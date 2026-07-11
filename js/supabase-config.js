@@ -137,6 +137,20 @@ export function isAnonymousSession(session) {
  * When CAPTCHA is enabled in Supabase, pass the verified CAPTCHA token:
  * ensureCustomerSession({ captchaToken: "token-from-widget" })
  */
+function createAuthSessionError(prefix, authError) {
+  const error = new Error(
+    `${prefix}: ${authError?.message || "Unknown authentication error"}`
+  );
+
+  error.name = authError?.name || "AuthSessionError";
+  error.code = authError?.code || "";
+  error.status = Number(authError?.status) || 0;
+  error.details = authError?.details || "";
+  error.cause = authError || null;
+
+  return error;
+}
+
 export async function ensureCustomerSession({ captchaToken = null } = {}) {
   const {
     data: { session: existingSession },
@@ -144,7 +158,10 @@ export async function ensureCustomerSession({ captchaToken = null } = {}) {
   } = await customerSupabase.auth.getSession();
 
   if (sessionError) {
-    throw new Error(`Unable to restore customer session: ${sessionError.message}`);
+    throw createAuthSessionError(
+      "Unable to restore customer session",
+      sessionError
+    );
   }
 
   if (existingSession && isAnonymousSession(existingSession)) {
@@ -157,8 +174,9 @@ export async function ensureCustomerSession({ captchaToken = null } = {}) {
     });
 
     if (signOutError) {
-      throw new Error(
-        `Unable to reset the customer session: ${signOutError.message}`
+      throw createAuthSessionError(
+        "Unable to reset customer session",
+        signOutError
       );
     }
   }
@@ -170,16 +188,24 @@ export async function ensureCustomerSession({ captchaToken = null } = {}) {
     : await customerSupabase.auth.signInAnonymously();
 
   if (signInResult.error) {
-    throw new Error(
-      `Unable to create an anonymous customer session: ${signInResult.error.message}`
+    throw createAuthSessionError(
+      "Unable to create anonymous customer session",
+      signInResult.error
     );
   }
 
-  if (!signInResult.data.session || !isAnonymousSession(signInResult.data.session)) {
-    throw new Error("Supabase did not return a valid anonymous customer session.");
+  const session = signInResult.data?.session;
+
+  if (!session || !isAnonymousSession(session)) {
+    const error = new Error(
+      "Supabase returned no valid anonymous customer session."
+    );
+
+    error.code = "anonymous_session_missing";
+    throw error;
   }
 
-  return signInResult.data.session;
+  return session;
 }
 
 /**

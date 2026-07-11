@@ -1,8 +1,23 @@
-import "/js/supabase-config.js";
+import {
+  customerSupabase,
+  ensureCustomerSession,
+} from "/js/supabase-config.js";
+
+import {
+  OPENSTREETMAP_CONFIG,
+} from "/js/openstreetmap-config.js";
 
 const CART_STORAGE_KEY = "ssupertea-cart-v1";
+const CUSTOMER_NAME_STORAGE_KEY = "ssupertea-customer-name-v1";
+const CUSTOMER_SESSION_TOKEN_STORAGE_KEY =
+  "ssupertea-customer-session-token-v1";
+const LAST_ORDER_STORAGE_KEY = "ssupertea-last-order-v1";
+
 const MAX_ITEM_QUANTITY = 20;
+const MAX_DELIVERY_ADDRESS_LENGTH = 500;
 const TOAST_DURATION_MS = 3800;
+
+let leafletLoadPromise = null;
 
 const MENU_ITEMS = Object.freeze([
   {
@@ -233,6 +248,21 @@ const state = {
   customizeQuantity: 1,
   installPrompt: null,
   cart: loadCart(),
+  checkout: {
+    map: null,
+    marker: null,
+    shopMarker: null,
+    accuracyCircle: null,
+    routeLayer: null,
+    routeAbortController: null,
+    routeRequestId: 0,
+    leafletReady: false,
+    mapVisible: false,
+    selectedLocation: null,
+    routeOrigin: null,
+    isLocating: false,
+    isSubmitting: false,
+  },
 };
 
 const elements = {};
@@ -248,6 +278,7 @@ function initializeApp() {
   applyShortcutView();
   updateScrolledHeader();
   updateCurrentYear();
+  restoreSavedCustomerName();
 }
 
 function cacheElements() {
@@ -274,6 +305,48 @@ function cacheElements() {
     "cart-subtotal",
     "checkout-total",
     "checkout-button",
+    "checkout-dialog",
+    "checkout-form",
+    "close-checkout-button",
+    "order-type-options",
+    "customer-name",
+    "pickup-details",
+    "delivery-details",
+    "address-line1",
+    "address-city",
+    "address-province",
+    "address-landmark",
+    "use-current-location-button",
+    "toggle-map-button",
+    "clear-map-pin-button",
+    "delivery-map-panel",
+    "map-status",
+    "delivery-map",
+    "map-instructions",
+    "selected-location-card",
+    "selected-location-coordinates",
+    "open-google-maps-link",
+    "route-summary-card",
+    "route-status",
+    "route-distance",
+    "route-duration",
+    "delivery-address",
+    "delivery-lat",
+    "delivery-lng",
+    "checkout-summary-list",
+    "checkout-summary-count",
+    "checkout-summary-total",
+    "checkout-submit-button",
+    "checkout-submit-label",
+    "checkout-submit-total",
+    "order-confirmation-dialog",
+    "confirmation-customer-name",
+    "confirmation-order-number",
+    "confirmation-status",
+    "confirmation-order-type",
+    "confirmation-total",
+    "confirmation-track-button",
+    "close-confirmation-button",
     "customize-dialog",
     "customize-form",
     "close-customize-button",
@@ -339,14 +412,74 @@ function bindEvents() {
   elements["track-order-button"].addEventListener("click", handleTrackRequest);
   elements["install-button"].addEventListener("click", handleInstallClick);
 
+  elements["close-checkout-button"].addEventListener("click", closeCheckoutDialog);
+  elements["checkout-form"].addEventListener("submit", handleCheckoutSubmit);
+  elements["order-type-options"].addEventListener(
+    "change",
+    handleOrderTypeChange
+  );
+  elements["use-current-location-button"].addEventListener(
+    "click",
+    useCurrentDeliveryLocation
+  );
+
+  elements["toggle-map-button"].addEventListener(
+    "click",
+    toggleDeliveryMap
+  );
+
+  elements["clear-map-pin-button"].addEventListener(
+    "click",
+    clearSelectedDeliveryLocation
+  );
+
+  elements["close-confirmation-button"].addEventListener(
+    "click",
+    closeOrderConfirmation
+  );
+  elements["confirmation-track-button"].addEventListener(
+    "click",
+    handleConfirmationTrackRequest
+  );
+
   elements["customize-dialog"].addEventListener("close", () => {
-    document.body.classList.remove("dialog-open");
     state.selectedProductId = null;
+    syncDialogBodyState();
   });
 
   elements["customize-dialog"].addEventListener("click", (event) => {
     if (event.target === elements["customize-dialog"]) {
       closeCustomizeDialog();
+    }
+  });
+
+  elements["checkout-dialog"].addEventListener("close", () => {
+    setCheckoutSubmitting(false);
+    syncDialogBodyState();
+  });
+
+  elements["checkout-dialog"].addEventListener("cancel", (event) => {
+    if (state.checkout.isSubmitting) {
+      event.preventDefault();
+    }
+  });
+
+  elements["checkout-dialog"].addEventListener("click", (event) => {
+    if (
+      event.target === elements["checkout-dialog"] &&
+      !state.checkout.isSubmitting
+    ) {
+      closeCheckoutDialog();
+    }
+  });
+
+  elements["order-confirmation-dialog"].addEventListener("close", () => {
+    syncDialogBodyState();
+  });
+
+  elements["order-confirmation-dialog"].addEventListener("click", (event) => {
+    if (event.target === elements["order-confirmation-dialog"]) {
+      closeOrderConfirmation();
     }
   });
 
@@ -779,6 +912,10 @@ function renderCart() {
   elements["cart-subtotal"].textContent = formatCurrency(subtotal);
   elements["checkout-total"].textContent = formatCurrency(subtotal);
   elements["checkout-button"].disabled = !hasItems;
+
+  if (elements["checkout-dialog"]?.open) {
+    renderCheckoutSummary();
+  }
 }
 
 function createCartItemMarkup(item) {
@@ -982,22 +1119,1470 @@ function handleCheckoutRequest() {
       title: "Your cart is empty",
       message: "Add at least one drink before continuing.",
     });
+
     return;
   }
 
-  showToast({
-    type: "info",
-    title: "Cart ready",
-    message: "Address selection and secure checkout will be connected in Phase 4.",
+  openCheckoutDialog();
+}
+
+function openCheckoutDialog() {
+  closeCart();
+  renderCheckoutSummary();
+  syncCheckoutOrderType();
+
+  if (!elements["checkout-dialog"].open) {
+    elements["checkout-dialog"].showModal();
+  }
+
+  document.body.classList.add("dialog-open");
+
+  requestAnimationFrame(() => {
+    elements["customer-name"].focus();
+
+    window.setTimeout(() => {
+      state.checkout.map?.invalidateSize();
+    }, 100);
   });
 }
 
+function closeCheckoutDialog() {
+  if (state.checkout.isSubmitting) {
+    return;
+  }
+
+  if (elements["checkout-dialog"].open) {
+    elements["checkout-dialog"].close();
+  }
+}
+
+function handleOrderTypeChange() {
+  syncCheckoutOrderType();
+}
+
+function getSelectedOrderType() {
+  const selectedInput = elements["checkout-form"].querySelector(
+    'input[name="order-type"]:checked'
+  );
+
+  return selectedInput?.value === "delivery" ? "delivery" : "pickup";
+}
+
+function syncCheckoutOrderType() {
+  const orderType = getSelectedOrderType();
+  const isDelivery = orderType === "delivery";
+
+  elements["pickup-details"].hidden = isDelivery;
+  elements["delivery-details"].hidden = !isDelivery;
+
+  const requiredDeliveryFields = [
+    elements["address-line1"],
+    elements["address-city"],
+    elements["address-province"],
+  ];
+
+  const allDeliveryFields = [
+    ...requiredDeliveryFields,
+    elements["address-landmark"],
+  ];
+
+  allDeliveryFields.forEach((field) => {
+    field.disabled = !isDelivery;
+  });
+
+  requiredDeliveryFields.forEach((field) => {
+    field.required = isDelivery;
+  });
+
+  if (!isDelivery) {
+    hideDeliveryMap();
+  }
+}
+
+function renderCheckoutSummary() {
+  const subtotal = getCartSubtotal();
+  const quantity = getCartQuantity();
+
+  elements["checkout-summary-list"].innerHTML = state.cart
+    .map((item) => {
+      const itemTotal = roundCurrency(item.unitPrice * item.quantity);
+      const addonLabel =
+        item.addons.length > 0
+          ? item.addons.map((addon) => addon.label).join(", ")
+          : "No add-ons";
+
+      return `
+        <article class="checkout-summary-item">
+          <strong>${item.quantity}× ${escapeHtml(item.name)}</strong>
+          <span>${formatCurrency(itemTotal)}</span>
+          <p>
+            ${escapeHtml(item.size.label)} ·
+            ${escapeHtml(item.sugar.label)} sugar ·
+            ${escapeHtml(item.ice.label)} ·
+            ${escapeHtml(addonLabel)}
+          </p>
+        </article>
+      `;
+    })
+    .join("");
+
+  elements["checkout-summary-count"].textContent = String(quantity);
+  elements["checkout-summary-total"].textContent = formatCurrency(subtotal);
+  elements["checkout-submit-total"].textContent = formatCurrency(subtotal);
+  elements["checkout-submit-button"].disabled =
+    state.cart.length === 0 || state.checkout.isSubmitting;
+}
+
+async function toggleDeliveryMap() {
+  if (state.checkout.mapVisible) {
+    hideDeliveryMap();
+    return;
+  }
+
+  await showDeliveryMap();
+}
+
+async function showDeliveryMap() {
+  elements["delivery-map-panel"].hidden = false;
+  state.checkout.mapVisible = true;
+  elements["toggle-map-button"].setAttribute("aria-expanded", "true");
+  elements["toggle-map-button"].querySelector("span").textContent = "Hide map";
+
+  try {
+    await initializeDeliveryMap();
+
+    window.setTimeout(() => {
+      state.checkout.map?.invalidateSize();
+
+      if (state.checkout.selectedLocation) {
+        state.checkout.map?.setView(
+          [
+            state.checkout.selectedLocation.latitude,
+            state.checkout.selectedLocation.longitude,
+          ],
+          OPENSTREETMAP_CONFIG.selectedLocationZoom
+        );
+      }
+    }, 80);
+  } catch (error) {
+    console.error("OpenStreetMap initialization failed:", error);
+
+    setMapStatus(
+      "The map could not load. Check your internet connection and try again.",
+      "error"
+    );
+  }
+}
+
+function hideDeliveryMap() {
+  elements["delivery-map-panel"].hidden = true;
+  state.checkout.mapVisible = false;
+  elements["toggle-map-button"].setAttribute("aria-expanded", "false");
+  elements["toggle-map-button"].querySelector("span").textContent =
+    "Choose location on map";
+}
+
+async function initializeDeliveryMap() {
+  if (state.checkout.leafletReady && state.checkout.map) {
+    window.setTimeout(() => {
+      state.checkout.map?.invalidateSize();
+    }, 80);
+
+    return state.checkout.map;
+  }
+
+  setMapStatus("Loading the OpenStreetMap delivery map…");
+
+  await loadLeafletLibrary();
+
+  const leaflet = window.L;
+
+  if (!leaflet) {
+    throw new Error("LEAFLET_UNAVAILABLE");
+  }
+
+  const {
+    latitude,
+    longitude,
+    zoom,
+  } = OPENSTREETMAP_CONFIG.defaultView;
+
+  const map = leaflet.map(elements["delivery-map"], {
+    center: [latitude, longitude],
+    zoom,
+    minZoom: OPENSTREETMAP_CONFIG.tiles.minimumZoom,
+    maxZoom: OPENSTREETMAP_CONFIG.tiles.maximumZoom,
+    zoomControl: true,
+    attributionControl: true,
+    preferCanvas: true,
+  });
+
+  leaflet
+    .tileLayer(OPENSTREETMAP_CONFIG.tiles.url, {
+      minZoom: OPENSTREETMAP_CONFIG.tiles.minimumZoom,
+      maxZoom: OPENSTREETMAP_CONFIG.tiles.maximumZoom,
+      attribution: OPENSTREETMAP_CONFIG.tiles.attribution,
+      updateWhenIdle: true,
+      keepBuffer: 2,
+    })
+    .addTo(map);
+
+  map.on("click", (event) => {
+    selectDeliveryLocation(
+      event.latlng.lat,
+      event.latlng.lng,
+      {
+        source: "map",
+        centerMap: false,
+      }
+    );
+  });
+
+  map.whenReady(() => {
+    setMapStatus(
+      "Tap the map or use your current location to place the delivery pin."
+    );
+  });
+
+  state.checkout.map = map;
+  state.checkout.leafletReady = true;
+
+  window.setTimeout(() => {
+    map.invalidateSize();
+  }, 120);
+
+  return map;
+}
+
+function loadLeafletLibrary() {
+  if (window.L?.map) {
+    return Promise.resolve(window.L);
+  }
+
+  if (leafletLoadPromise) {
+    return leafletLoadPromise;
+  }
+
+  leafletLoadPromise = new Promise((resolve, reject) => {
+    const leafletSettings = OPENSTREETMAP_CONFIG.leaflet;
+
+    let stylesheet = document.querySelector(
+      'link[data-ssupertea-leaflet="true"]'
+    );
+
+    if (!stylesheet) {
+      stylesheet = document.createElement("link");
+      stylesheet.rel = "stylesheet";
+      stylesheet.href = leafletSettings.cssUrl;
+      stylesheet.integrity = leafletSettings.cssIntegrity;
+      stylesheet.crossOrigin = "anonymous";
+      stylesheet.dataset.ssuperteaLeaflet = "true";
+      document.head.append(stylesheet);
+    }
+
+    let script = document.querySelector(
+      'script[data-ssupertea-leaflet="true"]'
+    );
+
+    if (script) {
+      if (window.L?.map) {
+        resolve(window.L);
+        return;
+      }
+
+      script.addEventListener(
+        "load",
+        () => resolve(window.L),
+        { once: true }
+      );
+
+      script.addEventListener(
+        "error",
+        () => reject(new Error("LEAFLET_LOAD_FAILED")),
+        { once: true }
+      );
+
+      return;
+    }
+
+    script = document.createElement("script");
+    script.src = leafletSettings.scriptUrl;
+    script.integrity = leafletSettings.scriptIntegrity;
+    script.crossOrigin = "anonymous";
+    script.defer = true;
+    script.dataset.ssuperteaLeaflet = "true";
+
+    script.addEventListener(
+      "load",
+      () => {
+        if (window.L?.map) {
+          resolve(window.L);
+          return;
+        }
+
+        leafletLoadPromise = null;
+        reject(new Error("LEAFLET_UNAVAILABLE"));
+      },
+      { once: true }
+    );
+
+    script.addEventListener(
+      "error",
+      () => {
+        leafletLoadPromise = null;
+        script.remove();
+        reject(new Error("LEAFLET_LOAD_FAILED"));
+      },
+      { once: true }
+    );
+
+    document.head.append(script);
+  });
+
+  return leafletLoadPromise;
+}
+
+async function useCurrentDeliveryLocation() {
+  if (state.checkout.isLocating) {
+    return;
+  }
+
+  await showDeliveryMap();
+
+  if (!window.isSecureContext) {
+    setMapStatus(
+      "Current location requires HTTPS or localhost. You can still tap the map to place the pin.",
+      "error"
+    );
+
+    return;
+  }
+
+  if (!("geolocation" in navigator)) {
+    setMapStatus(
+      "This browser does not provide location access. Tap the map to place the pin manually.",
+      "error"
+    );
+
+    return;
+  }
+
+  try {
+    await initializeDeliveryMap();
+  } catch (error) {
+    console.error("Unable to initialize the map for geolocation:", error);
+
+    setMapStatus(
+      "The map is unavailable. Check your connection and try again.",
+      "error"
+    );
+
+    return;
+  }
+
+  state.checkout.isLocating = true;
+  elements["use-current-location-button"].disabled = true;
+  elements["use-current-location-button"].querySelector("span").textContent =
+    "Finding location…";
+
+  setMapStatus(
+    "Requesting your device location. Approve the browser permission when asked."
+  );
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const latitude = Number(position.coords.latitude);
+      const longitude = Number(position.coords.longitude);
+      const accuracy = Number(position.coords.accuracy);
+
+      selectDeliveryLocation(latitude, longitude, {
+        source: "gps",
+        centerMap: true,
+        accuracy,
+      });
+
+      finishLocationRequest();
+    },
+    (error) => {
+      console.warn("Geolocation request failed:", error);
+
+      setMapStatus(
+        getGeolocationErrorMessage(error),
+        "error"
+      );
+
+      finishLocationRequest();
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 60000,
+    }
+  );
+}
+
+function finishLocationRequest() {
+  state.checkout.isLocating = false;
+  elements["use-current-location-button"].disabled = false;
+  elements["use-current-location-button"].querySelector("span").textContent =
+    "Use current location";
+}
+
+function getGeolocationErrorMessage(error) {
+  if (error?.code === 1) {
+    return "Location permission was denied. Tap the map to place the pin manually.";
+  }
+
+  if (error?.code === 2) {
+    return "Your device could not determine its location. Tap the map to place the pin.";
+  }
+
+  if (error?.code === 3) {
+    return "Finding your location took too long. Try again or place the pin manually.";
+  }
+
+  return "Current location is unavailable. Tap the map to place the pin manually.";
+}
+
+function selectDeliveryLocation(
+  latitude,
+  longitude,
+  {
+    source = "map",
+    centerMap = true,
+    accuracy = null,
+  } = {}
+) {
+  const normalizedLatitude = Number(latitude);
+  const normalizedLongitude = Number(longitude);
+
+  if (
+    !Number.isFinite(normalizedLatitude) ||
+    !Number.isFinite(normalizedLongitude) ||
+    normalizedLatitude < -90 ||
+    normalizedLatitude > 90 ||
+    normalizedLongitude < -180 ||
+    normalizedLongitude > 180
+  ) {
+    setMapStatus(
+      "The selected coordinates are invalid. Choose another location.",
+      "error"
+    );
+
+    return;
+  }
+
+  const leaflet = window.L;
+  const map = state.checkout.map;
+
+  if (!leaflet || !map) {
+    setMapStatus(
+      "The map is not ready yet. Wait a moment and try again.",
+      "error"
+    );
+
+    return;
+  }
+
+  const location = [
+    normalizedLatitude,
+    normalizedLongitude,
+  ];
+
+  if (!state.checkout.marker) {
+    const markerIcon = leaflet.divIcon({
+      className: "ssupertea-map-marker-shell",
+      html: '<span class="ssupertea-map-marker"><span>S</span></span>',
+      iconSize: [42, 50],
+      iconAnchor: [21, 46],
+    });
+
+    state.checkout.marker = leaflet
+      .marker(location, {
+        draggable: true,
+        keyboard: true,
+        autoPan: true,
+        icon: markerIcon,
+        title: "Ssupertea delivery location",
+      })
+      .addTo(map);
+
+    state.checkout.marker.on("dragend", (event) => {
+      const draggedLocation = event.target.getLatLng();
+
+      selectDeliveryLocation(
+        draggedLocation.lat,
+        draggedLocation.lng,
+        {
+          source: "drag",
+          centerMap: false,
+        }
+      );
+    });
+  } else {
+    state.checkout.marker.setLatLng(location);
+  }
+
+  if (state.checkout.accuracyCircle) {
+    state.checkout.accuracyCircle.remove();
+    state.checkout.accuracyCircle = null;
+  }
+
+  if (
+    source === "gps" &&
+    Number.isFinite(Number(accuracy)) &&
+    Number(accuracy) > 0
+  ) {
+    state.checkout.accuracyCircle = leaflet
+      .circle(location, {
+        radius: Math.min(Number(accuracy), 5000),
+        color: "#0e5b3b",
+        weight: 1,
+        fillColor: "#a7c957",
+        fillOpacity: 0.13,
+        interactive: false,
+      })
+      .addTo(map);
+  }
+
+  if (centerMap) {
+    map.setView(
+      location,
+      OPENSTREETMAP_CONFIG.selectedLocationZoom,
+      {
+        animate: true,
+      }
+    );
+  }
+
+  state.checkout.selectedLocation = {
+    latitude: normalizedLatitude,
+    longitude: normalizedLongitude,
+    source,
+  };
+
+  elements["delivery-lat"].value = String(normalizedLatitude);
+  elements["delivery-lng"].value = String(normalizedLongitude);
+  elements["selected-location-coordinates"].textContent =
+    formatCoordinates(
+      normalizedLatitude,
+      normalizedLongitude
+    );
+
+  elements["selected-location-card"].hidden = false;
+  elements["clear-map-pin-button"].disabled = false;
+  elements["open-google-maps-link"].href =
+    createGoogleMapsDirectionsLink(
+      normalizedLatitude,
+      normalizedLongitude
+    );
+
+  setMapStatus(
+    source === "gps"
+      ? "Current location selected. Drag the pin if the exact delivery entrance is different."
+      : "Delivery pin selected. Drag it to make the location more accurate.",
+    "success"
+  );
+
+  requestDeliveryRoute(
+    normalizedLatitude,
+    normalizedLongitude
+  );
+}
+
+function clearSelectedDeliveryLocation() {
+  state.checkout.selectedLocation = null;
+
+  if (state.checkout.marker) {
+    state.checkout.marker.remove();
+    state.checkout.marker = null;
+  }
+
+  if (state.checkout.accuracyCircle) {
+    state.checkout.accuracyCircle.remove();
+    state.checkout.accuracyCircle = null;
+  }
+
+  elements["delivery-lat"].value = "";
+  elements["delivery-lng"].value = "";
+  elements["selected-location-coordinates"].textContent = "";
+  elements["selected-location-card"].hidden = true;
+  elements["clear-map-pin-button"].disabled = true;
+  elements["open-google-maps-link"].href =
+    "https://www.google.com/maps/";
+
+  clearDeliveryRoute();
+
+  setMapStatus(
+    "Tap the map or use your current location to place the delivery pin."
+  );
+}
+
+function setMapStatus(message, type = "info") {
+  const statusElement = elements["map-status"];
+
+  statusElement.textContent = message;
+  statusElement.classList.toggle(
+    "is-error",
+    type === "error"
+  );
+  statusElement.classList.toggle(
+    "is-success",
+    type === "success"
+  );
+}
+
+function formatCoordinates(latitude, longitude) {
+  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+}
+
+function createGoogleMapsDirectionsLink(latitude, longitude) {
+  const destination = encodeURIComponent(
+    `${latitude.toFixed(6)},${longitude.toFixed(6)}`
+  );
+
+  const origin = state.checkout.routeOrigin;
+
+  if (
+    origin &&
+    Number.isFinite(origin.latitude) &&
+    Number.isFinite(origin.longitude)
+  ) {
+    const encodedOrigin = encodeURIComponent(
+      `${origin.latitude.toFixed(6)},${origin.longitude.toFixed(6)}`
+    );
+
+    return (
+      "https://www.google.com/maps/dir/?api=1" +
+      `&origin=${encodedOrigin}` +
+      `&destination=${destination}` +
+      "&travelmode=driving"
+    );
+  }
+
+  return (
+    "https://www.google.com/maps/dir/?api=1" +
+    `&destination=${destination}` +
+    "&travelmode=driving"
+  );
+}
+
+async function requestDeliveryRoute(latitude, longitude) {
+  const requestId = ++state.checkout.routeRequestId;
+
+  state.checkout.routeAbortController?.abort();
+  state.checkout.routeAbortController = new AbortController();
+
+  setRouteSummary({
+    state: "loading",
+    status: "Calculating the route from Ssupertea Station…",
+  });
+
+  try {
+    const response = await fetch(
+      OPENSTREETMAP_CONFIG.routing.endpoint,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          destination: {
+            latitude,
+            longitude,
+          },
+        }),
+        signal: state.checkout.routeAbortController.signal,
+      }
+    );
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const routeError = new Error(
+        payload?.message || "ROUTE_REQUEST_FAILED"
+      );
+
+      routeError.code = payload?.code || "";
+      routeError.status = response.status;
+      throw routeError;
+    }
+
+    if (requestId !== state.checkout.routeRequestId) {
+      return;
+    }
+
+    drawDeliveryRoute(payload);
+
+    state.checkout.routeOrigin = {
+      latitude: Number(payload.shop?.latitude),
+      longitude: Number(payload.shop?.longitude),
+    };
+
+    elements["open-google-maps-link"].href =
+      createGoogleMapsDirectionsLink(
+        latitude,
+        longitude
+      );
+
+    setRouteSummary({
+      state: "success",
+      status: `Route from ${payload.shop?.name || "Ssupertea Station"}`,
+      distanceMeters: Number(payload.summary?.distance),
+      durationSeconds: Number(payload.summary?.duration),
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      return;
+    }
+
+    console.error("OpenRouteService route request failed:", error);
+
+    if (requestId !== state.checkout.routeRequestId) {
+      return;
+    }
+
+    removeRouteLayers();
+
+    setRouteSummary({
+      state: "error",
+      status: getRouteErrorMessage(error),
+    });
+  }
+}
+
+function drawDeliveryRoute(payload) {
+  removeRouteLayers();
+
+  const leaflet = window.L;
+  const map = state.checkout.map;
+  const feature = payload?.route;
+
+  if (!leaflet || !map || !feature) {
+    return;
+  }
+
+  state.checkout.routeLayer = leaflet
+    .geoJSON(feature, {
+      style: {
+        color: "#0e5b3b",
+        weight: 5,
+        opacity: 0.84,
+      },
+    })
+    .addTo(map);
+
+  const shopLatitude = Number(payload.shop?.latitude);
+  const shopLongitude = Number(payload.shop?.longitude);
+
+  if (
+    Number.isFinite(shopLatitude) &&
+    Number.isFinite(shopLongitude)
+  ) {
+    const shopIcon = leaflet.divIcon({
+      className: "ssupertea-shop-marker-shell",
+      html: '<span class="ssupertea-shop-marker">SHOP</span>',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    });
+
+    state.checkout.shopMarker = leaflet
+      .marker(
+        [shopLatitude, shopLongitude],
+        {
+          icon: shopIcon,
+          keyboard: false,
+          interactive: false,
+        }
+      )
+      .addTo(map);
+  }
+
+  const routeBounds = state.checkout.routeLayer.getBounds();
+
+  if (routeBounds.isValid()) {
+    map.fitBounds(routeBounds, {
+      padding: [28, 28],
+      maxZoom: OPENSTREETMAP_CONFIG.selectedLocationZoom,
+    });
+  }
+}
+
+function removeRouteLayers() {
+  if (state.checkout.routeLayer) {
+    state.checkout.routeLayer.remove();
+    state.checkout.routeLayer = null;
+  }
+
+  if (state.checkout.shopMarker) {
+    state.checkout.shopMarker.remove();
+    state.checkout.shopMarker = null;
+  }
+}
+
+function clearDeliveryRoute() {
+  state.checkout.routeRequestId += 1;
+  state.checkout.routeAbortController?.abort();
+  state.checkout.routeAbortController = null;
+  state.checkout.routeOrigin = null;
+
+  removeRouteLayers();
+
+  elements["route-summary-card"].hidden = true;
+  elements["route-summary-card"].classList.remove(
+    "is-loading",
+    "is-error"
+  );
+  elements["route-status"].textContent =
+    "Waiting for a delivery pin.";
+  elements["route-distance"].textContent = "—";
+  elements["route-duration"].textContent = "—";
+}
+
+function setRouteSummary({
+  state: routeState,
+  status,
+  distanceMeters = null,
+  durationSeconds = null,
+}) {
+  const card = elements["route-summary-card"];
+
+  card.hidden = false;
+  card.classList.toggle(
+    "is-loading",
+    routeState === "loading"
+  );
+  card.classList.toggle(
+    "is-error",
+    routeState === "error"
+  );
+
+  elements["route-status"].textContent = status;
+
+  elements["route-distance"].textContent =
+    Number.isFinite(distanceMeters)
+      ? formatRouteDistance(distanceMeters)
+      : "—";
+
+  elements["route-duration"].textContent =
+    Number.isFinite(durationSeconds)
+      ? formatRouteDuration(durationSeconds)
+      : "—";
+}
+
+function getRouteErrorMessage(error) {
+  if (error?.code === "ORS_NOT_CONFIGURED") {
+    return "OpenRouteService is not configured on Vercel yet. The delivery pin and Google Maps button still work.";
+  }
+
+  if (error?.code === "ORS_INVALID_KEY") {
+    return "The OpenRouteService key in Vercel is invalid or has been revoked.";
+  }
+
+  if (error?.code === "ORS_DAILY_QUOTA_REACHED") {
+    return "The daily OpenRouteService quota has been reached. Try again after the quota resets.";
+  }
+
+  if (
+    error?.code === "ORS_RATE_LIMITED" ||
+    error?.status === 429
+  ) {
+    return "The route service is receiving too many requests. Try moving the pin again shortly.";
+  }
+
+  if (error?.code === "ORS_TIMEOUT") {
+    return "The route calculation timed out. Try again or use the Google Maps button.";
+  }
+
+  if (error?.code === "DESTINATION_TOO_FAR") {
+    return error.message || "This location is outside the configured delivery range.";
+  }
+
+  if (!navigator.onLine) {
+    return "Reconnect to calculate distance and estimated travel time.";
+  }
+
+  return "The route could not be calculated, but you can still submit the selected delivery pin.";
+}
+
+function formatRouteDistance(distanceMeters) {
+  if (distanceMeters < 1000) {
+    return `${Math.round(distanceMeters)} m`;
+  }
+
+  return `${(distanceMeters / 1000).toFixed(1)} km`;
+}
+
+function formatRouteDuration(durationSeconds) {
+  const totalMinutes = Math.max(
+    1,
+    Math.round(durationSeconds / 60)
+  );
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes} min`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return minutes > 0
+    ? `${hours} hr ${minutes} min`
+    : `${hours} hr`;
+}
+
+async function handleCheckoutSubmit(event) {
+  event.preventDefault();
+
+  if (state.checkout.isSubmitting) {
+    return;
+  }
+
+  if (state.cart.length === 0) {
+    showToast({
+      type: "warning",
+      title: "Your cart changed",
+      message: "Add at least one drink before placing the order.",
+    });
+
+    closeCheckoutDialog();
+    return;
+  }
+
+  const customerName = normalizeCustomerName(
+    elements["customer-name"].value
+  );
+
+  if (customerName.length < 2 || customerName.length > 120) {
+    elements["customer-name"].setCustomValidity(
+      "Enter a name between 2 and 120 characters."
+    );
+    elements["customer-name"].reportValidity();
+    elements["customer-name"].setCustomValidity("");
+    return;
+  }
+
+  const orderType = getSelectedOrderType();
+  let deliveryAddress = null;
+  let deliveryLatitude = null;
+  let deliveryLongitude = null;
+
+  if (orderType === "delivery") {
+    if (!elements["checkout-form"].checkValidity()) {
+      elements["checkout-form"].reportValidity();
+      return;
+    }
+
+    const selectedLocation =
+      state.checkout.selectedLocation;
+
+    if (!selectedLocation) {
+      setMapStatus(
+        "Place the delivery pin on the map before submitting the order.",
+        "error"
+      );
+
+      elements["delivery-map"].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      return;
+    }
+
+    deliveryAddress = buildDeliveryAddress();
+    deliveryLatitude = selectedLocation.latitude;
+    deliveryLongitude = selectedLocation.longitude;
+
+    elements["delivery-address"].value =
+      deliveryAddress;
+
+    if (
+      deliveryAddress.length < 5 ||
+      deliveryAddress.length > MAX_DELIVERY_ADDRESS_LENGTH
+    ) {
+      showToast({
+        type: "error",
+        title: "Check the delivery address",
+        message: "Enter a complete address under 500 characters.",
+      });
+
+      return;
+    }
+  }
+
+  if (!navigator.onLine) {
+    showToast({
+      type: "error",
+      title: "Internet connection required",
+      message: "Reconnect before submitting your order.",
+    });
+
+    return;
+  }
+
+  setCheckoutSubmitting(true);
+
+  const expectedTotal = getCartSubtotal();
+  const clientOrderId = createUuid();
+
+  try {
+    const session = await ensureCustomerSession();
+    const sessionToken = session?.user?.id;
+
+    if (!sessionToken) {
+      throw new Error("CUSTOMER_SESSION_MISSING");
+    }
+
+    safeSetLocalStorage(
+      CUSTOMER_SESSION_TOKEN_STORAGE_KEY,
+      sessionToken
+    );
+
+    const orderPayload = {
+      id: clientOrderId,
+      customer_name: customerName,
+      order_type: orderType,
+      items: buildDatabaseOrderItems(),
+      total_price: expectedTotal,
+      delivery_address: deliveryAddress,
+      delivery_lat: deliveryLatitude,
+      delivery_lng: deliveryLongitude,
+      customer_session_token: sessionToken,
+    };
+
+    const order = await insertOrderWithRecovery(orderPayload);
+
+    safeSetLocalStorage(
+      CUSTOMER_NAME_STORAGE_KEY,
+      customerName
+    );
+
+    saveLastOrder({
+      orderId: order.id,
+      customerName: order.customer_name,
+      orderType: order.order_type,
+      totalPrice: Number(order.total_price),
+      status: order.status,
+      createdAt: order.created_at,
+      sessionToken,
+    });
+
+    state.cart = [];
+    persistCart();
+    renderCart();
+
+    const serverTotal = Number(order.total_price);
+
+    closeCheckoutDialog();
+    showOrderConfirmation(order);
+
+    if (
+      Number.isFinite(serverTotal) &&
+      roundCurrency(serverTotal) !== roundCurrency(expectedTotal)
+    ) {
+      showToast({
+        type: "info",
+        title: "Total updated",
+        message: "The database applied the current official menu prices.",
+      });
+    } else {
+      showToast({
+        type: "success",
+        title: "Order placed",
+        message: `Order ${formatOrderNumber(order.id)} was accepted.`,
+      });
+    }
+  } catch (error) {
+    console.error("Order submission failed:", error);
+
+    showToast({
+      type: "error",
+      title: "Order was not submitted",
+      message: getOrderSubmissionMessage(error),
+      duration: 5200,
+    });
+  } finally {
+    setCheckoutSubmitting(false);
+  }
+}
+
+function buildDatabaseOrderItems() {
+  return state.cart.map((item) => ({
+    product_id: item.productId,
+    quantity: item.quantity,
+    size_id: item.size.id,
+    sugar_id: item.sugar.id,
+    ice_id: item.ice.id,
+    addon_ids: item.addons.map((addon) => addon.id),
+  }));
+}
+
+function buildDeliveryAddress() {
+  const addressLine = normalizeAddressPart(
+    elements["address-line1"].value
+  );
+
+  const city = normalizeAddressPart(
+    elements["address-city"].value
+  );
+
+  const province = normalizeAddressPart(
+    elements["address-province"].value
+  );
+
+  const landmark = normalizeAddressPart(
+    elements["address-landmark"].value
+  );
+
+  const primaryAddress = [
+    addressLine,
+    city,
+    province,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return landmark
+    ? `${primaryAddress} — Landmark: ${landmark}`
+    : primaryAddress;
+}
+
+function normalizeAddressPart(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+async function insertOrderWithRecovery(orderPayload) {
+  const selectColumns = [
+    "id",
+    "customer_name",
+    "order_type",
+    "items",
+    "total_price",
+    "status",
+    "delivery_address",
+    "delivery_lat",
+    "delivery_lng",
+    "customer_session_token",
+    "created_at",
+  ].join(",");
+
+  const {
+    data,
+    error,
+  } = await customerSupabase
+    .from("orders")
+    .insert(orderPayload)
+    .select(selectColumns)
+    .single();
+
+  if (!error && data) {
+    return data;
+  }
+
+  /*
+   * A duplicate UUID can mean the first request succeeded but its response
+   * was interrupted. RLS permits the customer to recover only their own row.
+   */
+  if (error?.code === "23505") {
+    const {
+      data: recoveredOrder,
+      error: recoveryError,
+    } = await customerSupabase
+      .from("orders")
+      .select(selectColumns)
+      .eq("id", orderPayload.id)
+      .single();
+
+    if (!recoveryError && recoveredOrder) {
+      return recoveredOrder;
+    }
+  }
+
+  const submissionError = new Error(
+    error?.message || "ORDER_INSERT_FAILED"
+  );
+
+  submissionError.code = error?.code || "";
+  submissionError.details = error?.details || "";
+  submissionError.hint = error?.hint || "";
+
+  throw submissionError;
+}
+
+function getOrderSubmissionMessage(error) {
+  const errorCode = String(error?.code || "").toLocaleLowerCase("en-PH");
+
+  const combinedMessage = [
+    error?.message,
+    error?.details,
+    error?.hint,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase("en-PH");
+
+  if (errorCode === "signup_disabled") {
+    return (
+      "Supabase has “Allow new users to sign up” turned off. " +
+      "Turn it on under Authentication settings; anonymous sign-in creates a new Auth user."
+    );
+  }
+
+  if (errorCode === "anonymous_provider_disabled") {
+    return (
+      "Supabase Anonymous Sign-ins are turned off. " +
+      "Enable Anonymous Sign-ins under Authentication settings."
+    );
+  }
+
+  if (errorCode === "captcha_failed") {
+    return (
+      "Supabase CAPTCHA verification failed. " +
+      "Complete the CAPTCHA integration or temporarily disable CAPTCHA while testing."
+    );
+  }
+
+  if (errorCode === "over_request_rate_limit") {
+    return (
+      "Too many anonymous sign-in attempts were made from this connection. " +
+      "Wait a few minutes and try again."
+    );
+  }
+
+  if (
+    errorCode === "unexpected_failure" ||
+    Number(error?.status) >= 500
+  ) {
+    return (
+      "Supabase Auth encountered a server or database error. " +
+      "Open Authentication → Logs in Supabase to view the exact failure."
+    );
+  }
+
+  if (
+    errorCode === "anonymous_session_missing" ||
+    combinedMessage.includes("no valid anonymous customer session")
+  ) {
+    return "Supabase did not return a valid customer session. Refresh the page and try again.";
+  }
+
+  if (
+    error?.code === "42501" ||
+    combinedMessage.includes("row-level security")
+  ) {
+    return (
+      "The order was blocked by database security. " +
+      "Run the included AUTH_AND_RLS_FIX.sql and verify the customer order policies."
+    );
+  }
+
+  if (
+    error?.code === "22023" ||
+    error?.code === "23514" ||
+    combinedMessage.includes("invalid or unavailable")
+  ) {
+    return "One of the drinks or options is no longer available. Refresh the menu and try again.";
+  }
+
+  if (
+    combinedMessage.includes("failed to fetch") ||
+    combinedMessage.includes("network")
+  ) {
+    return "The order server could not be reached. Check your internet connection and try again.";
+  }
+
+  return (
+    error?.message ||
+    "Your cart is still saved. Please try submitting the order again."
+  );
+}
+
+function setCheckoutSubmitting(isSubmitting) {
+  state.checkout.isSubmitting = Boolean(isSubmitting);
+
+  elements["checkout-form"].setAttribute(
+    "aria-busy",
+    String(state.checkout.isSubmitting)
+  );
+
+  elements["checkout-submit-button"].disabled =
+    state.checkout.isSubmitting || state.cart.length === 0;
+
+  elements["close-checkout-button"].disabled =
+    state.checkout.isSubmitting;
+
+  elements["checkout-submit-label"].textContent =
+    state.checkout.isSubmitting
+      ? "Placing order…"
+      : "Place order";
+}
+
+function showOrderConfirmation(order) {
+  elements["confirmation-customer-name"].textContent =
+    String(order.customer_name || "customer");
+
+  elements["confirmation-order-number"].textContent =
+    formatOrderNumber(order.id);
+
+  elements["confirmation-status"].textContent =
+    String(order.status || "pending");
+
+  elements["confirmation-order-type"].textContent =
+    String(order.order_type || "pickup");
+
+  elements["confirmation-total"].textContent =
+    formatCurrency(Number(order.total_price) || 0);
+
+  if (!elements["order-confirmation-dialog"].open) {
+    elements["order-confirmation-dialog"].showModal();
+  }
+
+  document.body.classList.add("dialog-open");
+}
+
+function closeOrderConfirmation() {
+  if (elements["order-confirmation-dialog"].open) {
+    elements["order-confirmation-dialog"].close();
+  }
+}
+
 function handleTrackRequest() {
+  const lastOrder = loadLastOrder();
+
+  if (!lastOrder) {
+    showToast({
+      type: "info",
+      title: "No recent order",
+      message: "Place an order first, then its tracking details will appear here.",
+    });
+
+    return;
+  }
+
+  showOrderConfirmation({
+    id: lastOrder.orderId,
+    customer_name: lastOrder.customerName,
+    order_type: lastOrder.orderType,
+    total_price: lastOrder.totalPrice,
+    status: lastOrder.status,
+  });
+}
+
+function handleConfirmationTrackRequest() {
   showToast({
     type: "info",
-    title: "Order tracking",
-    message: "Realtime order tracking will be connected after checkout in Phase 5.",
+    title: "Tracking is next",
+    message: "Realtime status updates will be connected in Phase 5.",
   });
+}
+
+function saveLastOrder(order) {
+  safeSetLocalStorage(
+    LAST_ORDER_STORAGE_KEY,
+    JSON.stringify(order)
+  );
+}
+
+function loadLastOrder() {
+  try {
+    const rawValue = localStorage.getItem(LAST_ORDER_STORAGE_KEY);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+
+    if (
+      !parsedValue ||
+      typeof parsedValue !== "object" ||
+      typeof parsedValue.orderId !== "string"
+    ) {
+      return null;
+    }
+
+    return parsedValue;
+  } catch {
+    return null;
+  }
+}
+
+function restoreSavedCustomerName() {
+  try {
+    const savedName = localStorage.getItem(
+      CUSTOMER_NAME_STORAGE_KEY
+    );
+
+    if (savedName) {
+      elements["customer-name"].value =
+        normalizeCustomerName(savedName);
+    }
+  } catch {
+    // Checkout remains usable without name persistence.
+  }
+}
+
+function safeSetLocalStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    console.warn(`Unable to store ${key}:`, error);
+  }
+}
+
+function normalizeCustomerName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function formatOrderNumber(orderId) {
+  const compactId = String(orderId || "")
+    .replace(/[^a-fA-F0-9]/g, "")
+    .slice(0, 8)
+    .toUpperCase();
+
+  return `SS-${compactId || "00000000"}`;
+}
+
+function createUuid() {
+  if (typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  const randomBytes = new Uint8Array(16);
+  crypto.getRandomValues(randomBytes);
+
+  randomBytes[6] = (randomBytes[6] & 0x0f) | 0x40;
+  randomBytes[8] = (randomBytes[8] & 0x3f) | 0x80;
+
+  const hexadecimal = [...randomBytes]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+
+  return [
+    hexadecimal.slice(0, 8),
+    hexadecimal.slice(8, 12),
+    hexadecimal.slice(12, 16),
+    hexadecimal.slice(16, 20),
+    hexadecimal.slice(20),
+  ].join("-");
+}
+
+function syncDialogBodyState() {
+  const anyDialogOpen = Boolean(
+    elements["customize-dialog"].open ||
+      elements["checkout-dialog"].open ||
+      elements["order-confirmation-dialog"].open
+  );
+
+  document.body.classList.toggle(
+    "dialog-open",
+    anyDialogOpen
+  );
 }
 
 function getCartQuantity() {

@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v6";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -17,6 +17,7 @@ const APP_SHELL = [
   "/css/style.css",
   "/js/app.js",
   "/js/supabase-config.js",
+  "/js/openstreetmap-config.js",
   "/assets/icons/icon-192.png",
   "/assets/icons/icon-512.png",
   "/assets/icons/maskable-icon-512.png",
@@ -82,8 +83,7 @@ self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(request.url);
 
   /*
-   * Supabase and Google Maps requests are cross-origin and are deliberately
-   * excluded. The service worker only caches this application's own files.
+   * Supabase, Leaflet CDN, and OpenStreetMap tile requests are cross-origin and deliberately excluded. The service worker only caches this application's own files.
    */
   if (requestUrl.origin !== self.location.origin) {
     return;
@@ -91,6 +91,18 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(networkFirstNavigation(event));
+    return;
+  }
+
+  /*
+   * Configuration files should prefer the network so a newly entered API
+   * key or Supabase project setting is not hidden behind an older cache.
+   */
+  if (
+    requestUrl.pathname === "/js/openstreetmap-config.js" ||
+    requestUrl.pathname === "/js/supabase-config.js"
+  ) {
+    event.respondWith(networkFirstAsset(request));
     return;
   }
 
@@ -136,6 +148,42 @@ async function networkFirstNavigation(event) {
     }
 
     return createOfflineResponse();
+  }
+}
+
+async function networkFirstAsset(request) {
+  const runtimeCache = await caches.open(RUNTIME_CACHE);
+
+  try {
+    const networkResponse = await fetch(request, {
+      cache: "no-cache",
+    });
+
+    if (isCacheableResponse(networkResponse)) {
+      await runtimeCache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch {
+    const cachedResponse =
+      (await runtimeCache.match(request)) ||
+      (await caches.match(request));
+
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    return new Response(
+      "This configuration file is unavailable.",
+      {
+        status: 503,
+        statusText: "Service Unavailable",
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   }
 }
 

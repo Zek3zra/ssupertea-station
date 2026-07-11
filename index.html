@@ -318,7 +318,7 @@
       </button>
 
       <p class="checkout-note">
-        Delivery details and secure order submission are added in Phase 4.
+        Final delivery details and the server-verified total are confirmed at checkout.
       </p>
     </div>
   </aside>
@@ -418,6 +418,425 @@
         </button>
       </div>
     </form>
+  </dialog>
+
+
+  <dialog class="checkout-dialog" id="checkout-dialog">
+    <form id="checkout-form" autocomplete="on">
+      <header class="checkout-dialog-header">
+        <div>
+          <p class="eyebrow">Checkout</p>
+          <h2>Complete your order</h2>
+        </div>
+
+        <button
+          class="icon-button"
+          id="close-checkout-button"
+          type="button"
+          aria-label="Close checkout"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m6 6 12 12M18 6 6 18"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="checkout-dialog-content">
+        <section class="checkout-section" aria-labelledby="order-type-heading">
+          <div class="checkout-section-heading">
+            <span class="checkout-step">1</span>
+            <div>
+              <h3 id="order-type-heading">How will you receive it?</h3>
+              <p>Choose pickup or delivery.</p>
+            </div>
+          </div>
+
+          <div class="order-type-options" id="order-type-options">
+            <label class="order-type-card">
+              <input
+                name="order-type"
+                type="radio"
+                value="pickup"
+                checked
+              >
+              <span class="order-type-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 9h14l-1 12H6Zm2-4h10l2 4H5Zm3 8v4m4-4v4"/>
+                </svg>
+              </span>
+              <span>
+                <strong>Pickup</strong>
+                <small>Collect it from the shop</small>
+              </span>
+            </label>
+
+            <label class="order-type-card">
+              <input
+                name="order-type"
+                type="radio"
+                value="delivery"
+              >
+              <span class="order-type-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 7h11v10H3Zm11 4h4l3 3v3h-7ZM7 20a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm11 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/>
+                </svg>
+              </span>
+              <span>
+                <strong>Delivery</strong>
+                <small>Send it to your address</small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <section class="checkout-section" aria-labelledby="customer-heading">
+          <div class="checkout-section-heading">
+            <span class="checkout-step">2</span>
+            <div>
+              <h3 id="customer-heading">Customer details</h3>
+              <p>Tell the staff who the order belongs to.</p>
+            </div>
+          </div>
+
+          <label class="checkout-field" for="customer-name">
+            <span>Full name</span>
+            <input
+              id="customer-name"
+              name="customer-name"
+              type="text"
+              minlength="2"
+              maxlength="120"
+              autocomplete="name"
+              placeholder="Enter your full name"
+              required
+            >
+          </label>
+        </section>
+
+        <section
+          class="checkout-section pickup-details"
+          id="pickup-details"
+          aria-labelledby="pickup-heading"
+        >
+          <div class="checkout-section-heading">
+            <span class="checkout-step">3</span>
+            <div>
+              <h3 id="pickup-heading">Pickup branch</h3>
+              <p>Your order will be prepared for shop pickup.</p>
+            </div>
+          </div>
+
+          <div class="pickup-branch-card">
+            <span class="pickup-branch-icon" aria-hidden="true">S</span>
+            <div>
+              <strong>Ssupertea Station</strong>
+              <span>Main Branch</span>
+            </div>
+            <span class="pickup-badge">Pickup</span>
+          </div>
+        </section>
+
+        <section
+          class="checkout-section delivery-details"
+          id="delivery-details"
+          aria-labelledby="delivery-heading"
+          hidden
+        >
+          <div class="checkout-section-heading">
+            <span class="checkout-step">3</span>
+            <div>
+              <h3 id="delivery-heading">Delivery address and map pin</h3>
+              <p>
+                Type the complete address, then use your current location or
+                tap the map to place the delivery pin.
+              </p>
+            </div>
+          </div>
+
+          <div class="delivery-address-grid">
+            <label class="checkout-field" for="address-line1">
+              <span>House number, street, and barangay</span>
+              <input
+                id="address-line1"
+                name="address-line1"
+                type="text"
+                minlength="5"
+                maxlength="180"
+                autocomplete="street-address"
+                placeholder="Example: 123 Rizal Street, Barangay 1"
+              >
+            </label>
+
+            <label class="checkout-field" for="address-city">
+              <span>City or municipality</span>
+              <input
+                id="address-city"
+                name="address-city"
+                type="text"
+                minlength="2"
+                maxlength="100"
+                autocomplete="address-level2"
+                placeholder="Example: Bacolod City"
+              >
+            </label>
+
+            <label class="checkout-field" for="address-province">
+              <span>Province</span>
+              <input
+                id="address-province"
+                name="address-province"
+                type="text"
+                minlength="2"
+                maxlength="100"
+                autocomplete="address-level1"
+                placeholder="Example: Negros Occidental"
+              >
+            </label>
+
+            <label class="checkout-field" for="address-landmark">
+              <span>Landmark or unit details <small>Optional</small></span>
+              <input
+                id="address-landmark"
+                name="address-landmark"
+                type="text"
+                maxlength="120"
+                autocomplete="address-line2"
+                placeholder="Example: Blue gate beside the pharmacy"
+              >
+            </label>
+          </div>
+
+          <div class="delivery-map-toolbar">
+            <button
+              class="map-action-button map-location-button"
+              id="use-current-location-button"
+              type="button"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"></circle>
+                <circle cx="12" cy="12" r="8"></circle>
+                <path d="M12 2v2m0 16v2M2 12h2m16 0h2"></path>
+              </svg>
+              <span>Use current location</span>
+            </button>
+
+            <button
+              class="map-action-button"
+              id="toggle-map-button"
+              type="button"
+              aria-expanded="false"
+              aria-controls="delivery-map-panel"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"></path>
+                <path d="M9 3v15m6-12v15"></path>
+              </svg>
+              <span>Choose location on map</span>
+            </button>
+
+            <button
+              class="map-action-button"
+              id="clear-map-pin-button"
+              type="button"
+              disabled
+            >
+              Clear pin
+            </button>
+          </div>
+
+          <div
+            class="delivery-map-panel"
+            id="delivery-map-panel"
+            hidden
+          >
+            <div
+              class="map-status"
+              id="map-status"
+              role="status"
+              aria-live="polite"
+            >
+              Open the map to choose the exact delivery location.
+            </div>
+
+            <div
+              class="delivery-map"
+              id="delivery-map"
+              role="application"
+              aria-label="OpenStreetMap delivery pin selector"
+            ></div>
+
+            <p class="map-instructions" id="map-instructions">
+              Tap the exact delivery location on the map. After placing the pin,
+              drag it to make the location more accurate.
+            </p>
+          </div>
+
+          <div
+            class="selected-location-card"
+            id="selected-location-card"
+            hidden
+          >
+            <span class="selected-location-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+                <circle cx="12" cy="10" r="2.5"></circle>
+              </svg>
+            </span>
+
+            <div>
+              <strong>Delivery pin selected</strong>
+              <p id="selected-location-coordinates"></p>
+            </div>
+
+            <a
+              id="open-google-maps-link"
+              href="https://www.google.com/maps/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google Maps
+            </a>
+          </div>
+
+          <div
+            class="route-summary-card"
+            id="route-summary-card"
+            hidden
+          >
+            <div class="route-summary-heading">
+              <span class="route-summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 19c4 0 4-5 8-5h6"></path>
+                  <circle cx="5" cy="19" r="2"></circle>
+                  <circle cx="19" cy="14" r="2"></circle>
+                  <path d="M5 17V7a3 3 0 0 1 3-3h3"></path>
+                </svg>
+              </span>
+
+              <div>
+                <strong>Estimated delivery route</strong>
+                <p id="route-status">Waiting for a delivery pin.</p>
+              </div>
+            </div>
+
+            <dl class="route-metrics">
+              <div>
+                <dt>Distance</dt>
+                <dd id="route-distance">—</dd>
+              </div>
+              <div>
+                <dt>Estimated drive</dt>
+                <dd id="route-duration">—</dd>
+              </div>
+            </dl>
+
+            <p class="route-provider-attribution">
+              Route data ©
+              <a
+                href="https://openrouteservice.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                openrouteservice.org
+              </a>
+              by HeiGIT
+            </p>
+          </div>
+
+          <input id="delivery-address" type="hidden">
+          <input id="delivery-lat" type="hidden">
+          <input id="delivery-lng" type="hidden">
+        </section>
+
+        <section class="checkout-section order-review" aria-labelledby="review-heading">
+          <div class="checkout-section-heading">
+            <span class="checkout-step">4</span>
+            <div>
+              <h3 id="review-heading">Order review</h3>
+              <p>The database recalculates the official price before accepting the order.</p>
+            </div>
+          </div>
+
+          <div class="checkout-summary-list" id="checkout-summary-list"></div>
+
+          <dl class="checkout-summary-totals">
+            <div>
+              <dt>Items</dt>
+              <dd id="checkout-summary-count">0</dd>
+            </div>
+            <div class="checkout-summary-total">
+              <dt>Total</dt>
+              <dd id="checkout-summary-total">₱0.00</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+
+      <footer class="checkout-dialog-footer">
+        <p>
+          By placing the order, you confirm that the details above are correct.
+        </p>
+
+        <button
+          class="checkout-submit-button"
+          id="checkout-submit-button"
+          type="submit"
+        >
+          <span id="checkout-submit-label">Place order</span>
+          <span id="checkout-submit-total">₱0.00</span>
+        </button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="order-confirmation-dialog" id="order-confirmation-dialog">
+    <div class="confirmation-content">
+      <div class="confirmation-check" aria-hidden="true">✓</div>
+
+      <p class="eyebrow">Order confirmed</p>
+      <h2>Thank you, <span id="confirmation-customer-name">customer</span>!</h2>
+      <p class="confirmation-copy">
+        Your order was securely recorded and sent to Ssupertea Station.
+      </p>
+
+      <div class="confirmation-order-number">
+        <span>Order number</span>
+        <strong id="confirmation-order-number">SS-00000000</strong>
+      </div>
+
+      <dl class="confirmation-details">
+        <div>
+          <dt>Status</dt>
+          <dd id="confirmation-status">Pending</dd>
+        </div>
+        <div>
+          <dt>Order type</dt>
+          <dd id="confirmation-order-type">Pickup</dd>
+        </div>
+        <div>
+          <dt>Total</dt>
+          <dd id="confirmation-total">₱0.00</dd>
+        </div>
+      </dl>
+
+      <div class="confirmation-actions">
+        <button
+          class="primary-button"
+          id="confirmation-track-button"
+          type="button"
+        >
+          Track this order
+        </button>
+
+        <button
+          class="secondary-button"
+          id="close-confirmation-button"
+          type="button"
+        >
+          Continue browsing
+        </button>
+      </div>
+    </div>
   </dialog>
 
   <div

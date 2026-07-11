@@ -18,6 +18,8 @@ const PHILIPPINES_BOUNDS = Object.freeze({
 
 const DEFAULT_MAX_ROUTE_KM = 50;
 const ORS_TIMEOUT_MS = 15000;
+const DELIVERY_FEE_BLOCK_METERS = 300;
+const DELIVERY_FEE_PER_BLOCK = 10;
 
 module.exports = async function routeHandler(request, response) {
   response.setHeader("Cache-Control", "no-store");
@@ -161,12 +163,19 @@ module.exports = async function routeHandler(request, response) {
       });
     }
 
+    const distanceMeters = Number(summary.distance);
+    const durationSeconds = Number(summary.duration);
+    const deliveryFee = calculateDeliveryFee(distanceMeters);
+
     return response.status(200).json({
       shop,
       destination,
       summary: {
-        distance: Number(summary.distance),
-        duration: Number(summary.duration),
+        distance: distanceMeters,
+        duration: durationSeconds,
+        delivery_fee: deliveryFee,
+        fee_block_meters: DELIVERY_FEE_BLOCK_METERS,
+        fee_per_block: DELIVERY_FEE_PER_BLOCK,
       },
       route: routeFeature,
       attribution:
@@ -361,5 +370,19 @@ function haversineDistanceKm(
     2 *
     earthRadiusKm *
     Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  );
+}
+
+
+function calculateDeliveryFee(distanceMeters) {
+  const safeDistance = Number(distanceMeters);
+
+  if (!Number.isFinite(safeDistance) || safeDistance <= 0) {
+    return 0;
+  }
+
+  return (
+    Math.ceil(safeDistance / DELIVERY_FEE_BLOCK_METERS) *
+    DELIVERY_FEE_PER_BLOCK
   );
 }

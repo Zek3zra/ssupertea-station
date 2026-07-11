@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -100,7 +100,9 @@ self.addEventListener("fetch", (event) => {
    */
   if (
     requestUrl.pathname === "/js/openstreetmap-config.js" ||
-    requestUrl.pathname === "/js/supabase-config.js"
+    requestUrl.pathname === "/js/supabase-config.js" ||
+    requestUrl.pathname === "/js/app.js" ||
+    requestUrl.pathname === "/css/style.css"
   ) {
     event.respondWith(networkFirstAsset(request));
     return;

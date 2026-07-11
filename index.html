@@ -555,20 +555,23 @@
 
           <div class="delivery-address-grid">
             <label class="checkout-field" for="address-line1">
-              <span>House number, street, and barangay</span>
+              <span>House number and purok</span>
               <input
                 id="address-line1"
                 name="address-line1"
                 type="text"
-                minlength="5"
+                minlength="3"
                 maxlength="180"
                 autocomplete="street-address"
-                placeholder="Example: 123 Rizal Street, Barangay 1"
+                placeholder="Example: House 14, Purok 3"
               >
             </label>
 
-            <label class="checkout-field" for="address-city">
-              <span>City or municipality</span>
+            <label class="checkout-field checkout-field-autofill" for="address-city">
+              <span>
+                City or municipality
+                <small>Filled from map</small>
+              </span>
               <input
                 id="address-city"
                 name="address-city"
@@ -576,12 +579,16 @@
                 minlength="2"
                 maxlength="100"
                 autocomplete="address-level2"
-                placeholder="Example: Bacolod City"
+                placeholder="Choose a location first"
+                readonly
               >
             </label>
 
-            <label class="checkout-field" for="address-province">
-              <span>Province</span>
+            <label class="checkout-field checkout-field-autofill" for="address-province">
+              <span>
+                Province
+                <small>Filled from map</small>
+              </span>
               <input
                 id="address-province"
                 name="address-province"
@@ -589,7 +596,8 @@
                 minlength="2"
                 maxlength="100"
                 autocomplete="address-level1"
-                placeholder="Example: Negros Occidental"
+                placeholder="Choose a location first"
+                readonly
               >
             </label>
 
@@ -604,6 +612,15 @@
                 placeholder="Example: Blue gate beside the pharmacy"
               >
             </label>
+          </div>
+
+          <div
+            class="location-address-status"
+            id="location-address-status"
+            role="status"
+            aria-live="polite"
+          >
+            Select a map pin or use your current location to fill the city and province.
           </div>
 
           <div class="delivery-map-toolbar">
@@ -728,7 +745,15 @@
                 <dt>Estimated drive</dt>
                 <dd id="route-duration">—</dd>
               </div>
+              <div>
+                <dt>Delivery fee</dt>
+                <dd id="route-delivery-fee">—</dd>
+              </div>
             </dl>
+
+            <p class="delivery-fee-rule">
+              ₱10 is added for every started 300 meters of the driving route.
+            </p>
 
             <p class="route-provider-attribution">
               Route data ©
@@ -763,6 +788,14 @@
             <div>
               <dt>Items</dt>
               <dd id="checkout-summary-count">0</dd>
+            </div>
+            <div>
+              <dt>Items subtotal</dt>
+              <dd id="checkout-items-subtotal">₱0.00</dd>
+            </div>
+            <div id="checkout-delivery-fee-row" hidden>
+              <dt>Delivery fee</dt>
+              <dd id="checkout-delivery-fee">₱0.00</dd>
             </div>
             <div class="checkout-summary-total">
               <dt>Total</dt>
@@ -813,6 +846,10 @@
           <dt>Order type</dt>
           <dd id="confirmation-order-type">Pickup</dd>
         </div>
+        <div id="confirmation-delivery-fee-row" hidden>
+          <dt>Delivery fee</dt>
+          <dd id="confirmation-delivery-fee">₱0.00</dd>
+        </div>
         <div>
           <dt>Total</dt>
           <dd id="confirmation-total">₱0.00</dd>
@@ -835,6 +872,131 @@
         >
           Continue browsing
         </button>
+      </div>
+    </div>
+  </dialog>
+
+
+  <dialog class="tracking-dialog" id="tracking-dialog">
+    <div class="tracking-shell">
+      <header class="tracking-header">
+        <div>
+          <p class="eyebrow">Live order tracking</p>
+          <h2 id="tracking-order-number">SS-00000000</h2>
+        </div>
+
+        <button
+          class="icon-button"
+          id="close-tracking-button"
+          type="button"
+          aria-label="Close order tracking"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m6 6 12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="tracking-content">
+        <div class="tracking-connection-row">
+          <span
+            class="tracking-connection-dot"
+            id="tracking-connection-dot"
+            aria-hidden="true"
+          ></span>
+          <p id="tracking-connection-status">Connecting to live updates…</p>
+          <button id="refresh-tracking-button" type="button">Refresh</button>
+        </div>
+
+        <section class="tracking-status-card">
+          <p class="tracking-status-label">Current status</p>
+          <h3 id="tracking-current-status">Pending</h3>
+          <p id="tracking-status-message">
+            Your order has been received and is waiting for staff confirmation.
+          </p>
+        </section>
+
+        <ol class="tracking-timeline" id="tracking-timeline">
+          <li data-tracking-step="pending">
+            <span class="tracking-step-marker">1</span>
+            <div>
+              <strong>Order received</strong>
+              <p>Your order is in the queue.</p>
+            </div>
+          </li>
+          <li data-tracking-step="preparing">
+            <span class="tracking-step-marker">2</span>
+            <div>
+              <strong>Preparing</strong>
+              <p>The team is making your drinks.</p>
+            </div>
+          </li>
+          <li data-tracking-step="dispatched">
+            <span class="tracking-step-marker">3</span>
+            <div>
+              <strong id="tracking-dispatched-label">Out for delivery</strong>
+              <p id="tracking-dispatched-copy">Your order is on the way.</p>
+            </div>
+          </li>
+          <li data-tracking-step="completed">
+            <span class="tracking-step-marker">4</span>
+            <div>
+              <strong>Completed</strong>
+              <p>The order has been completed.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="tracking-cancelled-card" id="tracking-cancelled-card" hidden>
+          <strong>Order cancelled</strong>
+          <p>The shop marked this order as cancelled.</p>
+        </div>
+
+        <section class="tracking-details-card">
+          <div class="tracking-details-heading">
+            <h3>Order details</h3>
+            <span id="tracking-created-at"></span>
+          </div>
+
+          <div class="tracking-items" id="tracking-items"></div>
+
+          <dl class="tracking-totals">
+            <div>
+              <dt>Items subtotal</dt>
+              <dd id="tracking-items-subtotal">₱0.00</dd>
+            </div>
+            <div id="tracking-delivery-fee-row" hidden>
+              <dt>Delivery fee</dt>
+              <dd id="tracking-delivery-fee">₱0.00</dd>
+            </div>
+            <div>
+              <dt>Total</dt>
+              <dd id="tracking-total">₱0.00</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section
+          class="tracking-delivery-card"
+          id="tracking-delivery-card"
+          hidden
+        >
+          <h3>Delivery information</h3>
+          <p id="tracking-delivery-address"></p>
+          <div class="tracking-route-facts">
+            <span id="tracking-route-distance"></span>
+            <span id="tracking-route-duration"></span>
+          </div>
+          <a
+            class="secondary-button"
+            id="tracking-google-maps-link"
+            href="https://www.google.com/maps/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open route in Google Maps
+          </a>
+        </section>
       </div>
     </div>
   </dialog>

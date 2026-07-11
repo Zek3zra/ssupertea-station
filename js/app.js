@@ -17,6 +17,18 @@ const MAX_ITEM_QUANTITY = 20;
 const MAX_DELIVERY_ADDRESS_LENGTH = 500;
 const TOAST_DURATION_MS = 3800;
 
+const TRACKING_STATUS_ORDER = Object.freeze([
+  "pending",
+  "preparing",
+  "dispatched",
+  "completed",
+]);
+
+const TERMINAL_ORDER_STATUSES = new Set([
+  "completed",
+  "cancelled",
+]);
+
 let leafletLoadPromise = null;
 
 const MENU_ITEMS = Object.freeze([
@@ -255,13 +267,27 @@ const state = {
     accuracyCircle: null,
     routeLayer: null,
     routeAbortController: null,
+    reverseGeocodeAbortController: null,
     routeRequestId: 0,
+    reverseGeocodeRequestId: 0,
     leafletReady: false,
     mapVisible: false,
     selectedLocation: null,
     routeOrigin: null,
+    routeDistanceMeters: null,
+    routeDurationSeconds: null,
+    deliveryFee: 0,
+    routeReady: false,
+    addressResolved: false,
     isLocating: false,
     isSubmitting: false,
+  },
+  tracking: {
+    channel: null,
+    orderId: null,
+    order: null,
+    subscriptionStatus: "idle",
+    reconnectTimer: null,
   },
 };
 
@@ -279,6 +305,7 @@ function initializeApp() {
   updateScrolledHeader();
   updateCurrentYear();
   restoreSavedCustomerName();
+  restoreOrderTracking();
 }
 
 function cacheElements() {
@@ -316,6 +343,7 @@ function cacheElements() {
     "address-city",
     "address-province",
     "address-landmark",
+    "location-address-status",
     "use-current-location-button",
     "toggle-map-button",
     "clear-map-pin-button",
@@ -330,11 +358,15 @@ function cacheElements() {
     "route-status",
     "route-distance",
     "route-duration",
+    "route-delivery-fee",
     "delivery-address",
     "delivery-lat",
     "delivery-lng",
     "checkout-summary-list",
     "checkout-summary-count",
+    "checkout-items-subtotal",
+    "checkout-delivery-fee-row",
+    "checkout-delivery-fee",
     "checkout-summary-total",
     "checkout-submit-button",
     "checkout-submit-label",
@@ -344,9 +376,34 @@ function cacheElements() {
     "confirmation-order-number",
     "confirmation-status",
     "confirmation-order-type",
+    "confirmation-delivery-fee-row",
+    "confirmation-delivery-fee",
     "confirmation-total",
     "confirmation-track-button",
     "close-confirmation-button",
+    "tracking-dialog",
+    "close-tracking-button",
+    "refresh-tracking-button",
+    "tracking-order-number",
+    "tracking-connection-dot",
+    "tracking-connection-status",
+    "tracking-current-status",
+    "tracking-status-message",
+    "tracking-timeline",
+    "tracking-dispatched-label",
+    "tracking-dispatched-copy",
+    "tracking-cancelled-card",
+    "tracking-created-at",
+    "tracking-items",
+    "tracking-items-subtotal",
+    "tracking-delivery-fee-row",
+    "tracking-delivery-fee",
+    "tracking-total",
+    "tracking-delivery-card",
+    "tracking-delivery-address",
+    "tracking-route-distance",
+    "tracking-route-duration",
+    "tracking-google-maps-link",
     "customize-dialog",
     "customize-form",
     "close-customize-button",
@@ -442,6 +499,16 @@ function bindEvents() {
     handleConfirmationTrackRequest
   );
 
+  elements["close-tracking-button"].addEventListener(
+    "click",
+    closeTrackingDialog
+  );
+
+  elements["refresh-tracking-button"].addEventListener(
+    "click",
+    refreshTrackedOrder
+  );
+
   elements["customize-dialog"].addEventListener("close", () => {
     state.selectedProductId = null;
     syncDialogBodyState();
@@ -483,10 +550,31 @@ function bindEvents() {
     }
   });
 
+  elements["tracking-dialog"].addEventListener("close", () => {
+    syncDialogBodyState();
+  });
+
+  elements["tracking-dialog"].addEventListener("click", (event) => {
+    if (event.target === elements["tracking-dialog"]) {
+      closeTrackingDialog();
+    }
+  });
+
   window.addEventListener("scroll", updateScrolledHeader, { passive: true });
   window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
   window.addEventListener("appinstalled", handleAppInstalled);
   window.addEventListener("storage", handleStorageSync);
+  window.addEventListener("online", handleTrackingOnline);
+  window.addEventListener("offline", handleTrackingOffline);
+
+  document.addEventListener("visibilitychange", () => {
+    if (
+      document.visibilityState === "visible" &&
+      state.tracking.orderId
+    ) {
+      refreshTrackedOrder();
+    }
+  });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && elements["cart-panel"].classList.contains("is-open")) {
@@ -891,11 +979,26 @@ function createCartKey({ productId, sizeId, sugarId, iceId, addonIds }) {
 }
 
 function renderCart() {
+  if (!Array.isArray(state.cart)) {
+    state.cart = [];
+  }
+
   const hasItems = state.cart.length > 0;
 
-  elements["cart-empty-state"].hidden = hasItems;
-  elements["cart-list"].hidden = !hasItems;
-  elements["cart-footer"].hidden = !hasItems;
+  setElementHidden(
+    elements["cart-empty-state"],
+    hasItems
+  );
+
+  setElementHidden(
+    elements["cart-list"],
+    !hasItems
+  );
+
+  setElementHidden(
+    elements["cart-footer"],
+    !hasItems
+  );
 
   elements["cart-list"].innerHTML = state.cart.map(createCartItemMarkup).join("");
 
@@ -916,6 +1019,14 @@ function renderCart() {
   if (elements["checkout-dialog"]?.open) {
     renderCheckoutSummary();
   }
+}
+
+function setElementHidden(element, shouldHide) {
+  element.hidden = Boolean(shouldHide);
+  element.classList.toggle(
+    "is-hidden",
+    Boolean(shouldHide)
+  );
 }
 
 function createCartItemMarkup(item) {
@@ -1197,18 +1308,37 @@ function syncCheckoutOrderType() {
   if (!isDelivery) {
     hideDeliveryMap();
   }
+
+  renderCheckoutSummary();
 }
 
 function renderCheckoutSummary() {
-  const subtotal = getCartSubtotal();
+  const itemsSubtotal = getCartSubtotal();
   const quantity = getCartQuantity();
+  const isDelivery =
+    getSelectedOrderType() === "delivery";
+
+  const deliveryFee =
+    isDelivery &&
+    state.checkout.routeReady
+      ? state.checkout.deliveryFee
+      : 0;
+
+  const total = roundCurrency(
+    itemsSubtotal + deliveryFee
+  );
 
   elements["checkout-summary-list"].innerHTML = state.cart
     .map((item) => {
-      const itemTotal = roundCurrency(item.unitPrice * item.quantity);
+      const itemTotal = roundCurrency(
+        item.unitPrice * item.quantity
+      );
+
       const addonLabel =
         item.addons.length > 0
-          ? item.addons.map((addon) => addon.label).join(", ")
+          ? item.addons
+              .map((addon) => addon.label)
+              .join(", ")
           : "No add-ons";
 
       return `
@@ -1226,11 +1356,40 @@ function renderCheckoutSummary() {
     })
     .join("");
 
-  elements["checkout-summary-count"].textContent = String(quantity);
-  elements["checkout-summary-total"].textContent = formatCurrency(subtotal);
-  elements["checkout-submit-total"].textContent = formatCurrency(subtotal);
+  elements["checkout-summary-count"].textContent =
+    String(quantity);
+
+  elements["checkout-items-subtotal"].textContent =
+    formatCurrency(itemsSubtotal);
+
+  setElementHidden(
+    elements["checkout-delivery-fee-row"],
+    !isDelivery
+  );
+
+  elements["checkout-delivery-fee"].textContent =
+    state.checkout.routeReady
+      ? formatCurrency(deliveryFee)
+      : "Waiting for route";
+
+  elements["checkout-summary-total"].textContent =
+    formatCurrency(total);
+
+  elements["checkout-submit-total"].textContent =
+    formatCurrency(total);
+
+  const deliveryIsReady =
+    !isDelivery ||
+    (
+      state.checkout.routeReady &&
+      state.checkout.addressResolved &&
+      Boolean(state.checkout.selectedLocation)
+    );
+
   elements["checkout-submit-button"].disabled =
-    state.cart.length === 0 || state.checkout.isSubmitting;
+    state.cart.length === 0 ||
+    state.checkout.isSubmitting ||
+    !deliveryIsReady;
 }
 
 async function toggleDeliveryMap() {
@@ -1688,6 +1847,11 @@ function selectDeliveryLocation(
     normalizedLatitude,
     normalizedLongitude
   );
+
+  reverseGeocodeDeliveryLocation(
+    normalizedLatitude,
+    normalizedLongitude
+  );
 }
 
 function clearSelectedDeliveryLocation() {
@@ -1712,10 +1876,13 @@ function clearSelectedDeliveryLocation() {
     "https://www.google.com/maps/";
 
   clearDeliveryRoute();
+  clearResolvedDeliveryAddress();
 
   setMapStatus(
     "Tap the map or use your current location to place the delivery pin."
   );
+
+  renderCheckoutSummary();
 }
 
 function setMapStatus(message, type = "info") {
@@ -1819,6 +1986,23 @@ async function requestDeliveryRoute(latitude, longitude) {
       longitude: Number(payload.shop?.longitude),
     };
 
+    state.checkout.routeDistanceMeters =
+      Number(payload.summary?.distance);
+
+    state.checkout.routeDurationSeconds =
+      Number(payload.summary?.duration);
+
+    state.checkout.deliveryFee =
+      Number(payload.summary?.delivery_fee) || 0;
+
+    state.checkout.routeReady =
+      Number.isFinite(
+        state.checkout.routeDistanceMeters
+      ) &&
+      Number.isFinite(
+        state.checkout.routeDurationSeconds
+      );
+
     elements["open-google-maps-link"].href =
       createGoogleMapsDirectionsLink(
         latitude,
@@ -1830,7 +2014,10 @@ async function requestDeliveryRoute(latitude, longitude) {
       status: `Route from ${payload.shop?.name || "Ssupertea Station"}`,
       distanceMeters: Number(payload.summary?.distance),
       durationSeconds: Number(payload.summary?.duration),
+      deliveryFee: Number(payload.summary?.delivery_fee),
     });
+
+    renderCheckoutSummary();
   } catch (error) {
     if (error?.name === "AbortError") {
       return;
@@ -1844,10 +2031,17 @@ async function requestDeliveryRoute(latitude, longitude) {
 
     removeRouteLayers();
 
+    state.checkout.routeDistanceMeters = null;
+    state.checkout.routeDurationSeconds = null;
+    state.checkout.deliveryFee = 0;
+    state.checkout.routeReady = false;
+
     setRouteSummary({
       state: "error",
       status: getRouteErrorMessage(error),
     });
+
+    renderCheckoutSummary();
   }
 }
 
@@ -1925,6 +2119,10 @@ function clearDeliveryRoute() {
   state.checkout.routeAbortController?.abort();
   state.checkout.routeAbortController = null;
   state.checkout.routeOrigin = null;
+  state.checkout.routeDistanceMeters = null;
+  state.checkout.routeDurationSeconds = null;
+  state.checkout.deliveryFee = 0;
+  state.checkout.routeReady = false;
 
   removeRouteLayers();
 
@@ -1937,6 +2135,7 @@ function clearDeliveryRoute() {
     "Waiting for a delivery pin.";
   elements["route-distance"].textContent = "—";
   elements["route-duration"].textContent = "—";
+  elements["route-delivery-fee"].textContent = "—";
 }
 
 function setRouteSummary({
@@ -1944,6 +2143,7 @@ function setRouteSummary({
   status,
   distanceMeters = null,
   durationSeconds = null,
+  deliveryFee = null,
 }) {
   const card = elements["route-summary-card"];
 
@@ -1967,6 +2167,11 @@ function setRouteSummary({
   elements["route-duration"].textContent =
     Number.isFinite(durationSeconds)
       ? formatRouteDuration(durationSeconds)
+      : "—";
+
+  elements["route-delivery-fee"].textContent =
+    Number.isFinite(deliveryFee)
+      ? formatCurrency(deliveryFee)
       : "—";
 }
 
@@ -2029,6 +2234,166 @@ function formatRouteDuration(durationSeconds) {
   return minutes > 0
     ? `${hours} hr ${minutes} min`
     : `${hours} hr`;
+}
+
+async function reverseGeocodeDeliveryLocation(
+  latitude,
+  longitude
+) {
+  const requestId =
+    ++state.checkout.reverseGeocodeRequestId;
+
+  state.checkout.reverseGeocodeAbortController?.abort();
+
+  state.checkout.reverseGeocodeAbortController =
+    new AbortController();
+
+  state.checkout.addressResolved = false;
+  elements["address-city"].value = "";
+  elements["address-province"].value = "";
+  elements["address-city"].classList.remove("is-autofilled");
+  elements["address-province"].classList.remove("is-autofilled");
+
+  setLocationAddressStatus(
+    "Finding the city and province from the selected location…",
+    "loading"
+  );
+
+  renderCheckoutSummary();
+
+  try {
+    const response = await fetch(
+      "/api/reverse-geocode",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          latitude,
+          longitude,
+        }),
+        signal:
+          state.checkout.reverseGeocodeAbortController.signal,
+      }
+    );
+
+    const payload =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const error = new Error(
+        payload?.message ||
+        "REVERSE_GEOCODE_FAILED"
+      );
+
+      error.code = payload?.code || "";
+      throw error;
+    }
+
+    if (
+      requestId !==
+      state.checkout.reverseGeocodeRequestId
+    ) {
+      return;
+    }
+
+    elements["address-city"].value =
+      String(payload.city || "").trim();
+
+    elements["address-province"].value =
+      String(payload.province || "").trim();
+
+    state.checkout.addressResolved =
+      Boolean(
+        elements["address-city"].value &&
+        elements["address-province"].value
+      );
+
+    elements["address-city"].classList.toggle(
+      "is-autofilled",
+      state.checkout.addressResolved
+    );
+
+    elements["address-province"].classList.toggle(
+      "is-autofilled",
+      state.checkout.addressResolved
+    );
+
+    setLocationAddressStatus(
+      state.checkout.addressResolved
+        ? "City and province were filled automatically. Enter only the house number, purok, and an optional landmark."
+        : "The city or province could not be identified.",
+      state.checkout.addressResolved
+        ? "success"
+        : "error"
+    );
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      return;
+    }
+
+    console.error(
+      "Delivery reverse geocoding failed:",
+      error
+    );
+
+    state.checkout.addressResolved = false;
+
+    /*
+     * Fallback: unlock the fields so checkout is still usable if Pelias
+     * does not have enough local address data for the selected point.
+     */
+    elements["address-city"].readOnly = false;
+    elements["address-province"].readOnly = false;
+
+    setLocationAddressStatus(
+      "Automatic location lookup failed. Enter the city and province manually.",
+      "error"
+    );
+  } finally {
+    renderCheckoutSummary();
+  }
+}
+
+function clearResolvedDeliveryAddress() {
+  state.checkout.reverseGeocodeRequestId += 1;
+  state.checkout.reverseGeocodeAbortController?.abort();
+  state.checkout.reverseGeocodeAbortController = null;
+  state.checkout.addressResolved = false;
+
+  elements["address-city"].value = "";
+  elements["address-province"].value = "";
+  elements["address-city"].readOnly = true;
+  elements["address-province"].readOnly = true;
+  elements["address-city"].classList.remove("is-autofilled");
+  elements["address-province"].classList.remove("is-autofilled");
+
+  setLocationAddressStatus(
+    "Select a map pin or use your current location to fill the city and province."
+  );
+}
+
+function setLocationAddressStatus(
+  message,
+  type = "info"
+) {
+  const status =
+    elements["location-address-status"];
+
+  status.textContent = message;
+  status.classList.toggle(
+    "is-loading",
+    type === "loading"
+  );
+  status.classList.toggle(
+    "is-success",
+    type === "success"
+  );
+  status.classList.toggle(
+    "is-error",
+    type === "error"
+  );
 }
 
 async function handleCheckoutSubmit(event) {
@@ -2121,9 +2486,34 @@ async function handleCheckoutSubmit(event) {
     return;
   }
 
+  if (
+    orderType === "delivery" &&
+    (
+      !state.checkout.routeReady ||
+      !state.checkout.addressResolved
+    )
+  ) {
+    showToast({
+      type: "warning",
+      title: "Delivery location is not ready",
+      message:
+        "Wait for the route, city, and province to finish loading.",
+    });
+
+    return;
+  }
+
   setCheckoutSubmitting(true);
 
-  const expectedTotal = getCartSubtotal();
+  const expectedTotal = roundCurrency(
+    getCartSubtotal() +
+    (
+      orderType === "delivery"
+        ? state.checkout.deliveryFee
+        : 0
+    )
+  );
+
   const clientOrderId = createUuid();
 
   try {
@@ -2144,29 +2534,27 @@ async function handleCheckoutSubmit(event) {
       customer_name: customerName,
       order_type: orderType,
       items: buildDatabaseOrderItems(),
-      total_price: expectedTotal,
       delivery_address: deliveryAddress,
       delivery_lat: deliveryLatitude,
       delivery_lng: deliveryLongitude,
-      customer_session_token: sessionToken,
     };
 
-    const order = await insertOrderWithRecovery(orderPayload);
+    const order = await createOrderViaServer(
+      orderPayload,
+      session.access_token
+    );
 
     safeSetLocalStorage(
       CUSTOMER_NAME_STORAGE_KEY,
       customerName
     );
 
-    saveLastOrder({
-      orderId: order.id,
-      customerName: order.customer_name,
-      orderType: order.order_type,
-      totalPrice: Number(order.total_price),
-      status: order.status,
-      createdAt: order.created_at,
-      sessionToken,
-    });
+    saveLastOrderFromDatabaseOrder(
+      order,
+      sessionToken
+    );
+
+    startOrderTracking(order.id);
 
     state.cart = [];
     persistCart();
@@ -2254,66 +2642,44 @@ function normalizeAddressPart(value) {
     .replace(/\s+/g, " ");
 }
 
-async function insertOrderWithRecovery(orderPayload) {
-  const selectColumns = [
-    "id",
-    "customer_name",
-    "order_type",
-    "items",
-    "total_price",
-    "status",
-    "delivery_address",
-    "delivery_lat",
-    "delivery_lng",
-    "customer_session_token",
-    "created_at",
-  ].join(",");
-
-  const {
-    data,
-    error,
-  } = await customerSupabase
-    .from("orders")
-    .insert(orderPayload)
-    .select(selectColumns)
-    .single();
-
-  if (!error && data) {
-    return data;
-  }
-
-  /*
-   * A duplicate UUID can mean the first request succeeded but its response
-   * was interrupted. RLS permits the customer to recover only their own row.
-   */
-  if (error?.code === "23505") {
-    const {
-      data: recoveredOrder,
-      error: recoveryError,
-    } = await customerSupabase
-      .from("orders")
-      .select(selectColumns)
-      .eq("id", orderPayload.id)
-      .single();
-
-    if (!recoveryError && recoveredOrder) {
-      return recoveredOrder;
+async function createOrderViaServer(
+  orderPayload,
+  accessToken
+) {
+  const response = await fetch(
+    "/api/create-order",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(orderPayload),
     }
-  }
-
-  const submissionError = new Error(
-    error?.message || "ORDER_INSERT_FAILED"
   );
 
-  submissionError.code = error?.code || "";
-  submissionError.details = error?.details || "";
-  submissionError.hint = error?.hint || "";
+  const payload =
+    await response.json().catch(() => ({}));
 
-  throw submissionError;
+  if (response.ok && payload?.order) {
+    return payload.order;
+  }
+
+  const error = new Error(
+    payload?.message ||
+    "The order server rejected the request."
+  );
+
+  error.code = payload?.code || "";
+  error.status = response.status;
+
+  throw error;
 }
 
 function getOrderSubmissionMessage(error) {
-  const errorCode = String(error?.code || "").toLocaleLowerCase("en-PH");
+  const errorCode =
+    String(error?.code || "")
+      .toLocaleLowerCase("en-PH");
 
   const combinedMessage = [
     error?.message,
@@ -2327,76 +2693,95 @@ function getOrderSubmissionMessage(error) {
   if (errorCode === "signup_disabled") {
     return (
       "Supabase has “Allow new users to sign up” turned off. " +
-      "Turn it on under Authentication settings; anonymous sign-in creates a new Auth user."
-    );
-  }
-
-  if (errorCode === "anonymous_provider_disabled") {
-    return (
-      "Supabase Anonymous Sign-ins are turned off. " +
-      "Enable Anonymous Sign-ins under Authentication settings."
-    );
-  }
-
-  if (errorCode === "captcha_failed") {
-    return (
-      "Supabase CAPTCHA verification failed. " +
-      "Complete the CAPTCHA integration or temporarily disable CAPTCHA while testing."
-    );
-  }
-
-  if (errorCode === "over_request_rate_limit") {
-    return (
-      "Too many anonymous sign-in attempts were made from this connection. " +
-      "Wait a few minutes and try again."
+      "Anonymous sign-in creates a new Auth user."
     );
   }
 
   if (
-    errorCode === "unexpected_failure" ||
-    Number(error?.status) >= 500
+    errorCode === "anonymous_provider_disabled"
   ) {
     return (
-      "Supabase Auth encountered a server or database error. " +
-      "Open Authentication → Logs in Supabase to view the exact failure."
+      "Supabase Anonymous Sign-ins are turned off."
     );
   }
 
   if (
-    errorCode === "anonymous_session_missing" ||
-    combinedMessage.includes("no valid anonymous customer session")
-  ) {
-    return "Supabase did not return a valid customer session. Refresh the page and try again.";
-  }
-
-  if (
-    error?.code === "42501" ||
-    combinedMessage.includes("row-level security")
+    errorCode === "order_api_not_configured"
   ) {
     return (
-      "The order was blocked by database security. " +
-      "Run the included AUTH_AND_RLS_FIX.sql and verify the customer order policies."
+      "The secure order endpoint is missing one or more Vercel variables. " +
+      "Add the Supabase server variables listed in the Phase 5 setup guide."
     );
   }
 
   if (
-    error?.code === "22023" ||
-    error?.code === "23514" ||
-    combinedMessage.includes("invalid or unavailable")
+    errorCode === "customer_session_invalid" ||
+    errorCode === "customer_session_required"
   ) {
-    return "One of the drinks or options is no longer available. Refresh the menu and try again.";
+    return (
+      "Your customer session expired. Refresh the page and place the order again."
+    );
+  }
+
+  if (
+    errorCode === "destination_too_far"
+  ) {
+    return error.message;
+  }
+
+  if (
+    errorCode === "ors_rate_limited" ||
+    Number(error?.status) === 429
+  ) {
+    return (
+      "The route service is busy. Wait briefly and try again."
+    );
+  }
+
+  if (
+    errorCode === "order_pricing_failed"
+  ) {
+    return (
+      "One of the drinks or add-ons is no longer available. Refresh the menu and try again."
+    );
+  }
+
+  if (
+    errorCode === "order_insert_failed"
+  ) {
+    return (
+      "The database rejected the order. Run the Phase 5 SQL migration and try again."
+    );
+  }
+
+  if (
+    errorCode === "captcha_failed"
+  ) {
+    return (
+      "Supabase CAPTCHA verification failed."
+    );
+  }
+
+  if (
+    errorCode === "over_request_rate_limit"
+  ) {
+    return (
+      "Too many sign-in attempts were made. Wait a few minutes and try again."
+    );
   }
 
   if (
     combinedMessage.includes("failed to fetch") ||
     combinedMessage.includes("network")
   ) {
-    return "The order server could not be reached. Check your internet connection and try again.";
+    return (
+      "The order server could not be reached. Check your internet connection and try again."
+    );
   }
 
   return (
     error?.message ||
-    "Your cart is still saved. Please try submitting the order again."
+    "Your cart is still saved. Try submitting the order again."
   );
 }
 
@@ -2433,6 +2818,17 @@ function showOrderConfirmation(order) {
   elements["confirmation-order-type"].textContent =
     String(order.order_type || "pickup");
 
+  const confirmationDeliveryFee =
+    Number(order.delivery_fee) || 0;
+
+  setElementHidden(
+    elements["confirmation-delivery-fee-row"],
+    order.order_type !== "delivery"
+  );
+
+  elements["confirmation-delivery-fee"].textContent =
+    formatCurrency(confirmationDeliveryFee);
+
   elements["confirmation-total"].textContent =
     formatCurrency(Number(order.total_price) || 0);
 
@@ -2449,33 +2845,657 @@ function closeOrderConfirmation() {
   }
 }
 
-function handleTrackRequest() {
+async function handleTrackRequest() {
   const lastOrder = loadLastOrder();
 
   if (!lastOrder) {
     showToast({
       type: "info",
       title: "No recent order",
-      message: "Place an order first, then its tracking details will appear here.",
+      message:
+        "Place an order first, then its live status will appear here.",
     });
 
     return;
   }
 
-  showOrderConfirmation({
-    id: lastOrder.orderId,
-    customer_name: lastOrder.customerName,
-    order_type: lastOrder.orderType,
-    total_price: lastOrder.totalPrice,
-    status: lastOrder.status,
+  await openTrackingDialog(lastOrder.orderId);
+}
+
+async function handleConfirmationTrackRequest() {
+  const lastOrder = loadLastOrder();
+
+  closeOrderConfirmation();
+
+  if (!lastOrder) {
+    showToast({
+      type: "error",
+      title: "Tracking unavailable",
+      message:
+        "The saved order reference could not be found.",
+    });
+
+    return;
+  }
+
+  await openTrackingDialog(lastOrder.orderId);
+}
+
+async function openTrackingDialog(orderId) {
+  if (!orderId) {
+    return;
+  }
+
+  if (!elements["tracking-dialog"].open) {
+    elements["tracking-dialog"].showModal();
+  }
+
+  document.body.classList.add("dialog-open");
+  setTrackingConnectionStatus(
+    navigator.onLine
+      ? "connecting"
+      : "offline"
+  );
+
+  await startOrderTracking(orderId, {
+    forceRefresh: true,
   });
 }
 
-function handleConfirmationTrackRequest() {
-  showToast({
-    type: "info",
-    title: "Tracking is next",
-    message: "Realtime status updates will be connected in Phase 5.",
+function closeTrackingDialog() {
+  if (elements["tracking-dialog"].open) {
+    elements["tracking-dialog"].close();
+  }
+}
+
+async function restoreOrderTracking() {
+  const lastOrder = loadLastOrder();
+
+  if (!lastOrder?.orderId) {
+    return;
+  }
+
+  await startOrderTracking(lastOrder.orderId, {
+    forceRefresh: false,
+    silent: true,
+  });
+}
+
+async function startOrderTracking(
+  orderId,
+  {
+    forceRefresh = true,
+    silent = false,
+  } = {}
+) {
+  if (!orderId) {
+    return;
+  }
+
+  state.tracking.orderId = orderId;
+
+  if (forceRefresh) {
+    await refreshTrackedOrder({ silent });
+  }
+
+  if (
+    state.tracking.channel &&
+    state.tracking.channel.topic ===
+      `realtime:order:${orderId}`
+  ) {
+    return;
+  }
+
+  await stopTrackingChannel();
+
+  const channel = customerSupabase
+    .channel(`order:${orderId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "orders",
+        filter: `id=eq.${orderId}`,
+      },
+      (payload) => {
+        if (!payload?.new?.id) {
+          return;
+        }
+
+        handleTrackedOrderUpdate(payload.new);
+      }
+    )
+    .subscribe((status, error) => {
+      state.tracking.subscriptionStatus = status;
+
+      if (status === "SUBSCRIBED") {
+        setTrackingConnectionStatus("connected");
+        return;
+      }
+
+      if (
+        status === "CHANNEL_ERROR" ||
+        status === "TIMED_OUT"
+      ) {
+        console.error(
+          "Order tracking subscription error:",
+          error
+        );
+
+        setTrackingConnectionStatus("error");
+        scheduleTrackingReconnect();
+        return;
+      }
+
+      if (status === "CLOSED") {
+        setTrackingConnectionStatus(
+          navigator.onLine
+            ? "connecting"
+            : "offline"
+        );
+      }
+    });
+
+  state.tracking.channel = channel;
+}
+
+async function stopTrackingChannel() {
+  if (!state.tracking.channel) {
+    return;
+  }
+
+  const oldChannel = state.tracking.channel;
+  state.tracking.channel = null;
+
+  try {
+    await customerSupabase.removeChannel(
+      oldChannel
+    );
+  } catch (error) {
+    console.warn(
+      "Unable to remove old tracking channel:",
+      error
+    );
+  }
+}
+
+async function refreshTrackedOrder(
+  { silent = false } = {}
+) {
+  const orderId =
+    state.tracking.orderId ||
+    loadLastOrder()?.orderId;
+
+  if (!orderId) {
+    return;
+  }
+
+  state.tracking.orderId = orderId;
+
+  if (!navigator.onLine) {
+    setTrackingConnectionStatus("offline");
+    return;
+  }
+
+  if (!silent) {
+    setTrackingConnectionStatus("connecting");
+  }
+
+  try {
+    const session =
+      await ensureCustomerSession();
+
+    const storedOrder = loadLastOrder();
+
+    if (
+      storedOrder?.sessionToken &&
+      storedOrder.sessionToken !==
+        session.user.id
+    ) {
+      throw new Error(
+        "TRACKING_SESSION_MISMATCH"
+      );
+    }
+
+    const { data, error } =
+      await customerSupabase
+        .from("orders")
+        .select(
+          [
+            "id",
+            "customer_name",
+            "order_type",
+            "items",
+            "items_subtotal",
+            "delivery_fee",
+            "total_price",
+            "status",
+            "delivery_address",
+            "delivery_lat",
+            "delivery_lng",
+            "route_distance_m",
+            "route_duration_s",
+            "customer_session_token",
+            "created_at",
+          ].join(",")
+        )
+        .eq("id", orderId)
+        .single();
+
+    if (error || !data) {
+      const trackingError = new Error(
+        error?.message ||
+        "ORDER_TRACKING_FETCH_FAILED"
+      );
+
+      trackingError.code = error?.code || "";
+      throw trackingError;
+    }
+
+    state.tracking.order = data;
+    saveLastOrderFromDatabaseOrder(
+      data,
+      session.user.id
+    );
+
+    renderTrackingOrder(data);
+    setTrackingConnectionStatus("connected");
+  } catch (error) {
+    console.error(
+      "Unable to refresh tracked order:",
+      error
+    );
+
+    setTrackingConnectionStatus("error");
+
+    if (
+      error?.message ===
+      "TRACKING_SESSION_MISMATCH"
+    ) {
+      showToast({
+        type: "error",
+        title: "Tracking session expired",
+        message:
+          "This anonymous order belongs to a browser session that is no longer available.",
+      });
+    } else if (!silent) {
+      showToast({
+        type: "error",
+        title: "Unable to refresh order",
+        message:
+          "The latest order status could not be loaded.",
+      });
+    }
+  }
+}
+
+function handleTrackedOrderUpdate(order) {
+  const previousStatus =
+    state.tracking.order?.status;
+
+  state.tracking.order = order;
+
+  const storedOrder = loadLastOrder();
+
+  saveLastOrderFromDatabaseOrder(
+    order,
+    storedOrder?.sessionToken || ""
+  );
+
+  renderTrackingOrder(order);
+
+  if (
+    previousStatus &&
+    previousStatus !== order.status
+  ) {
+    showToast({
+      type:
+        order.status === "cancelled"
+          ? "error"
+          : "success",
+      title: "Order status updated",
+      message:
+        getTrackingStatusMessage(
+          order.status,
+          order.order_type
+        ),
+      duration: 5200,
+    });
+  }
+
+  if (
+    TERMINAL_ORDER_STATUSES.has(
+      order.status
+    )
+  ) {
+    setTrackingConnectionStatus("connected");
+  }
+}
+
+function renderTrackingOrder(order) {
+  if (!order?.id) {
+    return;
+  }
+
+  elements["tracking-order-number"].textContent =
+    formatOrderNumber(order.id);
+
+  elements["tracking-current-status"].textContent =
+    getTrackingStatusLabel(
+      order.status,
+      order.order_type
+    );
+
+  elements["tracking-status-message"].textContent =
+    getTrackingStatusMessage(
+      order.status,
+      order.order_type
+    );
+
+  const isCancelled =
+    order.status === "cancelled";
+
+  setElementHidden(
+    elements["tracking-cancelled-card"],
+    !isCancelled
+  );
+
+  elements["tracking-timeline"].classList.toggle(
+    "is-cancelled",
+    isCancelled
+  );
+
+  renderTrackingTimeline(order);
+  renderTrackingItems(order);
+
+  elements["tracking-created-at"].textContent =
+    formatOrderDate(order.created_at);
+
+  elements["tracking-items-subtotal"].textContent =
+    formatCurrency(
+      Number(order.items_subtotal) ||
+      calculateNormalizedItemsSubtotal(
+        order.items
+      )
+    );
+
+  const deliveryFee =
+    Number(order.delivery_fee) || 0;
+
+  setElementHidden(
+    elements["tracking-delivery-fee-row"],
+    order.order_type !== "delivery"
+  );
+
+  elements["tracking-delivery-fee"].textContent =
+    formatCurrency(deliveryFee);
+
+  elements["tracking-total"].textContent =
+    formatCurrency(
+      Number(order.total_price) || 0
+    );
+
+  renderTrackingDelivery(order);
+}
+
+function renderTrackingTimeline(order) {
+  const statusIndex =
+    TRACKING_STATUS_ORDER.indexOf(
+      order.status
+    );
+
+  const steps = [
+    ...elements["tracking-timeline"]
+      .querySelectorAll(
+        "[data-tracking-step]"
+      ),
+  ];
+
+  steps.forEach((step, index) => {
+    step.classList.toggle(
+      "is-complete",
+      statusIndex > index &&
+      order.status !== "cancelled"
+    );
+
+    step.classList.toggle(
+      "is-active",
+      statusIndex === index &&
+      order.status !== "cancelled"
+    );
+  });
+
+  const isPickup =
+    order.order_type === "pickup";
+
+  elements["tracking-dispatched-label"].textContent =
+    isPickup
+      ? "Ready for pickup"
+      : "Out for delivery";
+
+  elements["tracking-dispatched-copy"].textContent =
+    isPickup
+      ? "Your order is ready at the shop."
+      : "Your order is on the way.";
+}
+
+function renderTrackingItems(order) {
+  const items = Array.isArray(order.items)
+    ? order.items
+    : [];
+
+  elements["tracking-items"].innerHTML =
+    items.length > 0
+      ? items
+          .map((item) => {
+            const addonText =
+              Array.isArray(item.addons) &&
+              item.addons.length > 0
+                ? item.addons
+                    .map(
+                      (addon) =>
+                        addon.label ||
+                        addon.name
+                    )
+                    .filter(Boolean)
+                    .join(", ")
+                : "No add-ons";
+
+            return `
+              <article class="tracking-item">
+                <strong>
+                  ${Number(item.quantity) || 1}×
+                  ${escapeHtml(item.name || "Drink")}
+                </strong>
+                <span>
+                  ${formatCurrency(
+                    Number(item.line_total) ||
+                    (
+                      Number(item.unit_price) *
+                      Number(item.quantity)
+                    ) ||
+                    0
+                  )}
+                </span>
+                <p>
+                  ${escapeHtml(
+                    item.size?.label || ""
+                  )} ·
+                  ${escapeHtml(
+                    item.sugar?.label || ""
+                  )} sugar ·
+                  ${escapeHtml(
+                    item.ice?.label || ""
+                  )} ·
+                  ${escapeHtml(addonText)}
+                </p>
+              </article>
+            `;
+          })
+          .join("")
+      : '<p class="tracking-empty-items">Order items are unavailable.</p>';
+}
+
+function renderTrackingDelivery(order) {
+  const isDelivery =
+    order.order_type === "delivery";
+
+  setElementHidden(
+    elements["tracking-delivery-card"],
+    !isDelivery
+  );
+
+  if (!isDelivery) {
+    return;
+  }
+
+  elements["tracking-delivery-address"].textContent =
+    String(order.delivery_address || "");
+
+  const distance =
+    Number(order.route_distance_m);
+
+  const duration =
+    Number(order.route_duration_s);
+
+  elements["tracking-route-distance"].textContent =
+    Number.isFinite(distance)
+      ? formatRouteDistance(distance)
+      : "Distance unavailable";
+
+  elements["tracking-route-duration"].textContent =
+    Number.isFinite(duration)
+      ? formatRouteDuration(duration)
+      : "Travel time unavailable";
+
+  const latitude =
+    Number(order.delivery_lat);
+
+  const longitude =
+    Number(order.delivery_lng);
+
+  elements["tracking-google-maps-link"].href =
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude)
+      ? createGoogleMapsDirectionsLink(
+          latitude,
+          longitude
+        )
+      : "https://www.google.com/maps/";
+}
+
+function setTrackingConnectionStatus(status) {
+  const label =
+    elements["tracking-connection-status"];
+
+  const dot =
+    elements["tracking-connection-dot"];
+
+  dot.classList.remove(
+    "is-connected",
+    "is-offline",
+    "is-error"
+  );
+
+  if (status === "connected") {
+    label.textContent =
+      "Live updates connected";
+    dot.classList.add("is-connected");
+    return;
+  }
+
+  if (status === "offline") {
+    label.textContent =
+      "Offline — showing the last saved status";
+    dot.classList.add("is-offline");
+    return;
+  }
+
+  if (status === "error") {
+    label.textContent =
+      "Live updates interrupted — press Refresh";
+    dot.classList.add("is-error");
+    return;
+  }
+
+  label.textContent =
+    "Connecting to live updates…";
+}
+
+function scheduleTrackingReconnect() {
+  window.clearTimeout(
+    state.tracking.reconnectTimer
+  );
+
+  state.tracking.reconnectTimer =
+    window.setTimeout(async () => {
+      if (
+        !navigator.onLine ||
+        !state.tracking.orderId
+      ) {
+        return;
+      }
+
+      await startOrderTracking(
+        state.tracking.orderId,
+        {
+          forceRefresh: true,
+          silent: true,
+        }
+      );
+    }, 3500);
+}
+
+function handleTrackingOnline() {
+  if (!state.tracking.orderId) {
+    return;
+  }
+
+  setTrackingConnectionStatus("connecting");
+
+  startOrderTracking(
+    state.tracking.orderId,
+    {
+      forceRefresh: true,
+      silent: true,
+    }
+  );
+}
+
+function handleTrackingOffline() {
+  if (state.tracking.orderId) {
+    setTrackingConnectionStatus("offline");
+  }
+}
+
+function saveLastOrderFromDatabaseOrder(
+  order,
+  sessionToken
+) {
+  saveLastOrder({
+    orderId: order.id,
+    customerName: order.customer_name,
+    orderType: order.order_type,
+    itemsSubtotal:
+      Number(order.items_subtotal) || 0,
+    deliveryFee:
+      Number(order.delivery_fee) || 0,
+    totalPrice:
+      Number(order.total_price) || 0,
+    status: order.status,
+    createdAt: order.created_at,
+    deliveryAddress:
+      order.delivery_address || null,
+    deliveryLat:
+      order.delivery_lat ?? null,
+    deliveryLng:
+      order.delivery_lng ?? null,
+    routeDistanceM:
+      order.route_distance_m ?? null,
+    routeDurationS:
+      order.route_duration_s ?? null,
+    sessionToken,
   });
 }
 
@@ -2488,13 +3508,17 @@ function saveLastOrder(order) {
 
 function loadLastOrder() {
   try {
-    const rawValue = localStorage.getItem(LAST_ORDER_STORAGE_KEY);
+    const rawValue =
+      localStorage.getItem(
+        LAST_ORDER_STORAGE_KEY
+      );
 
     if (!rawValue) {
       return null;
     }
 
-    const parsedValue = JSON.parse(rawValue);
+    const parsedValue =
+      JSON.parse(rawValue);
 
     if (
       !parsedValue ||
@@ -2508,6 +3532,103 @@ function loadLastOrder() {
   } catch {
     return null;
   }
+}
+
+function getTrackingStatusLabel(
+  status,
+  orderType
+) {
+  if (
+    status === "dispatched" &&
+    orderType === "pickup"
+  ) {
+    return "Ready for pickup";
+  }
+
+  const labels = {
+    pending: "Order received",
+    preparing: "Preparing",
+    dispatched: "Out for delivery",
+    completed: "Completed",
+    cancelled: "Cancelled",
+  };
+
+  return labels[status] || "Pending";
+}
+
+function getTrackingStatusMessage(
+  status,
+  orderType
+) {
+  if (status === "pending") {
+    return (
+      "Your order has been received and is waiting for staff confirmation."
+    );
+  }
+
+  if (status === "preparing") {
+    return (
+      "The Ssupertea team is preparing your drinks."
+    );
+  }
+
+  if (status === "dispatched") {
+    return orderType === "pickup"
+      ? "Your order is ready for pickup at Ssupertea Station."
+      : "Your order has left the shop and is on the way.";
+  }
+
+  if (status === "completed") {
+    return (
+      "Your order has been completed. Thank you!"
+    );
+  }
+
+  if (status === "cancelled") {
+    return (
+      "The shop marked this order as cancelled."
+    );
+  }
+
+  return "Waiting for the latest order status.";
+}
+
+function calculateNormalizedItemsSubtotal(items) {
+  if (!Array.isArray(items)) {
+    return 0;
+  }
+
+  return roundCurrency(
+    items.reduce(
+      (total, item) =>
+        total +
+        (
+          Number(item?.line_total) ||
+          (
+            Number(item?.unit_price) *
+            Number(item?.quantity)
+          ) ||
+          0
+        ),
+      0
+    )
+  );
+}
+
+function formatOrderDate(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-PH",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }
+  ).format(date);
 }
 
 function restoreSavedCustomerName() {
@@ -2576,7 +3697,8 @@ function syncDialogBodyState() {
   const anyDialogOpen = Boolean(
     elements["customize-dialog"].open ||
       elements["checkout-dialog"].open ||
-      elements["order-confirmation-dialog"].open
+      elements["order-confirmation-dialog"].open ||
+      elements["tracking-dialog"].open
   );
 
   document.body.classList.toggle(

@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en-PH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0E5B3B">
+  <meta name="description" content="Order milk tea, fruit tea, and specialty drinks from Ssupertea Station.">
+  <meta name="robots" content="index, follow">
+
+  <title>Ssupertea Station | Order Online</title>
+
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script type="module" src="/js/app.js"></script>
+</head>
+
+<body>
+  <a class="skip-link" href="#main-content">Skip to menu</a>
+
+  <div class="app-shell">
+    <header class="site-header" id="home">
+      <div class="header-inner">
+        <a class="brand" href="#home" aria-label="Ssupertea Station home">
+          <span class="brand-mark" aria-hidden="true">
+            <span class="brand-leaf brand-leaf-left"></span>
+            <span class="brand-leaf brand-leaf-right"></span>
+            S
+          </span>
+
+          <span class="brand-copy">
+            <strong>ssupertea</strong>
+            <small>STATION</small>
+          </span>
+        </a>
+
+        <div class="header-actions">
+          <button
+            class="icon-button install-button"
+            id="install-button"
+            type="button"
+            hidden
+            aria-label="Install Ssupertea Station"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+            </svg>
+          </button>
+
+          <button
+            class="cart-trigger"
+            id="header-cart-button"
+            type="button"
+            aria-controls="cart-panel"
+            aria-expanded="false"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M3 4h2l2.1 9.1a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L20 7H6m4 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm8 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>
+            </svg>
+
+            <span class="cart-trigger-label">Cart</span>
+            <span class="cart-count" id="header-cart-count" aria-label="0 items">0</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="hero section-shell" aria-labelledby="hero-title">
+        <div class="hero-content">
+          <p class="eyebrow">Freshly made for you</p>
+
+          <h1 id="hero-title">
+            Good tea.
+            <span>Great day.</span>
+          </h1>
+
+          <p class="hero-description">
+            Pick your favorite drink, choose your sweetness and add-ons,
+            then enjoy it your way.
+          </p>
+
+          <div class="hero-actions">
+            <a class="primary-button" href="#menu">
+              Order now
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </a>
+
+            <p class="hero-note">
+              <span aria-hidden="true">●</span>
+              Made fresh upon order
+            </p>
+          </div>
+        </div>
+
+        <div class="hero-art" aria-hidden="true">
+          <span class="hero-leaf hero-leaf-one"></span>
+          <span class="hero-leaf hero-leaf-two"></span>
+          <span class="hero-leaf hero-leaf-three"></span>
+
+          <div class="hero-cup">
+            <span class="hero-straw"></span>
+            <span class="hero-lid"></span>
+            <span class="hero-drink"></span>
+            <span class="hero-ice hero-ice-one"></span>
+            <span class="hero-ice hero-ice-two"></span>
+            <span class="hero-pearls"></span>
+            <span class="hero-logo">S</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="menu-section section-shell" id="menu" aria-labelledby="menu-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Our menu</p>
+            <h2 id="menu-title">Find your favorite</h2>
+          </div>
+
+          <p class="section-copy">
+            Customize the size, sweetness, ice, and add-ons before adding a drink to your cart.
+          </p>
+        </div>
+
+        <div class="menu-toolbar">
+          <label class="search-field" for="menu-search">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-4-4"></path>
+            </svg>
+
+            <span class="sr-only">Search drinks</span>
+
+            <input
+              id="menu-search"
+              type="search"
+              placeholder="Search drinks"
+              autocomplete="off"
+              maxlength="60"
+            >
+          </label>
+
+          <div class="category-strip" id="category-strip" aria-label="Menu categories"></div>
+        </div>
+
+        <div class="menu-status" id="menu-status" role="status" aria-live="polite">
+          Loading menu…
+        </div>
+
+        <div class="menu-grid" id="menu-grid" aria-live="polite"></div>
+
+        <div class="empty-state" id="menu-empty-state" hidden>
+          <div class="empty-icon" aria-hidden="true">⌕</div>
+          <h3>No drinks found</h3>
+          <p>Try another search or category.</p>
+          <button class="secondary-button" id="reset-menu-button" type="button">
+            Show all drinks
+          </button>
+        </div>
+      </section>
+
+      <section class="how-it-works section-shell" aria-labelledby="steps-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Simple ordering</p>
+            <h2 id="steps-title">From menu to your hands</h2>
+          </div>
+        </div>
+
+        <ol class="steps-grid">
+          <li>
+            <span class="step-number">1</span>
+            <div>
+              <h3>Pick a drink</h3>
+              <p>Browse milk tea, fruit tea, matcha, and specialty favorites.</p>
+            </div>
+          </li>
+
+          <li>
+            <span class="step-number">2</span>
+            <div>
+              <h3>Make it yours</h3>
+              <p>Choose your size, sugar level, ice level, and add-ons.</p>
+            </div>
+          </li>
+
+          <li>
+            <span class="step-number">3</span>
+            <div>
+              <h3>Review your cart</h3>
+              <p>Adjust quantities and confirm everything before checkout.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="section-shell footer-inner">
+        <a class="brand brand-footer" href="#home" aria-label="Ssupertea Station home">
+          <span class="brand-mark" aria-hidden="true">S</span>
+          <span class="brand-copy">
+            <strong>ssupertea</strong>
+            <small>STATION</small>
+          </span>
+        </a>
+
+        <p>Fresh drinks, made your way.</p>
+        <p>© <span id="current-year"></span> Ssupertea Station</p>
+      </div>
+    </footer>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Primary navigation">
+    <a class="mobile-nav-item is-active" href="#home" data-nav-view="home">
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/>
+      </svg>
+      <span>Home</span>
+    </a>
+
+    <a class="mobile-nav-item" href="#menu" data-nav-view="menu">
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M6 3h12l-1 18H7Zm1 5h10M9 3l1-2m5 2-1-2"/>
+      </svg>
+      <span>Menu</span>
+    </a>
+
+    <button class="mobile-cart-button" id="mobile-cart-button" type="button">
+      <span class="mobile-cart-icon">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M3 4h2l2.1 9.1a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L20 7H6m4 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm8 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>
+        </svg>
+
+        <span class="mobile-cart-count" id="mobile-cart-count">0</span>
+      </span>
+      <span>Cart</span>
+    </button>
+
+    <button class="mobile-nav-item" id="track-order-button" type="button">
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7v5l3 2"/>
+      </svg>
+      <span>Track</span>
+    </button>
+  </nav>
+
+  <div class="overlay" id="page-overlay" hidden></div>
+
+  <aside
+    class="cart-panel"
+    id="cart-panel"
+    aria-labelledby="cart-title"
+    aria-hidden="true"
+  >
+    <div class="panel-handle" aria-hidden="true"></div>
+
+    <div class="cart-header">
+      <div>
+        <p class="eyebrow">Your order</p>
+        <h2 id="cart-title">My cart</h2>
+      </div>
+
+      <button
+        class="icon-button panel-close-button"
+        id="close-cart-button"
+        type="button"
+        aria-label="Close cart"
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M18 6 6 18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="cart-body">
+      <div class="cart-empty" id="cart-empty-state">
+        <div class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 4h2l2.1 9.1a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L20 7H6"/>
+          </svg>
+        </div>
+        <h3>Your cart is empty</h3>
+        <p>Add a drink from the menu to get started.</p>
+        <button class="secondary-button" id="browse-menu-button" type="button">
+          Browse menu
+        </button>
+      </div>
+
+      <div class="cart-list" id="cart-list"></div>
+    </div>
+
+    <div class="cart-footer" id="cart-footer" hidden>
+      <button class="clear-cart-button" id="clear-cart-button" type="button">
+        Clear cart
+      </button>
+
+      <dl class="cart-summary">
+        <div>
+          <dt>Items</dt>
+          <dd id="cart-item-total">0</dd>
+        </div>
+
+        <div class="cart-total-row">
+          <dt>Subtotal</dt>
+          <dd id="cart-subtotal">₱0.00</dd>
+        </div>
+      </dl>
+
+      <button class="checkout-button" id="checkout-button" type="button">
+        <span>Continue to checkout</span>
+        <span id="checkout-total">₱0.00</span>
+      </button>
+
+      <p class="checkout-note">
+        Delivery details and secure order submission are added in Phase 4.
+      </p>
+    </div>
+  </aside>
+
+  <dialog class="customize-dialog" id="customize-dialog">
+    <form method="dialog" id="customize-form">
+      <div class="dialog-hero">
+        <button
+          class="icon-button dialog-close-button"
+          id="close-customize-button"
+          type="button"
+          aria-label="Close customization"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m6 6 12 12M18 6 6 18"/>
+          </svg>
+        </button>
+
+        <div class="dialog-drink-visual" id="dialog-drink-visual" aria-hidden="true"></div>
+
+        <div class="dialog-product-copy">
+          <p class="product-category" id="dialog-product-category"></p>
+          <h2 id="dialog-product-name"></h2>
+          <p id="dialog-product-description"></p>
+        </div>
+      </div>
+
+      <div class="dialog-content">
+        <fieldset class="option-group">
+          <legend>
+            Size
+            <span>Required</span>
+          </legend>
+
+          <div class="segmented-options" id="size-options"></div>
+        </fieldset>
+
+        <fieldset class="option-group">
+          <legend>
+            Sugar level
+            <span>Required</span>
+          </legend>
+
+          <div class="chip-options" id="sugar-options"></div>
+        </fieldset>
+
+        <fieldset class="option-group">
+          <legend>
+            Ice level
+            <span>Required</span>
+          </legend>
+
+          <div class="chip-options" id="ice-options"></div>
+        </fieldset>
+
+        <fieldset class="option-group">
+          <legend>
+            Add-ons
+            <span>Optional</span>
+          </legend>
+
+          <div class="addon-list" id="addon-options"></div>
+        </fieldset>
+
+        <div class="quantity-row">
+          <div>
+            <strong>Quantity</strong>
+            <span>Maximum 20 per customized item</span>
+          </div>
+
+          <div class="quantity-control" aria-label="Quantity">
+            <button
+              id="customize-decrease-button"
+              type="button"
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+
+            <output id="customize-quantity" aria-live="polite">1</output>
+
+            <button
+              id="customize-increase-button"
+              type="button"
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <button class="add-cart-button" id="add-cart-button" type="submit">
+          <span>Add to cart</span>
+          <span id="customized-total">₱0.00</span>
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <div
+    class="toast-region"
+    id="toast-region"
+    aria-live="polite"
+    aria-atomic="false"
+  ></div>
+
+  <noscript>
+    <div class="noscript-message">
+      Ssupertea Station requires JavaScript to display the menu and manage your cart.
+    </div>
+  </noscript>
+</body>
+</html>

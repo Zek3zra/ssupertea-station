@@ -2517,18 +2517,6 @@ async function handleCheckoutSubmit(event) {
   const clientOrderId = createUuid();
 
   try {
-    const session = await ensureCustomerSession();
-    const sessionToken = session?.user?.id;
-
-    if (!sessionToken) {
-      throw new Error("CUSTOMER_SESSION_MISSING");
-    }
-
-    safeSetLocalStorage(
-      CUSTOMER_SESSION_TOKEN_STORAGE_KEY,
-      sessionToken
-    );
-
     const orderPayload = {
       id: clientOrderId,
       customer_name: customerName,
@@ -2539,9 +2527,22 @@ async function handleCheckoutSubmit(event) {
       delivery_lng: deliveryLongitude,
     };
 
-    const order = await createOrderViaServer(
-      orderPayload,
-      session.access_token
+    const {
+      order,
+      session,
+    } = await createOrderWithSessionRecovery(
+      orderPayload
+    );
+
+    const sessionToken = session?.user?.id;
+
+    if (!sessionToken) {
+      throw new Error("CUSTOMER_SESSION_MISSING");
+    }
+
+    safeSetLocalStorage(
+      CUSTOMER_SESSION_TOKEN_STORAGE_KEY,
+      sessionToken
     );
 
     safeSetLocalStorage(
@@ -2642,6 +2643,58 @@ function normalizeAddressPart(value) {
     .replace(/\s+/g, " ");
 }
 
+async function createOrderWithSessionRecovery(
+  orderPayload
+) {
+  let session = await ensureCustomerSession({
+    forceRefresh: true,
+  });
+
+  try {
+    const order = await createOrderViaServer(
+      orderPayload,
+      session.access_token
+    );
+
+    return {
+      order,
+      session,
+    };
+  } catch (error) {
+    const code =
+      String(error?.code || "")
+        .toUpperCase();
+
+    const canRetry =
+      code === "CUSTOMER_SESSION_INVALID" ||
+      code === "CUSTOMER_SESSION_REQUIRED" ||
+      code === "CUSTOMER_SESSION_TYPE_INVALID";
+
+    if (!canRetry) {
+      throw error;
+    }
+
+    /*
+     * A stale/invalid anonymous token is replaced once. We intentionally
+     * reuse the same client-generated order UUID, so the retry stays
+     * idempotent if the first request reached the database.
+     */
+    session = await ensureCustomerSession({
+      forceNew: true,
+    });
+
+    const order = await createOrderViaServer(
+      orderPayload,
+      session.access_token
+    );
+
+    return {
+      order,
+      session,
+    };
+  }
+}
+
 async function createOrderViaServer(
   orderPayload,
   accessToken
@@ -2716,10 +2769,22 @@ function getOrderSubmissionMessage(error) {
 
   if (
     errorCode === "customer_session_invalid" ||
-    errorCode === "customer_session_required"
+    errorCode === "customer_session_required" ||
+    errorCode === "customer_session_type_invalid"
   ) {
     return (
-      "Your customer session expired. Refresh the page and place the order again."
+      "The customer session could not be verified even after an automatic retry. " +
+      "Confirm that SUPABASE_URL and the server key in Vercel come from the same Supabase project."
+    );
+  }
+
+  if (
+    errorCode ===
+      "anonymous_session_verification_failed"
+  ) {
+    return (
+      "Supabase created an anonymous customer session but could not verify it. " +
+      "Check the Project URL and browser key in js/supabase-config.js."
     );
   }
 

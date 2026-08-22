@@ -145,12 +145,14 @@ function getConfiguration() {
     .trim()
     .replace(/\/+$/, "");
 
-  const publishableKey = String(
-    process.env.SUPABASE_PUBLISHABLE_KEY || ""
-  ).trim();
-
-  const serviceRoleKey = String(
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  /*
+   * Accept either the current Supabase secret-key format or the legacy
+   * service_role JWT. Both must remain server-side only.
+   */
+  const serverKey = String(
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    ""
   ).trim();
 
   const orsKey = String(
@@ -159,22 +161,45 @@ function getConfiguration() {
 
   if (
     !supabaseUrl ||
-    !publishableKey ||
-    !serviceRoleKey ||
+    !serverKey ||
     !orsKey
   ) {
     return {
       ok: false,
       message:
-        "SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY, and OPENROUTESERVICE_API_KEY must be configured in Vercel.",
+        "SUPABASE_URL, a Supabase server key, and OPENROUTESERVICE_API_KEY must be configured in Vercel.",
+    };
+  }
+
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(supabaseUrl);
+  } catch {
+    return {
+      ok: false,
+      message:
+        "SUPABASE_URL in Vercel is not a valid URL.",
+    };
+  }
+
+  if (
+    parsedUrl.protocol !== "https:" ||
+    !parsedUrl.hostname.endsWith(
+      ".supabase.co"
+    )
+  ) {
+    return {
+      ok: false,
+      message:
+        "SUPABASE_URL must be the exact HTTPS Project URL from Supabase.",
     };
   }
 
   return {
     ok: true,
     supabaseUrl,
-    publishableKey,
-    serviceRoleKey,
+    serverKey,
     orsKey,
   };
 }
@@ -188,35 +213,59 @@ function getBearerToken(request) {
   return match?.[1] || "";
 }
 
-async function verifyCustomerUser(configuration, accessToken) {
+async function verifyCustomerUser(
+  configuration,
+  accessToken
+) {
+  /*
+   * Authorization carries the customer's access-token JWT.
+   * apikey identifies this trusted Vercel backend to the Supabase project.
+   */
   const authResponse = await fetch(
     `${configuration.supabaseUrl}/auth/v1/user`,
     {
       headers: {
-        apikey: configuration.publishableKey,
+        apikey: configuration.serverKey,
         Authorization: `Bearer ${accessToken}`,
       },
     }
   );
 
-  const user = await authResponse.json().catch(() => null);
+  const user =
+    await authResponse.json().catch(() => null);
 
-  if (!authResponse.ok || !user?.id) {
-    const error = new Error("Invalid customer session.");
-    error.code = "CUSTOMER_SESSION_INVALID";
-    error.statusCode = 401;
-    error.publicMessage =
-      "Your customer session expired. Refresh the page and try again.";
-    throw error;
+  if (
+    !authResponse.ok ||
+    !user?.id
+  ) {
+    console.error(
+      "Supabase Auth rejected the customer token:",
+      {
+        status: authResponse.status,
+        code:
+          user?.code ||
+          user?.error_code ||
+          "",
+        message:
+          user?.message ||
+          user?.msg ||
+          "",
+      }
+    );
+
+    throw publicError(
+      "CUSTOMER_SESSION_INVALID",
+      401,
+      "The customer session could not be verified by Supabase Auth."
+    );
   }
 
   if (user.is_anonymous !== true) {
-    const error = new Error("Customer session is not anonymous.");
-    error.code = "CUSTOMER_SESSION_TYPE_INVALID";
-    error.statusCode = 403;
-    error.publicMessage =
-      "This checkout requires an anonymous customer session.";
-    throw error;
+    throw publicError(
+      "CUSTOMER_SESSION_TYPE_INVALID",
+      403,
+      "This checkout requires an anonymous customer session."
+    );
   }
 
   return user;
@@ -542,12 +591,25 @@ async function recoverOrder(
 }
 
 function serviceHeaders(configuration) {
-  return {
-    apikey: configuration.serviceRoleKey,
-    Authorization:
-      `Bearer ${configuration.serviceRoleKey}`,
+  const headers = {
+    apikey: configuration.serverKey,
     "Content-Type": "application/json",
   };
+
+  /*
+   * Legacy service_role API keys are JWTs and can also be used as the
+   * bearer token. New sb_secret_ keys are opaque and belong only in apikey.
+   */
+  if (
+    configuration.serverKey.startsWith(
+      "eyJ"
+    )
+  ) {
+    headers.Authorization =
+      `Bearer ${configuration.serverKey}`;
+  }
+
+  return headers;
 }
 
 function getShopLocation() {

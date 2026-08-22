@@ -1,5 +1,11 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.2/+esm";
 
+const CUSTOMER_AUTH_STORAGE_KEY =
+  "ssupertea-customer-auth-v1";
+
+const SESSION_REFRESH_WINDOW_SECONDS = 120;
+
+
 /*
  * Replace only these two project-specific values.
  * Supabase Dashboard → Project Settings → API:
@@ -66,7 +72,7 @@ export const customerSupabase = createClient(
     ...sharedOptions,
     auth: {
       ...sharedOptions.auth,
-      storageKey: "ssupertea-customer-auth-v1",
+      storageKey: CUSTOMER_AUTH_STORAGE_KEY,
     },
   }
 );
@@ -151,52 +157,91 @@ function createAuthSessionError(prefix, authError) {
   return error;
 }
 
-export async function ensureCustomerSession({ captchaToken = null } = {}) {
-  const {
-    data: { session: existingSession },
-    error: sessionError,
-  } = await customerSupabase.auth.getSession();
+async function validateCustomerSession(session) {
+  if (
+    !session?.access_token ||
+    !session?.user?.id ||
+    !isAnonymousSession(session)
+  ) {
+    return false;
+  }
 
-  if (sessionError) {
-    throw createAuthSessionError(
-      "Unable to restore customer session",
-      sessionError
+  const {
+    data: { user },
+    error,
+  } = await customerSupabase.auth.getUser(
+    session.access_token
+  );
+
+  return Boolean(
+    !error &&
+    user?.id &&
+    user.id === session.user.id &&
+    user.is_anonymous === true
+  );
+}
+
+function sessionNeedsRefresh(session) {
+  const expiresAt = Number(session?.expires_at);
+
+  if (!Number.isFinite(expiresAt)) {
+    return true;
+  }
+
+  const nowSeconds =
+    Math.floor(Date.now() / 1000);
+
+  return (
+    expiresAt - nowSeconds <=
+    SESSION_REFRESH_WINDOW_SECONDS
+  );
+}
+
+async function resetStoredCustomerSession() {
+  try {
+    await customerSupabase.auth.signOut({
+      scope: "local",
+    });
+  } catch (error) {
+    console.warn(
+      "Unable to sign out the stale customer session:",
+      error
     );
   }
 
-  if (existingSession && isAnonymousSession(existingSession)) {
-    return existingSession;
+  try {
+    localStorage.removeItem(
+      CUSTOMER_AUTH_STORAGE_KEY
+    );
+  } catch {
+    // Storage may be unavailable in strict privacy modes.
   }
+}
 
-  if (existingSession) {
-    const { error: signOutError } = await customerSupabase.auth.signOut({
-      scope: "local",
-    });
-
-    if (signOutError) {
-      throw createAuthSessionError(
-        "Unable to reset customer session",
-        signOutError
-      );
-    }
-  }
-
-  const signInResult = captchaToken
+async function createAnonymousCustomerSession(
+  captchaToken
+) {
+  const result = captchaToken
     ? await customerSupabase.auth.signInAnonymously({
-        options: { captchaToken },
+        options: {
+          captchaToken,
+        },
       })
     : await customerSupabase.auth.signInAnonymously();
 
-  if (signInResult.error) {
+  if (result.error) {
     throw createAuthSessionError(
       "Unable to create anonymous customer session",
-      signInResult.error
+      result.error
     );
   }
 
-  const session = signInResult.data?.session;
+  const session = result.data?.session;
 
-  if (!session || !isAnonymousSession(session)) {
+  if (
+    !session ||
+    !isAnonymousSession(session)
+  ) {
     const error = new Error(
       "Supabase returned no valid anonymous customer session."
     );
@@ -205,8 +250,109 @@ export async function ensureCustomerSession({ captchaToken = null } = {}) {
     throw error;
   }
 
+  if (
+    !await validateCustomerSession(session)
+  ) {
+    await resetStoredCustomerSession();
+
+    const error = new Error(
+      "Supabase created a session that could not be verified."
+    );
+
+    error.code =
+      "anonymous_session_verification_failed";
+
+    throw error;
+  }
+
   return session;
 }
+
+/**
+ * Returns a verified anonymous customer session.
+ *
+ * getSession() may restore a browser-stored token. Before checkout, this
+ * function refreshes when requested and verifies the user with Supabase Auth.
+ * Invalid sessions are removed and replaced with a new anonymous session.
+ */
+export async function ensureCustomerSession({
+  captchaToken = null,
+  forceRefresh = false,
+  forceNew = false,
+} = {}) {
+  if (forceNew) {
+    await resetStoredCustomerSession();
+
+    return createAnonymousCustomerSession(
+      captchaToken
+    );
+  }
+
+  const {
+    data: { session: storedSession },
+    error: sessionError,
+  } = await customerSupabase.auth.getSession();
+
+  if (sessionError) {
+    await resetStoredCustomerSession();
+
+    throw createAuthSessionError(
+      "Unable to restore customer session",
+      sessionError
+    );
+  }
+
+  if (
+    storedSession &&
+    isAnonymousSession(storedSession)
+  ) {
+    let candidate = storedSession;
+
+    if (
+      forceRefresh ||
+      sessionNeedsRefresh(candidate)
+    ) {
+      const {
+        data,
+        error: refreshError,
+      } = await customerSupabase.auth.refreshSession(
+        candidate
+      );
+
+      if (
+        !refreshError &&
+        data?.session &&
+        isAnonymousSession(data.session)
+      ) {
+        candidate = data.session;
+      } else {
+        console.warn(
+          "Stored customer session refresh failed:",
+          refreshError
+        );
+
+        await resetStoredCustomerSession();
+        candidate = null;
+      }
+    }
+
+    if (
+      candidate &&
+      await validateCustomerSession(candidate)
+    ) {
+      return candidate;
+    }
+
+    await resetStoredCustomerSession();
+  } else if (storedSession) {
+    await resetStoredCustomerSession();
+  }
+
+  return createAnonymousCustomerSession(
+    captchaToken
+  );
+}
+
 
 /**
  * Verifies the current staff session against Supabase Auth.

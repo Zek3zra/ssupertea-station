@@ -23,6 +23,7 @@ const LAST_ORDER_STORAGE_KEY = "ssupertea-last-order-v1";
 const MAX_ITEM_QUANTITY = 20;
 const MAX_DELIVERY_ADDRESS_LENGTH = 500;
 const TOAST_DURATION_MS = 3800;
+const CUSTOMER_CANCEL_DELAY_MS = 10 * 60 * 1000;
 
 const TRACKING_STATUS_ORDER = Object.freeze([
   "pending",
@@ -298,6 +299,7 @@ const state = {
     order: null,
     subscriptionStatus: "idle",
     reconnectTimer: null,
+    cancelCountdownTimer: null,
   },
 };
 
@@ -3340,6 +3342,8 @@ async function openTrackingDialog(orderId) {
 }
 
 function closeTrackingDialog() {
+  clearCustomerCancellationTimer();
+
   if (elements["tracking-dialog"].open) {
     elements["tracking-dialog"].close();
   }
@@ -3625,28 +3629,33 @@ async function handleCustomerCancelOrder() {
   const order =
     state.tracking.order;
 
-  if (
-    !order?.id ||
-    order.status !== "pending"
-  ) {
+  const cancellationState =
+    getCustomerCancellationState(order);
+
+  if (!cancellationState.allowed) {
     showToast({
       type: "warning",
       title: "Cancellation unavailable",
       message:
-        "Orders can only be cancelled before the store starts preparing them.",
+        order?.status !== "pending"
+          ? "This order has already been confirmed by the store and can no longer be cancelled."
+          : "Cancellation becomes available only if the order is still pending after 10 minutes.",
     });
 
+    renderCustomerCancellationControl(order);
     return;
   }
 
   const confirmed =
     window.confirm(
-      `Cancel ${formatOrderNumber(order.id)}? You will be able to place another order after it is cancelled.`
+      `Cancel ${formatOrderNumber(order.id)}? This is available because the order has remained pending for at least 10 minutes.`
     );
 
   if (!confirmed) {
     return;
   }
+
+  clearCustomerCancellationTimer();
 
   elements["cancel-order-button"].disabled =
     true;
@@ -3668,7 +3677,7 @@ async function handleCustomerCancelOrder() {
       type: "success",
       title: "Order cancelled",
       message:
-        "The order was cancelled before preparation started.",
+        "The order was cancelled because it remained pending for at least 10 minutes.",
     });
   } catch (error) {
     showToast({
@@ -3676,12 +3685,15 @@ async function handleCustomerCancelOrder() {
       title: "Unable to cancel",
       message:
         error?.code ===
-        "ORDER_CANCELLATION_LOCKED"
-          ? "The store has already started preparing this order, so it can no longer be cancelled."
-          : (
-              error?.message ||
-              "The order could not be cancelled."
-            ),
+        "ORDER_CANCELLATION_WAIT"
+          ? "The 10-minute waiting period has not finished yet."
+          : error?.code ===
+            "ORDER_CANCELLATION_LOCKED"
+            ? "The store has already confirmed this order, so it can no longer be cancelled."
+            : (
+                error?.message ||
+                "The order could not be cancelled."
+              ),
       duration: 5200,
     });
 
@@ -3689,12 +3701,140 @@ async function handleCustomerCancelOrder() {
       silent: true,
     });
   } finally {
+    renderCustomerCancellationControl(
+      state.tracking.order
+    );
+  }
+}
+
+function clearCustomerCancellationTimer() {
+  if (
+    state.tracking.cancelCountdownTimer
+  ) {
+    window.clearTimeout(
+      state.tracking.cancelCountdownTimer
+    );
+
+    state.tracking.cancelCountdownTimer =
+      null;
+  }
+}
+
+function getCustomerCancellationState(order) {
+  if (
+    !order?.id ||
+    order.status !== "pending"
+  ) {
+    return {
+      visible: false,
+      allowed: false,
+      remainingMs: 0,
+    };
+  }
+
+  const createdAtMs =
+    Date.parse(order.created_at);
+
+  if (!Number.isFinite(createdAtMs)) {
+    return {
+      visible: true,
+      allowed: false,
+      remainingMs:
+        CUSTOMER_CANCEL_DELAY_MS,
+    };
+  }
+
+  const unlockAtMs =
+    createdAtMs +
+    CUSTOMER_CANCEL_DELAY_MS;
+
+  const remainingMs =
+    Math.max(
+      0,
+      unlockAtMs - Date.now()
+    );
+
+  return {
+    visible: true,
+    allowed: remainingMs <= 0,
+    remainingMs,
+  };
+}
+
+function formatCancellationCountdown(
+  remainingMs
+) {
+  const totalSeconds =
+    Math.max(
+      0,
+      Math.ceil(
+        remainingMs / 1000
+      )
+    );
+
+  const minutes =
+    Math.floor(
+      totalSeconds / 60
+    );
+
+  const seconds =
+    totalSeconds % 60;
+
+  return `${minutes}:${String(
+    seconds
+  ).padStart(2, "0")}`;
+}
+
+function renderCustomerCancellationControl(
+  order
+) {
+  clearCustomerCancellationTimer();
+
+  const cancellationState =
+    getCustomerCancellationState(order);
+
+  setElementHidden(
+    elements["cancel-order-button"],
+    !cancellationState.visible
+  );
+
+  if (!cancellationState.visible) {
+    return;
+  }
+
+  if (cancellationState.allowed) {
     elements["cancel-order-button"].disabled =
       false;
 
     elements["cancel-order-button"].textContent =
       "Cancel order";
+
+    return;
   }
+
+  elements["cancel-order-button"].disabled =
+    true;
+
+  elements["cancel-order-button"].textContent =
+    `Cancel available in ${formatCancellationCountdown(
+      cancellationState.remainingMs
+    )}`;
+
+  state.tracking.cancelCountdownTimer =
+    window.setTimeout(
+      () => {
+        renderCustomerCancellationControl(
+          state.tracking.order
+        );
+      },
+      Math.min(
+        1000,
+        Math.max(
+          250,
+          cancellationState.remainingMs
+        )
+      )
+    );
 }
 
 function renderTrackingOrder(order) {
@@ -3717,12 +3857,7 @@ function renderTrackingOrder(order) {
       order.order_type
     );
 
-  // Phase 6 policy: once an order is placed, customers cannot cancel it.
-  // Keep the legacy button hidden for compatibility with the existing markup.
-  setElementHidden(
-    elements["cancel-order-button"],
-    true
-  );
+  renderCustomerCancellationControl(order);
 
   const isCancelled =
     order.status === "cancelled";
@@ -4077,7 +4212,7 @@ function getTrackingStatusLabel(
   }
 
   const labels = {
-    pending: "Order received",
+    pending: "Order pending",
     preparing: "Preparing",
     dispatched: "Out for delivery",
     completed: "Completed",
@@ -4093,7 +4228,7 @@ function getTrackingStatusMessage(
 ) {
   if (status === "pending") {
     return (
-      "Your order has been received and is waiting for staff confirmation."
+      "Your order is pending and waiting for staff confirmation."
     );
   }
 

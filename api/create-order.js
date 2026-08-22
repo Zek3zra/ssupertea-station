@@ -70,7 +70,7 @@ module.exports = async function createOrderHandler(request, response) {
       throw publicError(
         "ACTIVE_ORDER_EXISTS",
         409,
-        "You already have an unfinished order. Complete or cancel it before placing another order."
+        "You already have an unfinished order. Please wait until it is completed or cancelled by the store before placing another order."
       );
     }
 
@@ -575,7 +575,7 @@ async function insertOrder(
       throw publicError(
         "ACTIVE_ORDER_EXISTS",
         409,
-        "You already have an unfinished order. Complete or cancel it before placing another order."
+        "You already have an unfinished order. Please wait until it is completed or cancelled by the store before placing another order."
       );
     }
   }

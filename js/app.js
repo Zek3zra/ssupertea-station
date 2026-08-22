@@ -3717,9 +3717,11 @@ function renderTrackingOrder(order) {
       order.order_type
     );
 
+  // Phase 6 policy: once an order is placed, customers cannot cancel it.
+  // Keep the legacy button hidden for compatibility with the existing markup.
   setElementHidden(
     elements["cancel-order-button"],
-    order.status !== "pending"
+    true
   );
 
   const isCancelled =

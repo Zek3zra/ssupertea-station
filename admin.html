@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-PH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0E5B3B">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Ssupertea Station | Admin workspace</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/staff.css">
+  <script type="module" src="/js/staff-gate.js"></script>
+</head>
+<body class="staff-page" data-staff-permission="manage">
+  <div class="staff-gate" id="staff-gate">
+    Checking staff access…
+  </div>
+
+  <div class="staff-shell" id="staff-shell" hidden>
+    <header class="staff-topbar">
+      <a class="staff-brand" href="/">
+        <span class="brand-mark" aria-hidden="true">S</span>
+        <span>
+          <strong>Ssupertea Station</strong>
+          <small id="staff-account-email">Authorized staff</small>
+        </span>
+      </a>
+
+      <div class="staff-actions">
+        <span class="staff-role-pill" id="staff-role-label">Staff</span>
+        <a class="staff-action-link" id="admin-mode-link" href="/admin.html">Admin</a>
+        <a class="staff-action-link" id="rider-mode-link" href="/rider.html">Rider Mode</a>
+        <button class="staff-signout-button" id="staff-signout-button" type="button">
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <main class="staff-content">
+      <section class="staff-phase-card">
+        <p class="eyebrow">Backbone ready</p>
+        <h1>Admin workspace</h1>
+        <p>Your staff account can manage orders. The full order dashboard, confirmation workflow, and rider assignment controls will be added in the next admin phase.</p>
+      </section>
+
+      <div class="staff-next-grid">
+        <article class="staff-next-card">
+          <h2>Account routing</h2>
+          <p>Authorized staff accounts are routed away from the customer storefront immediately after sign-in.</p>
+        </article>
+        <article class="staff-next-card">
+          <h2>Permission based</h2>
+          <p>Store Admin, Rider, and Store Admin + Rider are separate permission combinations.</p>
+        </article>
+        <article class="staff-next-card">
+          <h2>Next phase</h2>
+          <p>The live order-management and rider-delivery interfaces will be built on this protected shell.</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

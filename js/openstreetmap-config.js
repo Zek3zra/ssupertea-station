@@ -1,43 +1,63 @@
 /**
- * Ssupertea Station map configuration.
+ * Ssupertea Station 2D map configuration.
  *
- * Leaflet + OpenStreetMap require no browser API key.
- * OpenRouteService requests go through /api/route so the ORS key remains
- * in the Vercel environment and is never shipped to the browser.
+ * Street view stays on Leaflet + OpenStreetMap.
+ * Satellite and Satellite + Labels use MapTiler raster tiles when the
+ * public MapTiler key is configured in Vercel as MAPTILER_PUBLIC_KEY.
+ *
+ * No map rotation, bearing, or 3D is used.
  */
 export const OPENSTREETMAP_CONFIG = Object.freeze({
   leaflet: Object.freeze({
     version: "1.9.4",
-    cssUrl: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+    cssUrl:
+      "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
     cssIntegrity:
       "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=",
-    scriptUrl: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+    scriptUrl:
+      "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
     scriptIntegrity:
       "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=",
   }),
 
   tiles: Object.freeze({
-    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    url:
+      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
     minimumZoom: 3,
     maximumZoom: 19,
   }),
 
-  /*
-   * Initial map view and public shop pin.
-   * The server uses the same coordinates as the route origin.
-   */
-  defaultView: Object.freeze({
-    latitude: 10.406125231986707,
-    longitude: 122.9977403682195,
-    zoom: 15,
+  mapTiler: Object.freeze({
+    configEndpoint:
+      "/api/map-config",
+    tileSize:
+      256,
+    minimumZoom:
+      1,
+    maximumZoom:
+      20,
+    attribution:
+      '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener noreferrer">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',
   }),
 
-  selectedLocationZoom: 17,
+  defaultView: Object.freeze({
+    latitude:
+      10.406125231986707,
+    longitude:
+      122.9977403682195,
+    zoom:
+      15,
+  }),
+
+  selectedLocationZoom:
+    17,
 
   routing: Object.freeze({
-    endpoint: "/api/route",
-    profile: "driving-car",
+    endpoint:
+      "/api/route",
+    profile:
+      "driving-car",
   }),
 });

@@ -1,0 +1,141 @@
+body.staff-page {
+  min-height: 100dvh;
+  background: var(--cream-100);
+}
+
+.staff-gate {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  color: var(--green-800);
+  font-weight: 800;
+}
+
+.staff-shell {
+  min-height: 100dvh;
+}
+
+.staff-topbar {
+  min-height: 76px;
+  padding: 14px max(18px, 4vw);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
+}
+
+.staff-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.staff-brand strong {
+  color: var(--green-950);
+}
+
+.staff-brand small {
+  display: block;
+  color: var(--ink-500);
+  font-size: 0.68rem;
+}
+
+.staff-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.staff-role-pill {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: var(--green-100);
+  color: var(--green-800);
+  font-size: 0.67rem;
+  font-weight: 850;
+}
+
+.staff-action-link,
+.staff-signout-button {
+  min-height: 38px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--white);
+  color: var(--green-800);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.staff-content {
+  width: min(calc(100% - 32px), 1050px);
+  margin: 42px auto;
+}
+
+.staff-phase-card {
+  padding: clamp(24px, 5vw, 46px);
+  border-radius: 26px;
+  background: var(--green-800);
+  color: var(--white);
+}
+
+.staff-phase-card .eyebrow {
+  color: var(--lime-500);
+}
+
+.staff-phase-card h1 {
+  margin-top: 8px;
+  font-size: clamp(1.9rem, 5vw, 3.5rem);
+  letter-spacing: -0.05em;
+}
+
+.staff-phase-card p:last-child {
+  margin-top: 12px;
+  max-width: 65ch;
+  color: rgba(255,255,255,.75);
+  line-height: 1.6;
+}
+
+.staff-next-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 14px;
+}
+
+.staff-next-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--white);
+}
+
+.staff-next-card h2 {
+  color: var(--green-950);
+  font-size: 1rem;
+}
+
+.staff-next-card p {
+  margin-top: 8px;
+  color: var(--ink-700);
+  font-size: .72rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .staff-topbar {
+    align-items: flex-start;
+  }
+
+  .staff-account-email {
+    display: none;
+  }
+
+  .staff-next-grid {
+    grid-template-columns: 1fr;
+  }
+}

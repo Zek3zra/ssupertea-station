@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v10";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -13,9 +13,17 @@ const CACHE_PREFIX = "ssupertea-";
 const APP_SHELL = [
   "/",
   "/index.html",
+  "/auth-callback.html",
+  "/admin.html",
+  "/rider.html",
   "/manifest.json",
   "/css/style.css",
+  "/css/account.css",
+  "/css/staff.css",
   "/js/app.js",
+  "/js/account.js",
+  "/js/auth-callback.js",
+  "/js/staff-gate.js",
   "/js/supabase-config.js",
   "/js/openstreetmap-config.js",
   "/assets/icons/icon-192.png",
@@ -102,7 +110,12 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/js/openstreetmap-config.js" ||
     requestUrl.pathname === "/js/supabase-config.js" ||
     requestUrl.pathname === "/js/app.js" ||
-    requestUrl.pathname === "/css/style.css"
+    requestUrl.pathname === "/js/account.js" ||
+    requestUrl.pathname === "/js/auth-callback.js" ||
+    requestUrl.pathname === "/js/staff-gate.js" ||
+    requestUrl.pathname === "/css/style.css" ||
+    requestUrl.pathname === "/css/account.css" ||
+    requestUrl.pathname === "/css/staff.css"
   ) {
     event.respondWith(networkFirstAsset(request));
     return;

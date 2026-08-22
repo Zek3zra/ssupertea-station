@@ -8,6 +8,12 @@
     },
     "api/create-order.js": {
       "maxDuration": 25
+    },
+    "api/cancel-order.js": {
+      "maxDuration": 15
+    },
+    "api/map-config.js": {
+      "maxDuration": 10
     }
   }
 }

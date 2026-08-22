@@ -1,0 +1,404 @@
+/* =========================================================
+   PHASE 6 — UNIFIED CUSTOMER / STAFF ACCOUNT UI
+   ========================================================= */
+
+.profile-trigger {
+  min-height: 44px;
+  padding: 5px 10px 5px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,.82);
+  color: var(--green-800);
+}
+
+.profile-trigger-avatar {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--green-100);
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.profile-trigger-avatar svg {
+  width: 18px;
+  height: 18px;
+}
+
+.profile-trigger-label {
+  max-width: 90px;
+  overflow: hidden;
+  font-size: .67rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-dialog {
+  width: min(calc(100% - 24px), 470px);
+  max-height: min(92dvh, 760px);
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 26px;
+  background: var(--cream-50);
+  color: var(--ink-900);
+  box-shadow: var(--shadow-md);
+}
+
+.account-dialog::backdrop {
+  background: rgba(10,32,22,.55);
+  backdrop-filter: blur(4px);
+}
+
+.account-dialog-shell {
+  padding: 22px;
+}
+
+.account-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.account-dialog-header h2 {
+  margin-top: 5px;
+  color: var(--green-950);
+  font-size: 1.55rem;
+  letter-spacing: -.04em;
+}
+
+.account-dialog-header p:last-child {
+  margin-top: 6px;
+  color: var(--ink-700);
+  font-size: .7rem;
+  line-height: 1.45;
+}
+
+.account-auth-tabs {
+  margin-top: 22px;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 13px;
+  background: var(--cream-100);
+}
+
+.account-auth-tabs button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-500);
+  font-size: .69rem;
+  font-weight: 850;
+}
+
+.account-auth-tabs button.is-active {
+  background: var(--white);
+  color: var(--green-800);
+  box-shadow: 0 5px 14px rgba(18,54,37,.08);
+}
+
+.google-auth-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 14px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 13px;
+  background: var(--white);
+  color: var(--ink-900);
+  font-size: .72rem;
+  font-weight: 850;
+}
+
+.google-g {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--cream-100);
+  font-weight: 950;
+}
+
+.account-divider {
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-500);
+  font-size: .6rem;
+}
+
+.account-divider::before,
+.account-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--border);
+}
+
+.account-form {
+  display: grid;
+  gap: 13px;
+}
+
+.account-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.account-form label > span {
+  color: var(--green-950);
+  font-size: .66rem;
+  font-weight: 800;
+}
+
+.account-form input {
+  width: 100%;
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  outline: 0;
+  background: var(--white);
+  color: var(--ink-900);
+}
+
+.account-form input:focus {
+  border-color: var(--green-700);
+  box-shadow: 0 0 0 4px rgba(167,201,87,.18);
+}
+
+.account-submit-button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--green-800);
+  color: var(--white);
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.account-auth-status {
+  margin-top: 14px;
+  padding: 10px 11px;
+  border-radius: 11px;
+  background: var(--green-100);
+  color: var(--green-800);
+  font-size: .66rem;
+  line-height: 1.45;
+}
+
+.account-auth-status[data-type="error"] {
+  background: var(--danger-100);
+  color: var(--danger-700);
+}
+
+.account-auth-status[data-type="success"] {
+  background: var(--success-100);
+  color: var(--success-700);
+}
+
+.account-order-note {
+  margin-top: 16px;
+  color: var(--ink-500);
+  font-size: .6rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.account-profile-head {
+  padding: 14px 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-profile-avatar {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--green-800);
+  color: var(--white);
+  font-weight: 900;
+}
+
+.account-profile-head strong,
+.account-profile-head span {
+  display: block;
+}
+
+.account-profile-head strong {
+  color: var(--green-950);
+}
+
+.account-profile-head span {
+  margin-top: 3px;
+  color: var(--ink-500);
+  font-size: .65rem;
+}
+
+.account-active-order {
+  padding: 14px;
+  border: 1px solid rgba(14,91,59,.2);
+  border-radius: 15px;
+  background: var(--green-100);
+}
+
+.account-active-order > span,
+.account-active-order > strong,
+.account-active-order > small {
+  display: block;
+}
+
+.account-active-order > span {
+  color: var(--ink-700);
+  font-size: .62rem;
+}
+
+.account-active-order > strong {
+  margin-top: 4px;
+  color: var(--green-950);
+  font-size: 1rem;
+}
+
+.account-active-order > small {
+  margin-top: 3px;
+  color: var(--green-700);
+}
+
+.account-active-order button,
+.account-logout-button {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 11px;
+  border-radius: 11px;
+  font-size: .68rem;
+  font-weight: 850;
+}
+
+.account-active-order button {
+  border: 0;
+  background: var(--green-800);
+  color: var(--white);
+}
+
+.account-logout-button {
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  color: var(--danger-700);
+}
+
+.tracking-cancel-button {
+  min-height: 40px;
+  margin-top: 13px;
+  padding: 0 13px;
+  border: 1px solid rgba(165,59,56,.22);
+  border-radius: 11px;
+  background: var(--danger-100);
+  color: var(--danger-700);
+  font-size: .67rem;
+  font-weight: 850;
+}
+
+.map-layer-switcher {
+  margin-top: 10px;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(255,255,255,.9);
+}
+
+.map-layer-option {
+  min-height: 36px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-700);
+  font-size: .61rem;
+  font-weight: 800;
+}
+
+.map-layer-option.is-active {
+  background: var(--green-800);
+  color: var(--white);
+}
+
+.map-layer-option:disabled {
+  opacity: .42;
+  cursor: not-allowed;
+}
+
+.auth-callback-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+}
+
+.auth-callback-card {
+  width: min(calc(100% - 32px), 430px);
+  padding: 36px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--white);
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.auth-callback-card h1 {
+  margin-top: 16px;
+  color: var(--green-950);
+}
+
+.auth-callback-card p {
+  margin-top: 9px;
+  color: var(--ink-700);
+  line-height: 1.55;
+}
+
+.auth-callback-spinner {
+  width: 34px;
+  height: 34px;
+  display: inline-block;
+  border: 3px solid var(--green-100);
+  border-top-color: var(--green-800);
+  border-radius: 50%;
+  animation: auth-spin .8s linear infinite;
+}
+
+@keyframes auth-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 520px) {
+  .profile-trigger-label {
+    display: none;
+  }
+
+  .profile-trigger {
+    padding-right: 6px;
+  }
+
+  .map-layer-switcher {
+    grid-template-columns: 1fr;
+  }
+}

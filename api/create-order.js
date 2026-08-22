@@ -60,6 +60,20 @@ module.exports = async function createOrderHandler(request, response) {
       accessToken
     );
 
+    const activeOrder =
+      await findActiveOrder(
+        configuration,
+        user.id
+      );
+
+    if (activeOrder) {
+      throw publicError(
+        "ACTIVE_ORDER_EXISTS",
+        409,
+        "You already have an unfinished order. Complete or cancel it before placing another order."
+      );
+    }
+
     const body = parseRequestBody(request.body);
     const orderInput = validateOrderInput(body);
 
@@ -260,11 +274,11 @@ async function verifyCustomerUser(
     );
   }
 
-  if (user.is_anonymous !== true) {
+  if (user.is_anonymous === true) {
     throw publicError(
-      "CUSTOMER_SESSION_TYPE_INVALID",
+      "CUSTOMER_ACCOUNT_REQUIRED",
       403,
-      "This checkout requires an anonymous customer session."
+      "Sign in with Google or email before placing an order."
     );
   }
 
@@ -550,6 +564,20 @@ async function insertOrder(
     if (recovered) {
       return recovered;
     }
+
+    const activeOrder =
+      await findActiveOrder(
+        configuration,
+        customerUserId
+      );
+
+    if (activeOrder) {
+      throw publicError(
+        "ACTIVE_ORDER_EXISTS",
+        409,
+        "You already have an unfinished order. Complete or cancel it before placing another order."
+      );
+    }
   }
 
   throw publicError(
@@ -559,6 +587,47 @@ async function insertOrder(
       payload?.details ||
       "The database rejected the order."
   );
+}
+
+async function findActiveOrder(
+  configuration,
+  customerUserId
+) {
+  const query = new URLSearchParams({
+    select:
+      "id,customer_name,order_type,status,total_price,created_at",
+    customer_session_token:
+      `eq.${customerUserId}`,
+    status:
+      "in.(pending,preparing,dispatched)",
+    order:
+      "created_at.desc",
+    limit:
+      "1",
+  });
+
+  const response = await fetch(
+    `${configuration.supabaseUrl}/rest/v1/orders?${query.toString()}`,
+    {
+      headers:
+        serviceHeaders(
+          configuration
+        ),
+    }
+  );
+
+  const payload =
+    await response
+      .json()
+      .catch(() => null);
+
+  return (
+    response.ok &&
+    Array.isArray(payload) &&
+    payload[0]
+  )
+    ? payload[0]
+    : null;
 }
 
 async function recoverOrder(

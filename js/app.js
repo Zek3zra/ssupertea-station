@@ -4,6 +4,13 @@ import {
 } from "/js/supabase-config.js";
 
 import {
+  initializeAccountSystem,
+  ensureCustomerAccount,
+  getActiveOrderForCurrentAccount,
+  cancelPendingOrder,
+} from "/js/account.js";
+
+import {
   OPENSTREETMAP_CONFIG,
 } from "/js/openstreetmap-config.js";
 
@@ -281,6 +288,9 @@ const state = {
     addressResolved: false,
     isLocating: false,
     isSubmitting: false,
+    baseLayers: {},
+    currentBaseLayer: "street",
+    satelliteEnabled: false,
   },
   tracking: {
     channel: null,
@@ -295,7 +305,7 @@ const elements = {};
 
 document.addEventListener("DOMContentLoaded", initializeApp);
 
-function initializeApp() {
+async function initializeApp() {
   cacheElements();
   renderCategories();
   renderMenu();
@@ -305,7 +315,10 @@ function initializeApp() {
   updateScrolledHeader();
   updateCurrentYear();
   restoreSavedCustomerName();
-  restoreOrderTracking();
+
+  await initializeAccountSystem();
+
+  await restoreOrderTracking();
 }
 
 function cacheElements() {
@@ -349,6 +362,7 @@ function cacheElements() {
     "clear-map-pin-button",
     "delivery-map-panel",
     "map-status",
+    "map-layer-switcher",
     "delivery-map",
     "map-instructions",
     "selected-location-card",
@@ -389,6 +403,7 @@ function cacheElements() {
     "tracking-connection-status",
     "tracking-current-status",
     "tracking-status-message",
+    "cancel-order-button",
     "tracking-timeline",
     "tracking-dispatched-label",
     "tracking-dispatched-copy",
@@ -507,6 +522,39 @@ function bindEvents() {
   elements["refresh-tracking-button"].addEventListener(
     "click",
     refreshTrackedOrder
+  );
+
+  elements["cancel-order-button"].addEventListener(
+    "click",
+    handleCustomerCancelOrder
+  );
+
+  elements["map-layer-switcher"].addEventListener(
+    "click",
+    handleMapLayerSwitch
+  );
+
+  window.addEventListener(
+    "ssupertea:resume-checkout",
+    handleCheckoutRequest
+  );
+
+  window.addEventListener(
+    "ssupertea:track-active-order",
+    async (event) => {
+      const order = event.detail?.order;
+
+      if (order?.id) {
+        saveLastOrderFromDatabaseOrder(
+          order,
+          order.customer_session_token
+        );
+
+        await openTrackingDialog(
+          order.id
+        );
+      }
+    }
   );
 
   elements["customize-dialog"].addEventListener("close", () => {
@@ -1223,7 +1271,7 @@ function handleBrowseMenu() {
   document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
 }
 
-function handleCheckoutRequest() {
+async function handleCheckoutRequest() {
   if (state.cart.length === 0) {
     showToast({
       type: "warning",
@@ -1232,6 +1280,61 @@ function handleCheckoutRequest() {
     });
 
     return;
+  }
+
+  const session =
+    await ensureCustomerAccount({
+      openDialog: true,
+      checkoutIntent: true,
+    });
+
+  if (!session) {
+    return;
+  }
+
+  const activeOrder =
+    await getActiveOrderForCurrentAccount();
+
+  if (activeOrder) {
+    saveLastOrderFromDatabaseOrder(
+      activeOrder,
+      session.user.id
+    );
+
+    showToast({
+      type: "info",
+      title: "You already have an active order",
+      message:
+        "Finish your current order before placing another one.",
+      duration: 5200,
+    });
+
+    await openTrackingDialog(
+      activeOrder.id
+    );
+
+    return;
+  }
+
+  /*
+   * Use the account name as a convenient default, while still allowing the
+   * customer to edit the order name before submission.
+   */
+  const accountName =
+    String(
+      session.user?.user_metadata?.full_name ||
+      session.user?.user_metadata?.name ||
+      ""
+    )
+      .trim()
+      .replace(/\s+/g, " ");
+
+  if (
+    accountName &&
+    !elements["customer-name"].value.trim()
+  ) {
+    elements["customer-name"].value =
+      accountName;
   }
 
   openCheckoutDialog();
@@ -1476,15 +1579,34 @@ async function initializeDeliveryMap() {
     preferCanvas: true,
   });
 
-  leaflet
-    .tileLayer(OPENSTREETMAP_CONFIG.tiles.url, {
-      minZoom: OPENSTREETMAP_CONFIG.tiles.minimumZoom,
-      maxZoom: OPENSTREETMAP_CONFIG.tiles.maximumZoom,
-      attribution: OPENSTREETMAP_CONFIG.tiles.attribution,
-      updateWhenIdle: true,
-      keepBuffer: 2,
-    })
-    .addTo(map);
+  const streetLayer =
+    leaflet.tileLayer(
+      OPENSTREETMAP_CONFIG.tiles.url,
+      {
+        minZoom:
+          OPENSTREETMAP_CONFIG.tiles.minimumZoom,
+        maxZoom:
+          OPENSTREETMAP_CONFIG.tiles.maximumZoom,
+        attribution:
+          OPENSTREETMAP_CONFIG.tiles.attribution,
+        updateWhenIdle: true,
+        keepBuffer: 2,
+      }
+    );
+
+  streetLayer.addTo(map);
+
+  state.checkout.baseLayers = {
+    street: streetLayer,
+  };
+
+  state.checkout.currentBaseLayer =
+    "street";
+
+  await configureOptionalSatelliteLayers(
+    map,
+    leaflet
+  );
 
   map.on("click", (event) => {
     selectDeliveryLocation(
@@ -1511,6 +1633,263 @@ async function initializeDeliveryMap() {
   }, 120);
 
   return map;
+}
+
+async function configureOptionalSatelliteLayers(
+  map,
+  leaflet
+) {
+  try {
+    const response =
+      await fetch(
+        OPENSTREETMAP_CONFIG
+          .mapTiler
+          .configEndpoint,
+        {
+          headers: {
+            Accept:
+              "application/json",
+          },
+        }
+      );
+
+    const config =
+      await response
+        .json()
+        .catch(() => ({}));
+
+    const key =
+      String(
+        config?.maptiler_public_key ||
+        ""
+      ).trim();
+
+    if (
+      !response.ok ||
+      !config?.satellite_enabled ||
+      !key
+    ) {
+      updateMapLayerButtons();
+      return;
+    }
+
+    const settings =
+      OPENSTREETMAP_CONFIG.mapTiler;
+
+    const satelliteStyle =
+      String(
+        config?.styles?.satellite ||
+        "satellite-v4"
+      );
+
+    const hybridStyle =
+      String(
+        config?.styles?.hybrid ||
+        "hybrid-v4"
+      );
+
+    const [
+      satelliteMetaResponse,
+      hybridMetaResponse,
+    ] = await Promise.all([
+      fetch(
+        `https://api.maptiler.com/maps/${satelliteStyle}/256/tiles.json?key=${encodeURIComponent(key)}`
+      ),
+      fetch(
+        `https://api.maptiler.com/maps/${hybridStyle}/256/tiles.json?key=${encodeURIComponent(key)}`
+      ),
+    ]);
+
+    const [
+      satelliteMeta,
+      hybridMeta,
+    ] = await Promise.all([
+      satelliteMetaResponse
+        .json()
+        .catch(() => ({})),
+      hybridMetaResponse
+        .json()
+        .catch(() => ({})),
+    ]);
+
+    const satelliteUrl =
+      satelliteMeta?.tiles?.[0];
+
+    const hybridUrl =
+      hybridMeta?.tiles?.[0];
+
+    if (
+      !satelliteMetaResponse.ok ||
+      !hybridMetaResponse.ok ||
+      !satelliteUrl ||
+      !hybridUrl
+    ) {
+      throw new Error(
+        "MAPTILER_TILEJSON_UNAVAILABLE"
+      );
+    }
+
+    state.checkout.baseLayers.satellite =
+      leaflet.tileLayer(
+        satelliteUrl,
+        {
+          minZoom:
+            Number(
+              satelliteMeta.minzoom
+            ) || settings.minimumZoom,
+          maxZoom:
+            Number(
+              satelliteMeta.maxzoom
+            ) || settings.maximumZoom,
+          attribution:
+            satelliteMeta.attribution ||
+            settings.attribution,
+          updateWhenIdle: true,
+          keepBuffer: 2,
+          crossOrigin: true,
+        }
+      );
+
+    state.checkout.baseLayers.hybrid =
+      leaflet.tileLayer(
+        hybridUrl,
+        {
+          minZoom:
+            Number(
+              hybridMeta.minzoom
+            ) || settings.minimumZoom,
+          maxZoom:
+            Number(
+              hybridMeta.maxzoom
+            ) || settings.maximumZoom,
+          attribution:
+            hybridMeta.attribution ||
+            settings.attribution,
+          updateWhenIdle: true,
+          keepBuffer: 2,
+          crossOrigin: true,
+        }
+      );
+
+    state.checkout.satelliteEnabled =
+      true;
+
+    updateMapLayerButtons();
+  } catch (error) {
+    console.warn(
+      "Satellite map layers are unavailable:",
+      error
+    );
+
+    state.checkout.satelliteEnabled =
+      false;
+
+    updateMapLayerButtons();
+  }
+}
+
+function handleMapLayerSwitch(event) {
+  const button =
+    event.target.closest(
+      "[data-map-layer]"
+    );
+
+  if (!button) {
+    return;
+  }
+
+  const layerName =
+    button.dataset.mapLayer;
+
+  if (
+    button.disabled ||
+    !state.checkout.map ||
+    !state.checkout
+      .baseLayers[layerName]
+  ) {
+    if (
+      layerName !== "street"
+    ) {
+      showToast({
+        type: "info",
+        title: "Satellite setup required",
+        message:
+          "Add MAPTILER_PUBLIC_KEY in Vercel to enable Satellite and Satellite + Labels.",
+      });
+    }
+
+    return;
+  }
+
+  if (
+    state.checkout.currentBaseLayer ===
+    layerName
+  ) {
+    return;
+  }
+
+  const oldLayer =
+    state.checkout.baseLayers[
+      state.checkout.currentBaseLayer
+    ];
+
+  if (
+    oldLayer &&
+    state.checkout.map.hasLayer(
+      oldLayer
+    )
+  ) {
+    state.checkout.map.removeLayer(
+      oldLayer
+    );
+  }
+
+  state.checkout
+    .baseLayers[layerName]
+    .addTo(state.checkout.map);
+
+  state.checkout.currentBaseLayer =
+    layerName;
+
+  updateMapLayerButtons();
+}
+
+function updateMapLayerButtons() {
+  const buttons = [
+    ...elements["map-layer-switcher"]
+      .querySelectorAll(
+        "[data-map-layer]"
+      ),
+  ];
+
+  buttons.forEach((button) => {
+    const name =
+      button.dataset.mapLayer;
+
+    const available =
+      name === "street" ||
+      Boolean(
+        state.checkout
+          .baseLayers[name]
+      );
+
+    button.disabled =
+      !available;
+
+    const active =
+      name ===
+      state.checkout.currentBaseLayer;
+
+    button.classList.toggle(
+      "is-active",
+      active
+    );
+
+    button.setAttribute(
+      "aria-pressed",
+      String(active)
+    );
+  });
 }
 
 function loadLeafletLibrary() {
@@ -2555,6 +2934,17 @@ async function handleCheckoutSubmit(event) {
       sessionToken
     );
 
+    window.dispatchEvent(
+      new CustomEvent(
+        "ssupertea:order-changed",
+        {
+          detail: {
+            order,
+          },
+        }
+      )
+    );
+
     startOrderTracking(order.id);
 
     state.cart = [];
@@ -2646,53 +3036,21 @@ function normalizeAddressPart(value) {
 async function createOrderWithSessionRecovery(
   orderPayload
 ) {
-  let session = await ensureCustomerSession({
-    forceRefresh: true,
-  });
-
-  try {
-    const order = await createOrderViaServer(
-      orderPayload,
-      session.access_token
-    );
-
-    return {
-      order,
-      session,
-    };
-  } catch (error) {
-    const code =
-      String(error?.code || "")
-        .toUpperCase();
-
-    const canRetry =
-      code === "CUSTOMER_SESSION_INVALID" ||
-      code === "CUSTOMER_SESSION_REQUIRED" ||
-      code === "CUSTOMER_SESSION_TYPE_INVALID";
-
-    if (!canRetry) {
-      throw error;
-    }
-
-    /*
-     * A stale/invalid anonymous token is replaced once. We intentionally
-     * reuse the same client-generated order UUID, so the retry stays
-     * idempotent if the first request reached the database.
-     */
-    session = await ensureCustomerSession({
-      forceNew: true,
+  const session =
+    await ensureCustomerSession({
+      forceRefresh: true,
     });
 
-    const order = await createOrderViaServer(
+  const order =
+    await createOrderViaServer(
       orderPayload,
       session.access_token
     );
 
-    return {
-      order,
-      session,
-    };
-  }
+  return {
+    order,
+    session,
+  };
 }
 
 async function createOrderViaServer(
@@ -2743,18 +3101,20 @@ function getOrderSubmissionMessage(error) {
     .join(" ")
     .toLocaleLowerCase("en-PH");
 
-  if (errorCode === "signup_disabled") {
+  if (
+    errorCode === "customer_account_required" ||
+    errorCode === "customer_session_required"
+  ) {
     return (
-      "Supabase has “Allow new users to sign up” turned off. " +
-      "Anonymous sign-in creates a new Auth user."
+      "Sign in with Google or email before placing an order."
     );
   }
 
   if (
-    errorCode === "anonymous_provider_disabled"
+    errorCode === "active_order_exists"
   ) {
     return (
-      "Supabase Anonymous Sign-ins are turned off."
+      "You already have an unfinished order. Track or finish that order before placing another one."
     );
   }
 
@@ -2768,23 +3128,10 @@ function getOrderSubmissionMessage(error) {
   }
 
   if (
-    errorCode === "customer_session_invalid" ||
-    errorCode === "customer_session_required" ||
-    errorCode === "customer_session_type_invalid"
+    errorCode === "customer_session_invalid"
   ) {
     return (
-      "The customer session could not be verified even after an automatic retry. " +
-      "Confirm that SUPABASE_URL and the server key in Vercel come from the same Supabase project."
-    );
-  }
-
-  if (
-    errorCode ===
-      "anonymous_session_verification_failed"
-  ) {
-    return (
-      "Supabase created an anonymous customer session but could not verify it. " +
-      "Check the Project URL and browser key in js/supabase-config.js."
+      "Your account session could not be verified. Log out, sign in again, and retry."
     );
   }
 
@@ -2911,20 +3258,45 @@ function closeOrderConfirmation() {
 }
 
 async function handleTrackRequest() {
-  const lastOrder = loadLastOrder();
+  let lastOrder =
+    loadLastOrder();
+
+  if (!lastOrder) {
+    const session =
+      await ensureCustomerAccount({
+        openDialog: false,
+      });
+
+    if (session) {
+      const activeOrder =
+        await getActiveOrderForCurrentAccount();
+
+      if (activeOrder) {
+        saveLastOrderFromDatabaseOrder(
+          activeOrder,
+          session.user.id
+        );
+
+        lastOrder =
+          loadLastOrder();
+      }
+    }
+  }
 
   if (!lastOrder) {
     showToast({
       type: "info",
-      title: "No recent order",
+      title: "No active order",
       message:
-        "Place an order first, then its live status will appear here.",
+        "Sign in and place an order first.",
     });
 
     return;
   }
 
-  await openTrackingDialog(lastOrder.orderId);
+  await openTrackingDialog(
+    lastOrder.orderId
+  );
 }
 
 async function handleConfirmationTrackRequest() {
@@ -3182,7 +3554,7 @@ async function refreshTrackedOrder(
         type: "error",
         title: "Tracking session expired",
         message:
-          "This anonymous order belongs to a browser session that is no longer available.",
+          "This order belongs to a different Ssupertea account.",
       });
     } else if (!silent) {
       showToast({
@@ -3235,6 +3607,93 @@ function handleTrackedOrderUpdate(order) {
     )
   ) {
     setTrackingConnectionStatus("connected");
+
+    window.dispatchEvent(
+      new CustomEvent(
+        "ssupertea:order-changed",
+        {
+          detail: {
+            order,
+          },
+        }
+      )
+    );
+  }
+}
+
+async function handleCustomerCancelOrder() {
+  const order =
+    state.tracking.order;
+
+  if (
+    !order?.id ||
+    order.status !== "pending"
+  ) {
+    showToast({
+      type: "warning",
+      title: "Cancellation unavailable",
+      message:
+        "Orders can only be cancelled before the store starts preparing them.",
+    });
+
+    return;
+  }
+
+  const confirmed =
+    window.confirm(
+      `Cancel ${formatOrderNumber(order.id)}? You will be able to place another order after it is cancelled.`
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  elements["cancel-order-button"].disabled =
+    true;
+
+  elements["cancel-order-button"].textContent =
+    "Cancelling…";
+
+  try {
+    const cancelledOrder =
+      await cancelPendingOrder(
+        order.id
+      );
+
+    handleTrackedOrderUpdate(
+      cancelledOrder
+    );
+
+    showToast({
+      type: "success",
+      title: "Order cancelled",
+      message:
+        "The order was cancelled before preparation started.",
+    });
+  } catch (error) {
+    showToast({
+      type: "error",
+      title: "Unable to cancel",
+      message:
+        error?.code ===
+        "ORDER_CANCELLATION_LOCKED"
+          ? "The store has already started preparing this order, so it can no longer be cancelled."
+          : (
+              error?.message ||
+              "The order could not be cancelled."
+            ),
+      duration: 5200,
+    });
+
+    await refreshTrackedOrder({
+      silent: true,
+    });
+  } finally {
+    elements["cancel-order-button"].disabled =
+      false;
+
+    elements["cancel-order-button"].textContent =
+      "Cancel order";
   }
 }
 
@@ -3257,6 +3716,11 @@ function renderTrackingOrder(order) {
       order.status,
       order.order_type
     );
+
+  setElementHidden(
+    elements["cancel-order-button"],
+    order.status !== "pending"
+  );
 
   const isCancelled =
     order.status === "cancelled";

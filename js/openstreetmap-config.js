@@ -33,7 +33,9 @@ export const OPENSTREETMAP_CONFIG = Object.freeze({
     configEndpoint:
       "/api/map-config",
     tileSize:
-      256,
+      512,
+    highDpi:
+      true,
     minimumZoom:
       1,
     maximumZoom:

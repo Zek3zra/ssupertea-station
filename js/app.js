@@ -1714,17 +1714,17 @@ async function configureOptionalSatelliteLayers(
         .catch(() => ({})),
     ]);
 
+    // Use MapTiler HiDPI/Retina tiles for a sharper satellite view.
+    // These are rendered at 2x resolution and displayed as 512px Leaflet tiles.
     const satelliteUrl =
-      satelliteMeta?.tiles?.[0];
+      `https://api.maptiler.com/maps/${satelliteStyle}/{z}/{x}/{y}@2x.jpg?key=${encodeURIComponent(key)}`;
 
     const hybridUrl =
-      hybridMeta?.tiles?.[0];
+      `https://api.maptiler.com/maps/${hybridStyle}/{z}/{x}/{y}@2x.png?key=${encodeURIComponent(key)}`;
 
     if (
       !satelliteMetaResponse.ok ||
-      !hybridMetaResponse.ok ||
-      !satelliteUrl ||
-      !hybridUrl
+      !hybridMetaResponse.ok
     ) {
       throw new Error(
         "MAPTILER_TILEJSON_UNAVAILABLE"
@@ -1746,6 +1746,9 @@ async function configureOptionalSatelliteLayers(
           attribution:
             satelliteMeta.attribution ||
             settings.attribution,
+          tileSize: 512,
+          zoomOffset: -1,
+          detectRetina: false,
           updateWhenIdle: true,
           keepBuffer: 2,
           crossOrigin: true,
@@ -1767,6 +1770,9 @@ async function configureOptionalSatelliteLayers(
           attribution:
             hybridMeta.attribution ||
             settings.attribution,
+          tileSize: 512,
+          zoomOffset: -1,
+          detectRetina: false,
           updateWhenIdle: true,
           keepBuffer: 2,
           crossOrigin: true,

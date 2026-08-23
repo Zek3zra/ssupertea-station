@@ -11,23 +11,29 @@ module.exports = async function mapConfigHandler(
 
   if (request.method !== "GET") {
     response.setHeader("Allow", "GET");
+
     return response.status(405).json({
       code: "METHOD_NOT_ALLOWED",
-      message: "Use GET for map configuration.",
+      message:
+        "Use GET for map configuration.",
     });
   }
 
+  // ArcGIS API keys used by browser maps are client-visible.
+  // Restrict the credential in ArcGIS to the Ssupertea web referrer
+  // and grant only the Basemaps privilege.
   const key = String(
-    process.env.MAPTILER_PUBLIC_KEY || ""
+    process.env.ARCGIS_API_KEY ||
+    process.env.ESRI_API_KEY ||
+    ""
   ).trim();
 
   return response.status(200).json({
     satellite_enabled:
       Boolean(key),
-    maptiler_public_key: key || null,
-    styles: {
-      satellite: "satellite-v4",
-      hybrid: "hybrid-v4",
-    },
+    provider:
+      "esri",
+    arcgis_api_key:
+      key || null,
   });
 };

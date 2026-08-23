@@ -38,6 +38,7 @@ const TERMINAL_ORDER_STATUSES = new Set([
 ]);
 
 let leafletLoadPromise = null;
+let esriLeafletLoadPromise = null;
 
 const MENU_ITEMS = Object.freeze([
   {
@@ -1645,7 +1646,7 @@ async function configureOptionalSatelliteLayers(
     const response =
       await fetch(
         OPENSTREETMAP_CONFIG
-          .mapTiler
+          .esri
           .configEndpoint,
         {
           headers: {
@@ -1662,7 +1663,7 @@ async function configureOptionalSatelliteLayers(
 
     const key =
       String(
-        config?.maptiler_public_key ||
+        config?.arcgis_api_key ||
         ""
       ).trim();
 
@@ -1675,109 +1676,70 @@ async function configureOptionalSatelliteLayers(
       return;
     }
 
-    const settings =
-      OPENSTREETMAP_CONFIG.mapTiler;
-
-    const satelliteStyle =
-      String(
-        config?.styles?.satellite ||
-        "satellite-v4"
-      );
-
-    const hybridStyle =
-      String(
-        config?.styles?.hybrid ||
-        "hybrid-v4"
-      );
-
-    const [
-      satelliteMetaResponse,
-      hybridMetaResponse,
-    ] = await Promise.all([
-      fetch(
-        `https://api.maptiler.com/maps/${satelliteStyle}/256/tiles.json?key=${encodeURIComponent(key)}`
-      ),
-      fetch(
-        `https://api.maptiler.com/maps/${hybridStyle}/256/tiles.json?key=${encodeURIComponent(key)}`
-      ),
-    ]);
-
-    const [
-      satelliteMeta,
-      hybridMeta,
-    ] = await Promise.all([
-      satelliteMetaResponse
-        .json()
-        .catch(() => ({})),
-      hybridMetaResponse
-        .json()
-        .catch(() => ({})),
-    ]);
-
-    // Use MapTiler HiDPI/Retina tiles for a sharper satellite view.
-    // These are rendered at 2x resolution and displayed as 512px Leaflet tiles.
-    const satelliteUrl =
-      `https://api.maptiler.com/maps/${satelliteStyle}/{z}/{x}/{y}@2x.jpg?key=${encodeURIComponent(key)}`;
-
-    const hybridUrl =
-      `https://api.maptiler.com/maps/${hybridStyle}/{z}/{x}/{y}@2x.png?key=${encodeURIComponent(key)}`;
+    await loadEsriLeafletLibraries();
 
     if (
-      !satelliteMetaResponse.ok ||
-      !hybridMetaResponse.ok
+      !leaflet?.esri?.tiledMapLayer ||
+      !leaflet?.esri?.Static
+        ?.staticBasemapTileLayer
     ) {
       throw new Error(
-        "MAPTILER_TILEJSON_UNAVAILABLE"
+        "ESRI_LEAFLET_UNAVAILABLE"
       );
     }
 
+    const settings =
+      OPENSTREETMAP_CONFIG.esri;
+
+    // Pure satellite imagery.
+    const satelliteImagery =
+      leaflet.esri.tiledMapLayer({
+        url:
+          settings.imageryServiceUrl,
+        token:
+          key,
+        minZoom:
+          settings.minimumZoom,
+        maxZoom:
+          settings.maximumZoom,
+      });
+
+    // Separate imagery instance for Hybrid so switching layers never
+    // reuses/removes the Satellite instance unexpectedly.
+    const hybridImagery =
+      leaflet.esri.tiledMapLayer({
+        url:
+          settings.imageryServiceUrl,
+        token:
+          key,
+        minZoom:
+          settings.minimumZoom,
+        maxZoom:
+          settings.maximumZoom,
+      });
+
+    const hybridLabels =
+      leaflet.esri.Static
+        .staticBasemapTileLayer(
+          settings.labelsStyle,
+          {
+            token:
+              key,
+            minZoom:
+              settings.minimumZoom,
+            maxZoom:
+              settings.maximumZoom,
+          }
+        );
+
     state.checkout.baseLayers.satellite =
-      leaflet.tileLayer(
-        satelliteUrl,
-        {
-          minZoom:
-            Number(
-              satelliteMeta.minzoom
-            ) || settings.minimumZoom,
-          maxZoom:
-            Number(
-              satelliteMeta.maxzoom
-            ) || settings.maximumZoom,
-          attribution:
-            satelliteMeta.attribution ||
-            settings.attribution,
-          tileSize: 512,
-          zoomOffset: -1,
-          detectRetina: false,
-          updateWhenIdle: true,
-          keepBuffer: 2,
-          crossOrigin: true,
-        }
-      );
+      satelliteImagery;
 
     state.checkout.baseLayers.hybrid =
-      leaflet.tileLayer(
-        hybridUrl,
-        {
-          minZoom:
-            Number(
-              hybridMeta.minzoom
-            ) || settings.minimumZoom,
-          maxZoom:
-            Number(
-              hybridMeta.maxzoom
-            ) || settings.maximumZoom,
-          attribution:
-            hybridMeta.attribution ||
-            settings.attribution,
-          tileSize: 512,
-          zoomOffset: -1,
-          detectRetina: false,
-          updateWhenIdle: true,
-          keepBuffer: 2,
-          crossOrigin: true,
-        }
-      );
+      leaflet.layerGroup([
+        hybridImagery,
+        hybridLabels,
+      ]);
 
     state.checkout.satelliteEnabled =
       true;
@@ -1785,7 +1747,7 @@ async function configureOptionalSatelliteLayers(
     updateMapLayerButtons();
   } catch (error) {
     console.warn(
-      "Satellite map layers are unavailable:",
+      "Esri satellite map layers are unavailable:",
       error
     );
 
@@ -1822,7 +1784,7 @@ function handleMapLayerSwitch(event) {
         type: "info",
         title: "Satellite setup required",
         message:
-          "Add MAPTILER_PUBLIC_KEY in Vercel to enable Satellite and Satellite + Labels.",
+          "Add ARCGIS_API_KEY in Vercel to enable Esri Satellite and Satellite + Labels.",
       });
     }
 
@@ -1898,6 +1860,152 @@ function updateMapLayerButtons() {
       String(active)
     );
   });
+}
+
+
+function loadEsriLeafletLibraries() {
+  const leaflet =
+    window.L;
+
+  if (
+    leaflet?.esri?.tiledMapLayer &&
+    leaflet?.esri?.Static
+      ?.staticBasemapTileLayer
+  ) {
+    return Promise.resolve(
+      leaflet.esri
+    );
+  }
+
+  if (esriLeafletLoadPromise) {
+    return esriLeafletLoadPromise;
+  }
+
+  esriLeafletLoadPromise =
+    (async () => {
+      const settings =
+        OPENSTREETMAP_CONFIG.esri;
+
+      await loadMapScript(
+        settings.coreScriptUrl,
+        "ssupertea-esri-leaflet",
+        () =>
+          Boolean(
+            window.L?.esri
+              ?.tiledMapLayer
+          )
+      );
+
+      await loadMapScript(
+        settings.staticBasemapScriptUrl,
+        "ssupertea-esri-static",
+        () =>
+          Boolean(
+            window.L?.esri?.Static
+              ?.staticBasemapTileLayer
+          )
+      );
+
+      return window.L.esri;
+    })().catch((error) => {
+      esriLeafletLoadPromise = null;
+      throw error;
+    });
+
+  return esriLeafletLoadPromise;
+}
+
+function loadMapScript(
+  src,
+  marker,
+  isReady
+) {
+  if (isReady()) {
+    return Promise.resolve();
+  }
+
+  return new Promise(
+    (resolve, reject) => {
+      let script =
+        document.querySelector(
+          `script[data-${marker}="true"]`
+        );
+
+      const handleLoad = () => {
+        if (isReady()) {
+          resolve();
+          return;
+        }
+
+        reject(
+          new Error(
+            "MAP_LIBRARY_UNAVAILABLE"
+          )
+        );
+      };
+
+      const handleError = () => {
+        script?.remove();
+
+        reject(
+          new Error(
+            "MAP_LIBRARY_LOAD_FAILED"
+          )
+        );
+      };
+
+      if (script) {
+        script.addEventListener(
+          "load",
+          handleLoad,
+          { once: true }
+        );
+
+        script.addEventListener(
+          "error",
+          handleError,
+          { once: true }
+        );
+
+        return;
+      }
+
+      script =
+        document.createElement(
+          "script"
+        );
+
+      script.src =
+        src;
+
+      script.crossOrigin =
+        "anonymous";
+
+      script.defer =
+        true;
+
+      script.setAttribute(
+        `data-${marker}`,
+        "true"
+      );
+
+      script.addEventListener(
+        "load",
+        handleLoad,
+        { once: true }
+      );
+
+      script.addEventListener(
+        "error",
+        handleError,
+        { once: true }
+      );
+
+      document.head.append(
+        script
+      );
+    }
+  );
 }
 
 function loadLeafletLibrary() {

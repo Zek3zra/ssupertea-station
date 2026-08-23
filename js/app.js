@@ -1744,6 +1744,10 @@ async function configureOptionalSatelliteLayers(
     state.checkout.satelliteEnabled =
       true;
 
+    applyMapLayerZoomLimit(
+      state.checkout.currentBaseLayer
+    );
+
     updateMapLayerButtons();
   } catch (error) {
     console.warn(
@@ -1821,7 +1825,37 @@ function handleMapLayerSwitch(event) {
   state.checkout.currentBaseLayer =
     layerName;
 
+  applyMapLayerZoomLimit(
+    layerName
+  );
+
   updateMapLayerButtons();
+}
+
+function applyMapLayerZoomLimit(
+  layerName
+) {
+  const map =
+    state.checkout.map;
+
+  if (!map) {
+    return;
+  }
+
+  const maxZoom =
+    layerName === "street"
+      ? OPENSTREETMAP_CONFIG.tiles
+          .maximumZoom
+      : OPENSTREETMAP_CONFIG.esri
+          .maximumZoom;
+
+  map.setMaxZoom(maxZoom);
+
+  if (map.getZoom() > maxZoom) {
+    map.setZoom(maxZoom, {
+      animate: true,
+    });
+  }
 }
 
 function updateMapLayerButtons() {
@@ -2551,15 +2585,41 @@ function drawDeliveryRoute(payload) {
     return;
   }
 
-  state.checkout.routeLayer = leaflet
-    .geoJSON(feature, {
+  // Draw a white route casing underneath a vivid blue route line.
+  // The casing keeps the route visible on both Street and satellite imagery.
+  const routeOutline = leaflet.geoJSON(
+    feature,
+    {
       style: {
-        color: "#0e5b3b",
-        weight: 5,
-        opacity: 0.84,
+        color: "#ffffff",
+        weight: 10,
+        opacity: 0.96,
+        lineCap: "round",
+        lineJoin: "round",
       },
-    })
-    .addTo(map);
+    }
+  );
+
+  const routeLine = leaflet.geoJSON(
+    feature,
+    {
+      style: {
+        color: "#1473e6",
+        weight: 6,
+        opacity: 1,
+        lineCap: "round",
+        lineJoin: "round",
+      },
+    }
+  );
+
+  state.checkout.routeLayer =
+    leaflet
+      .featureGroup([
+        routeOutline,
+        routeLine,
+      ])
+      .addTo(map);
 
   const shopLatitude = Number(payload.shop?.latitude);
   const shopLongitude = Number(payload.shop?.longitude);

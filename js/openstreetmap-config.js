@@ -47,8 +47,11 @@ export const OPENSTREETMAP_CONFIG = Object.freeze({
       "arcgis/imagery/labels",
     minimumZoom:
       1,
+    // At the shop area, World Imagery becomes unavailable/blank at the
+    // next Leaflet zoom step. Stop at 18 so customers always see real
+    // imagery instead of the gray background with only reference labels.
     maximumZoom:
-      20,
+      18,
   }),
 
   defaultView: Object.freeze({

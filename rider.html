@@ -2,13 +2,17 @@
 <html lang="en-PH">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0E5B3B">
   <meta name="robots" content="noindex, nofollow">
-  <title>Ssupertea Station | Rider workspace</title>
+  <title>Ssupertea Station | Rider Mode</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/staff.css">
+  <style>
+    .staff-content.rider-dashboard{width:min(calc(100% - 28px),1080px);margin-top:28px;margin-bottom:72px}.rider-hero{padding:clamp(24px,5vw,42px);display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-radius:28px;background:var(--green-800);color:var(--white);box-shadow:0 20px 48px rgba(12,62,43,.12)}.rider-hero .eyebrow{color:var(--lime-500)}.rider-hero h1{margin-top:7px;font-size:clamp(2rem,6vw,3.5rem);letter-spacing:-.05em}.rider-hero-copy{margin-top:10px;max-width:60ch;color:rgba(255,255,255,.76);line-height:1.6}.rider-live-panel{min-width:min(100%,240px);padding:15px;display:grid;gap:8px;border:1px solid rgba(255,255,255,.18);border-radius:18px;background:rgba(255,255,255,.08)}.rider-live-line{display:flex;align-items:center;gap:8px;font-size:.76rem}.rider-live-dot{width:9px;height:9px;border-radius:50%;background:#d9a514;box-shadow:0 0 0 4px rgba(217,165,20,.15)}.rider-live-dot[data-state="live"]{background:#79c267;box-shadow:0 0 0 4px rgba(121,194,103,.16)}.rider-live-dot[data-state="offline"]{background:#d85c5c;box-shadow:0 0 0 4px rgba(216,92,92,.16)}.rider-live-panel small{color:rgba(255,255,255,.66);font-size:.68rem}.rider-refresh-button{min-height:40px;padding:0 13px;border:1px solid rgba(255,255,255,.2);border-radius:11px;background:var(--white);color:var(--green-800);font-size:.7rem;font-weight:850}.rider-refresh-button[aria-busy="true"]{opacity:.65;pointer-events:none}.rider-status-message{margin:14px 2px 0;padding:10px 13px;border-radius:12px;color:var(--ink-700);font-size:.72rem}.rider-status-message[data-type="success"]{background:var(--green-100);color:var(--green-800)}.rider-status-message[data-type="loading"]{background:rgba(255,255,255,.72)}.rider-status-message[data-type="error"]{border:1px solid rgba(172,55,55,.18);background:#fff1f1;color:#8a3030}.rider-stats{margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rider-stat-card{padding:17px 18px;display:grid;gap:3px;border:1px solid var(--border);border-radius:18px;background:var(--white)}.rider-stat-card span{color:var(--ink-700);font-size:.7rem;font-weight:800}.rider-stat-card strong{color:var(--green-950);font-size:1.65rem;letter-spacing:-.04em}.rider-stat-card small{color:var(--ink-500);font-size:.64rem}.rider-section{margin-top:14px;padding:16px;border:1px solid var(--border);border-radius:22px;background:rgba(255,255,255,.68)}.rider-section-header h2{color:var(--green-950);font-size:1.08rem}.rider-section-header p{margin-top:5px;color:var(--ink-500);font-size:.68rem;line-height:1.5}.rider-order-list{margin-top:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rider-empty-state{grid-column:1/-1;padding:26px 16px;border:1px dashed rgba(14,91,59,.18);border-radius:16px;color:var(--ink-500);font-size:.72rem;text-align:center}.rider-order-card{padding:16px;border:1px solid var(--border);border-top:3px solid #2f80b7;border-radius:18px;background:var(--white);box-shadow:0 8px 22px rgba(27,55,44,.055)}.rider-order-card.status-dispatched{border-top-color:#6457b2}.rider-order-card.status-completed{border-top-color:#4b9a64}.rider-order-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.rider-order-number{display:block;color:var(--green-950);font-size:.86rem}.rider-order-customer{display:block;margin-top:3px;color:var(--ink-700);font-size:.72rem;font-weight:750}.rider-status-pill{padding:6px 8px;border-radius:999px;background:#e9f4fb;color:#25658f;font-size:.59rem;font-weight:900;white-space:nowrap}.rider-status-pill.status-dispatched{background:#efecff;color:#51458e}.rider-status-pill.status-completed{background:var(--green-100);color:var(--green-800)}.rider-order-meta{margin-top:10px;display:flex;flex-wrap:wrap;gap:5px}.rider-meta-chip{padding:5px 7px;border-radius:999px;background:var(--cream-100);color:var(--ink-700);font-size:.59rem;font-weight:750}.rider-order-items,.rider-address-block,.rider-order-actions{margin-top:12px;padding-top:11px;border-top:1px solid var(--border)}.rider-section-label{display:block;margin-bottom:5px;color:var(--ink-500);font-size:.58rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.rider-order-items ul{display:grid;gap:7px}.rider-order-items li{display:grid;gap:2px;color:var(--green-950);font-size:.69rem}.rider-order-items li small{color:var(--ink-500);font-size:.59rem;line-height:1.4}.rider-address-block p{color:var(--green-950);font-size:.69rem;font-weight:750;line-height:1.5}.rider-map-link{margin-top:9px;min-height:38px;padding:0 11px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:11px;background:var(--white);color:var(--green-800);font-size:.65rem;font-weight:850}.rider-total-row{margin-top:12px;padding:10px 11px;display:flex;align-items:center;justify-content:space-between;border-radius:12px;background:var(--green-100)}.rider-total-row span{color:var(--green-800);font-size:.62rem}.rider-total-row strong{color:var(--green-950);font-size:.86rem}.rider-order-actions p{color:var(--ink-500);font-size:.64rem;line-height:1.5}.rider-action-button{width:100%;min-height:44px;margin-top:10px;border:0;border-radius:12px;background:var(--green-800);color:var(--white);font:inherit;font-size:.72rem;font-weight:900}.rider-action-button:disabled{opacity:.55}.rider-toast-region{position:fixed;right:18px;bottom:18px;z-index:120;display:grid;gap:8px;width:min(calc(100% - 36px),380px)}.rider-toast{padding:12px 14px;border:1px solid var(--border);border-radius:13px;background:var(--white);box-shadow:0 18px 45px rgba(14,55,39,.18);color:var(--ink-700);font-size:.7rem;line-height:1.45}.rider-toast.is-success{border-color:rgba(14,91,59,.2);background:#eff8f2;color:var(--green-800)}.rider-toast.is-error{border-color:rgba(172,55,55,.2);background:#fff1f1;color:#8a3030}@media(max-width:760px){.rider-hero{align-items:stretch;flex-direction:column}.rider-live-panel{min-width:0}.rider-order-list{grid-template-columns:1fr}.rider-stats{grid-template-columns:1fr 1fr}.staff-content.rider-dashboard{width:min(calc(100% - 20px),1080px);margin-top:16px}.staff-actions{gap:5px}.staff-role-pill{display:none}}@media(max-width:480px){.rider-stats{grid-template-columns:1fr}.staff-topbar{align-items:flex-start}.staff-brand small{max-width:20ch}.staff-action-link,.staff-signout-button{padding:0 9px;font-size:.62rem}}
+  </style>
   <script type="module" src="/js/staff-gate.js"></script>
+  <script type="module" src="/js/rider.js"></script>
 </head>
 <body class="staff-page" data-staff-permission="deliver">
   <div class="staff-gate" id="staff-gate">
@@ -26,7 +30,7 @@
       </a>
 
       <div class="staff-actions">
-        <span class="staff-role-pill" id="staff-role-label">Staff</span>
+        <span class="staff-role-pill" id="staff-role-label">Rider</span>
         <a class="staff-action-link" id="admin-mode-link" href="/admin.html">Admin</a>
         <a class="staff-action-link" id="rider-mode-link" href="/rider.html">Rider Mode</a>
         <button class="staff-signout-button" id="staff-signout-button" type="button">
@@ -35,28 +39,63 @@
       </div>
     </header>
 
-    <main class="staff-content">
-      <section class="staff-phase-card">
-        <p class="eyebrow">Backbone ready</p>
-        <h1>Rider workspace</h1>
-        <p>Your staff account can handle deliveries. Live GPS transmission, delivery assignment, and rider navigation will be added in the rider phase.</p>
+    <main class="staff-content rider-dashboard" id="rider-dashboard">
+      <section class="rider-hero">
+        <div>
+          <p class="eyebrow">Phase 8 Rider Mode</p>
+          <h1>My deliveries</h1>
+          <p class="rider-hero-copy">
+            See only deliveries assigned to your rider account. Start a delivery when leaving the shop, then complete it after the customer receives the order.
+          </p>
+        </div>
+
+        <div class="rider-live-panel">
+          <div class="rider-live-line">
+            <span class="rider-live-dot" id="rider-live-dot" data-state="connecting" aria-hidden="true"></span>
+            <strong id="rider-live-label">Connecting live updates…</strong>
+          </div>
+          <small id="rider-last-updated">Waiting for first refresh</small>
+          <button class="rider-refresh-button" id="rider-refresh-button" type="button">
+            Refresh deliveries
+          </button>
+        </div>
       </section>
 
-      <div class="staff-next-grid">
-        <article class="staff-next-card">
-          <h2>Account routing</h2>
-          <p>Authorized staff accounts are routed away from the customer storefront immediately after sign-in.</p>
-        </article>
-        <article class="staff-next-card">
-          <h2>Permission based</h2>
-          <p>Store Admin, Rider, and Store Admin + Rider are separate permission combinations.</p>
-        </article>
-        <article class="staff-next-card">
-          <h2>Next phase</h2>
-          <p>The live order-management and rider-delivery interfaces will be built on this protected shell.</p>
-        </article>
+      <div class="rider-status-message" id="rider-status-message" data-type="loading" role="status" aria-live="polite">
+        Loading assigned deliveries…
       </div>
+
+      <section class="rider-stats" aria-label="Delivery summary">
+        <article class="rider-stat-card">
+          <span>Ready to start</span>
+          <strong id="rider-stat-ready">0</strong>
+          <small>Assigned deliveries still at the shop</small>
+        </article>
+        <article class="rider-stat-card">
+          <span>Out for delivery</span>
+          <strong id="rider-stat-active">0</strong>
+          <small>Deliveries currently in progress</small>
+        </article>
+      </section>
+
+      <section class="rider-section">
+        <div class="rider-section-header">
+          <h2>Assigned deliveries</h2>
+          <p>Only orders assigned to your authenticated rider account appear here.</p>
+        </div>
+        <div class="rider-order-list" id="rider-assigned-list"></div>
+      </section>
+
+      <section class="rider-section">
+        <div class="rider-section-header">
+          <h2>Recently completed</h2>
+          <p>Your latest completed assigned deliveries are kept here for quick reference.</p>
+        </div>
+        <div class="rider-order-list" id="rider-recent-list"></div>
+      </section>
     </main>
   </div>
+
+  <div class="rider-toast-region" id="rider-toast-region" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>

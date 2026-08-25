@@ -35,24 +35,18 @@ const ORDER_QUERY_COLUMNS = [
 const REFRESH_DEBOUNCE_MS = 180;
 const MAX_ORDERS_TO_LOAD = 100;
 
-const moneyFormatter = new Intl.NumberFormat(
-  "en-PH",
-  {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 2,
-  }
-);
+const moneyFormatter = new Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+  minimumFractionDigits: 2,
+});
 
-const dateTimeFormatter = new Intl.DateTimeFormat(
-  "en-PH",
-  {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }
-);
+const dateTimeFormatter = new Intl.DateTimeFormat("en-PH", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
 
 const state = {
   initialized: false,
@@ -69,31 +63,18 @@ const state = {
 
 const el = {};
 
-document.addEventListener(
-  "DOMContentLoaded",
-  initializeAdminModule
-);
+document.addEventListener("DOMContentLoaded", initializeAdminModule);
 
 function initializeAdminModule() {
   cacheElements();
   bindEvents();
 
-  window.addEventListener(
-    "ssupertea:staff-ready",
-    () => {
-      startAdminDashboard().catch(
-        handleInitializationError
-      );
-    }
-  );
+  window.addEventListener("ssupertea:staff-ready", () => {
+    startAdminDashboard().catch(handleInitializationError);
+  });
 
-  if (
-    document.body.dataset.staffReady ===
-    "true"
-  ) {
-    startAdminDashboard().catch(
-      handleInitializationError
-    );
+  if (document.body.dataset.staffReady === "true") {
+    startAdminDashboard().catch(handleInitializationError);
   }
 }
 
@@ -125,18 +106,20 @@ function cacheElements() {
 }
 
 function bindEvents() {
-  el["admin-refresh-button"]
-    ?.addEventListener(
-      "click",
-      () => refreshDashboard()
-    );
+  el["admin-refresh-button"]?.addEventListener("click", () => {
+    refreshDashboard();
+  });
 
-  document
-    .getElementById("admin-dashboard")
-    ?.addEventListener(
-      "click",
-      handleDashboardClick
-    );
+  document.getElementById("admin-dashboard")?.addEventListener(
+    "click",
+    handleDashboardClick
+  );
+
+  window.addEventListener("focus", () => {
+    if (state.initialized) {
+      refreshDashboard({ silent: true });
+    }
+  });
 }
 
 async function startAdminDashboard() {
@@ -145,29 +128,19 @@ async function startAdminDashboard() {
   }
 
   state.initialized = true;
-  setStatus(
-    "Loading live orders…",
-    "loading"
-  );
+  setStatus("Loading live orders…", "loading");
 
-  const session =
-    await getVerifiedAccountSession({
-      forceRefresh: true,
-    });
+  const session = await getVerifiedAccountSession({
+    forceRefresh: true,
+  });
 
   if (!session) {
-    window.location.replace(
-      "/?auth=login"
-    );
+    window.location.replace("/?auth=login");
     return;
   }
 
-  const {
-    data: permissions,
-    error: permissionError,
-  } = await customerSupabase.rpc(
-    "get_my_staff_permissions"
-  );
+  const { data: permissions, error: permissionError } =
+    await customerSupabase.rpc("get_my_staff_permissions");
 
   if (
     permissionError ||
@@ -181,104 +154,65 @@ async function startAdminDashboard() {
   state.session = session;
   state.permissions = permissions;
 
-  await refreshDashboard({
-    silent: true,
-  });
-
+  await refreshDashboard({ silent: true });
   subscribeToRealtime();
   startRelativeTimeUpdates();
 }
 
-async function refreshDashboard({
-  silent = false,
-} = {}) {
+async function refreshDashboard({ silent = false } = {}) {
   if (!state.session) {
     return;
   }
 
   if (!silent) {
-    setStatus(
-      "Refreshing orders…",
-      "loading"
-    );
+    setStatus("Refreshing orders…", "loading");
   }
 
-  el["admin-refresh-button"]?.setAttribute(
-    "aria-busy",
-    "true"
-  );
+  el["admin-refresh-button"]?.setAttribute("aria-busy", "true");
 
   try {
-    const [
-      ordersResult,
-      assignmentsResult,
-      ridersResult,
-    ] = await Promise.all([
+    const [ordersResult, assignmentsResult, ridersResult] = await Promise.all([
       customerSupabase
         .from("orders")
         .select(ORDER_QUERY_COLUMNS)
-        .order("created_at", {
-          ascending: false,
-        })
+        .order("created_at", { ascending: false })
         .limit(MAX_ORDERS_TO_LOAD),
       customerSupabase
         .from("order_delivery_assignments")
-        .select(
-          "order_id,rider_user_id,assigned_by,assigned_at"
-        ),
-      customerSupabase.rpc(
-        "admin_list_delivery_staff"
-      ),
+        .select("order_id,rider_user_id,assigned_by,assigned_at"),
+      customerSupabase.rpc("admin_list_delivery_staff"),
     ]);
 
     const firstError =
-      ordersResult.error ||
-      assignmentsResult.error ||
-      ridersResult.error;
+      ordersResult.error || assignmentsResult.error || ridersResult.error;
 
     if (firstError) {
       throw firstError;
     }
 
-    state.orders =
-      Array.isArray(ordersResult.data)
-        ? ordersResult.data
-        : [];
+    state.orders = Array.isArray(ordersResult.data)
+      ? ordersResult.data
+      : [];
 
     state.assignments = new Map(
-      (assignmentsResult.data || []).map(
-        (assignment) => [
-          assignment.order_id,
-          assignment,
-        ]
-      )
+      (assignmentsResult.data || []).map((assignment) => [
+        assignment.order_id,
+        assignment,
+      ])
     );
 
-    state.riders =
-      Array.isArray(ridersResult.data)
-        ? ridersResult.data
-        : [];
+    state.riders = Array.isArray(ridersResult.data)
+      ? ridersResult.data
+      : [];
 
     renderDashboard();
-    setStatus(
-      "Live order dashboard is up to date.",
-      "success"
-    );
+    setStatus("Live order dashboard is up to date.", "success");
     updateLastUpdated();
   } catch (error) {
-    console.error(
-      "Unable to load the admin dashboard:",
-      error
-    );
-
-    setStatus(
-      getSetupAwareErrorMessage(error),
-      "error"
-    );
+    console.error("Unable to load the admin dashboard:", error);
+    setStatus(getSetupAwareErrorMessage(error), "error");
   } finally {
-    el["admin-refresh-button"]?.removeAttribute(
-      "aria-busy"
-    );
+    el["admin-refresh-button"]?.removeAttribute("aria-busy");
   }
 }
 
@@ -304,52 +238,21 @@ function renderDashboard() {
       continue;
     }
 
-    if (
-      TERMINAL_STATUSES.has(order.status) &&
-      recent.length < 12
-    ) {
+    if (TERMINAL_STATUSES.has(order.status) && recent.length < 12) {
       recent.push(order);
     }
   }
 
-  const activeCount =
-    pending.length +
-    preparing.length +
-    dispatched.length;
+  const activeCount = pending.length + preparing.length + dispatched.length;
 
-  setText(
-    el["admin-stat-pending"],
-    String(pending.length)
-  );
-  setText(
-    el["admin-stat-preparing"],
-    String(preparing.length)
-  );
-  setText(
-    el["admin-stat-dispatched"],
-    String(dispatched.length)
-  );
-  setText(
-    el["admin-stat-active"],
-    String(activeCount)
-  );
-
-  setText(
-    el["admin-pending-count"],
-    String(pending.length)
-  );
-  setText(
-    el["admin-preparing-count"],
-    String(preparing.length)
-  );
-  setText(
-    el["admin-dispatched-count"],
-    String(dispatched.length)
-  );
-  setText(
-    el["admin-recent-count"],
-    String(recent.length)
-  );
+  setText(el["admin-stat-pending"], String(pending.length));
+  setText(el["admin-stat-preparing"], String(preparing.length));
+  setText(el["admin-stat-dispatched"], String(dispatched.length));
+  setText(el["admin-stat-active"], String(activeCount));
+  setText(el["admin-pending-count"], String(pending.length));
+  setText(el["admin-preparing-count"], String(preparing.length));
+  setText(el["admin-dispatched-count"], String(dispatched.length));
+  setText(el["admin-recent-count"], String(recent.length));
 
   renderOrderList(
     el["admin-pending-list"],
@@ -366,7 +269,7 @@ function renderDashboard() {
   renderOrderList(
     el["admin-dispatched-list"],
     dispatched,
-    "No delivery is currently in progress."
+    "No delivery or ready pickup is currently active."
   );
 
   renderOrderList(
@@ -376,11 +279,7 @@ function renderDashboard() {
   );
 }
 
-function renderOrderList(
-  container,
-  orders,
-  emptyMessage
-) {
+function renderOrderList(container, orders, emptyMessage) {
   if (!container) {
     return;
   }
@@ -395,13 +294,10 @@ function renderOrderList(
     return;
   }
 
-  const fragment =
-    document.createDocumentFragment();
+  const fragment = document.createDocumentFragment();
 
   for (const order of orders) {
-    fragment.append(
-      createOrderCard(order)
-    );
+    fragment.append(createOrderCard(order));
   }
 
   container.append(fragment);
@@ -409,8 +305,7 @@ function renderOrderList(
 
 function createOrderCard(order) {
   const card = document.createElement("article");
-  card.className =
-    `admin-order-card status-${order.status}`;
+  card.className = `admin-order-card status-${order.status}`;
   card.dataset.orderId = order.id;
 
   const header = document.createElement("div");
@@ -420,75 +315,45 @@ function createOrderCard(order) {
 
   const orderNumber = document.createElement("strong");
   orderNumber.className = "admin-order-number";
-  orderNumber.textContent = formatOrderNumber(
-    order.id
-  );
+  orderNumber.textContent = formatOrderNumber(order.id);
 
   const customer = document.createElement("span");
   customer.className = "admin-order-customer";
-  customer.textContent =
-    order.customer_name || "Customer";
+  customer.textContent = order.customer_name || "Customer";
 
-  headingGroup.append(
-    orderNumber,
-    customer
-  );
+  headingGroup.append(orderNumber, customer);
 
   const status = document.createElement("span");
-  status.className =
-    `admin-status-pill status-${order.status}`;
-  status.textContent = getStatusLabel(
-    order.status,
-    order.order_type
-  );
+  status.className = `admin-status-pill status-${order.status}`;
+  status.textContent = getStatusLabel(order.status, order.order_type);
 
-  header.append(
-    headingGroup,
-    status
-  );
+  header.append(headingGroup, status);
 
   const meta = document.createElement("div");
   meta.className = "admin-order-meta";
   meta.append(
-    makeChip(
-      order.order_type === "delivery"
-        ? "Delivery"
-        : "Pickup"
-    ),
+    makeChip(order.order_type === "delivery" ? "Delivery" : "Pickup"),
     makeChip(
       formatRelativeTime(order.created_at),
       "relative-time",
       order.created_at
     ),
-    makeChip(
-      formatDateTime(order.created_at)
-    )
+    makeChip(formatDateTime(order.created_at))
   );
-
-  const items = createItemsBlock(order.items);
-  const totals = createTotalsBlock(order);
 
   card.append(
     header,
     meta,
-    items,
-    totals
+    createItemsBlock(order.items),
+    createTotalsBlock(order)
   );
 
   if (order.order_type === "delivery") {
-    card.append(
-      createDeliveryBlock(order)
-    );
+    card.append(createDeliveryBlock(order));
   }
 
-  const assignment =
-    state.assignments.get(order.id) || null;
-
-  const actionArea =
-    createActionArea(
-      order,
-      assignment
-    );
+  const assignment = state.assignments.get(order.id) || null;
+  const actionArea = createActionArea(order, assignment);
 
   if (actionArea) {
     card.append(actionArea);
@@ -506,10 +371,7 @@ function createItemsBlock(itemsValue) {
   title.textContent = "Order items";
 
   const list = document.createElement("ul");
-
-  const items = Array.isArray(itemsValue)
-    ? itemsValue
-    : [];
+  const items = Array.isArray(itemsValue) ? itemsValue : [];
 
   if (!items.length) {
     const item = document.createElement("li");
@@ -521,15 +383,10 @@ function createItemsBlock(itemsValue) {
     const row = document.createElement("li");
 
     const main = document.createElement("span");
-    const quantity = normalizeQuantity(
-      item?.quantity
-    );
-    const name = getItemName(item);
-    main.textContent = `${quantity}× ${name}`;
+    main.textContent = `${normalizeQuantity(item?.quantity)}× ${getItemName(item)}`;
 
     const detail = document.createElement("small");
-    detail.textContent =
-      getItemDetails(item) || "Customized order";
+    detail.textContent = getItemDetails(item) || "Customized order";
 
     row.append(main, detail);
     list.append(row);
@@ -550,8 +407,7 @@ function createTotalsBlock(order) {
       : "Order total";
 
   const total = document.createElement("strong");
-  total.textContent =
-    formatMoney(order.total_price);
+  total.textContent = formatMoney(order.total_price);
 
   wrapper.append(left, total);
   return wrapper;
@@ -568,9 +424,7 @@ function createDeliveryBlock(order) {
   label.textContent = "Delivery address";
 
   const address = document.createElement("p");
-  address.textContent =
-    order.delivery_address ||
-    "Delivery address unavailable";
+  address.textContent = order.delivery_address || "Delivery address unavailable";
 
   const route = document.createElement("small");
   route.textContent = getRouteSummary(order);
@@ -593,10 +447,7 @@ function createDeliveryBlock(order) {
   return wrapper;
 }
 
-function createActionArea(
-  order,
-  assignment
-) {
+function createActionArea(order, assignment) {
   if (!ACTIVE_STATUSES.has(order.status)) {
     return null;
   }
@@ -609,54 +460,74 @@ function createActionArea(
     copy.textContent =
       "Confirm when the store has accepted this order. Customer cancellation locks immediately.";
 
-    const button = createActionButton({
-      label: "Confirm order",
-      action: "confirm",
-      orderId: order.id,
-      primary: true,
-    });
+    wrapper.append(
+      copy,
+      createActionButton({
+        label: "Confirm order",
+        action: "confirm",
+        orderId: order.id,
+        primary: true,
+      })
+    );
 
-    wrapper.append(copy, button);
     return wrapper;
   }
 
   if (order.status === "preparing") {
-    if (order.order_type !== "delivery") {
-      const note = document.createElement("p");
-      note.textContent =
-        "Pickup order. No rider assignment is required.";
-      wrapper.append(note);
+    if (order.order_type === "pickup") {
+      const copy = document.createElement("p");
+      copy.textContent =
+        "Mark this pickup ready only after the complete order is prepared for collection.";
+
+      wrapper.append(
+        copy,
+        createActionButton({
+          label: "Ready for pickup",
+          action: "pickup-ready",
+          orderId: order.id,
+          primary: true,
+        })
+      );
+
       return wrapper;
     }
 
+    wrapper.append(createRiderAssignmentPanel(order, assignment));
+    return wrapper;
+  }
+
+  if (order.order_type === "pickup") {
+    const copy = document.createElement("p");
+    copy.textContent =
+      "The pickup is ready. Complete it only after the customer has received the order.";
+
     wrapper.append(
-      createRiderAssignmentPanel(
-        order,
-        assignment
-      )
+      copy,
+      createActionButton({
+        label: "Complete pickup",
+        action: "pickup-complete",
+        orderId: order.id,
+        primary: true,
+      })
     );
+
     return wrapper;
   }
 
   const rider = assignment
-    ? getRiderById(
-        assignment.rider_user_id
-      )
+    ? getRiderById(assignment.rider_user_id)
     : null;
 
   const note = document.createElement("p");
   note.textContent = rider
-    ? `Assigned to ${getRiderDisplayName(rider)}. Rider delivery controls arrive in Phase 8.`
-    : "Delivery is in progress. Rider delivery controls arrive in Phase 8.";
+    ? `Assigned to ${getRiderDisplayName(rider)}. The rider can complete this order from Rider Mode.`
+    : "Delivery is in progress. No current rider assignment was found.";
 
   wrapper.append(note);
   return wrapper;
 }
 
-function createRiderAssignmentPanel(
-  order,
-  assignment
-) {
+function createRiderAssignmentPanel(order, assignment) {
   const panel = document.createElement("div");
   panel.className = "admin-rider-panel";
 
@@ -669,19 +540,14 @@ function createRiderAssignmentPanel(
 
   const currentValue = document.createElement("strong");
   const assignedRider = assignment
-    ? getRiderById(
-        assignment.rider_user_id
-      )
+    ? getRiderById(assignment.rider_user_id)
     : null;
 
   currentValue.textContent = assignedRider
     ? getRiderDisplayName(assignedRider)
     : "Not assigned";
 
-  current.append(
-    currentLabel,
-    currentValue
-  );
+  current.append(currentLabel, currentValue);
 
   const controls = document.createElement("div");
   controls.className = "admin-rider-controls";
@@ -696,80 +562,57 @@ function createRiderAssignmentPanel(
 
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent =
-    state.riders.length
-      ? "Choose rider"
-      : "No active riders";
+  placeholder.textContent = state.riders.length
+    ? "Choose rider"
+    : "No active riders";
   select.append(placeholder);
 
   for (const rider of state.riders) {
     const option = document.createElement("option");
     option.value = rider.user_id;
     option.textContent =
-      getRiderDisplayName(rider) +
-      (rider.is_current_user
-        ? " (you)"
-        : "");
+      getRiderDisplayName(rider) + (rider.is_current_user ? " (you)" : "");
 
-    if (
-      assignment?.rider_user_id ===
-      rider.user_id
-    ) {
+    if (assignment?.rider_user_id === rider.user_id) {
       option.selected = true;
     }
 
     select.append(option);
   }
 
-  const assignButton =
-    createActionButton({
-      label: assignment
-        ? "Update rider"
-        : "Assign rider",
-      action: "assign",
-      orderId: order.id,
-      primary: true,
-    });
+  const assignButton = createActionButton({
+    label: assignment ? "Update rider" : "Assign rider",
+    action: "assign",
+    orderId: order.id,
+    primary: true,
+  });
 
   if (!state.riders.length) {
     select.disabled = true;
     assignButton.disabled = true;
   }
 
-  controls.append(
-    select,
-    assignButton
-  );
+  controls.append(select, assignButton);
 
   if (
-    state.permissions
-      ?.can_deliver_orders === true &&
+    state.permissions?.can_deliver_orders === true &&
     state.session?.user?.id
   ) {
-    const assignMe = createActionButton({
-      label: "Assign to me",
-      action: "assign-me",
-      orderId: order.id,
-      primary: false,
-    });
-
-    controls.append(assignMe);
+    controls.append(
+      createActionButton({
+        label: "Assign to me",
+        action: "assign-me",
+        orderId: order.id,
+        primary: false,
+      })
+    );
   }
 
-  panel.append(
-    current,
-    controls
-  );
-
+  panel.append(current, controls);
   return panel;
 }
 
-function createActionButton({
-  label,
-  action,
-  orderId,
-  primary,
-}) {
+function createActionButton({ label, action, orderId, primary }) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = primary
@@ -787,24 +630,16 @@ function createActionButton({
 }
 
 async function handleDashboardClick(event) {
-  const button = event.target.closest(
-    "[data-admin-action]"
-  );
+  const button = event.target.closest("[data-admin-action]");
 
   if (!button) {
     return;
   }
 
-  const action =
-    button.dataset.adminAction;
-  const orderId =
-    button.dataset.orderId;
+  const action = button.dataset.adminAction;
+  const orderId = button.dataset.orderId;
 
-  if (!orderId || !action) {
-    return;
-  }
-
-  if (state.busyOrders.has(orderId)) {
+  if (!orderId || !action || state.busyOrders.has(orderId)) {
     return;
   }
 
@@ -812,24 +647,42 @@ async function handleDashboardClick(event) {
     setOrderBusy(orderId, true);
 
     if (action === "confirm") {
-      await confirmOrder(orderId);
+      await runOrderRpc("admin_confirm_order", orderId);
+      showToast(`${formatOrderNumber(orderId)} confirmed.`, "success");
+      await refreshDashboard({ silent: true });
+      return;
+    }
+
+    if (action === "pickup-ready") {
+      await runOrderRpc("admin_mark_pickup_ready", orderId);
+      showToast(`${formatOrderNumber(orderId)} is ready for pickup.`, "success");
+      await refreshDashboard({ silent: true });
+      return;
+    }
+
+    if (action === "pickup-complete") {
+      const confirmed = window.confirm(
+        `Complete ${formatOrderNumber(orderId)} after the customer has collected it?`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      await runOrderRpc("admin_complete_pickup_order", orderId);
+      showToast(`${formatOrderNumber(orderId)} pickup completed.`, "success");
+      await refreshDashboard({ silent: true });
       return;
     }
 
     if (action === "assign-me") {
-      const userId =
-        state.session?.user?.id;
+      const userId = state.session?.user?.id;
 
       if (!userId) {
-        throw new Error(
-          "Your staff session is unavailable."
-        );
+        throw new Error("Your staff session is unavailable.");
       }
 
-      await assignRider(
-        orderId,
-        userId
-      );
+      await assignRider(orderId, userId);
       return;
     }
 
@@ -838,93 +691,48 @@ async function handleDashboardClick(event) {
         `[data-rider-select="${cssEscape(orderId)}"]`
       );
 
-      const riderUserId =
-        String(select?.value || "").trim();
+      const riderUserId = String(select?.value || "").trim();
 
       if (!riderUserId) {
-        showToast(
-          "Choose a rider first.",
-          "error"
-        );
+        showToast("Choose a rider first.", "error");
         return;
       }
 
-      await assignRider(
-        orderId,
-        riderUserId
-      );
+      await assignRider(orderId, riderUserId);
     }
   } catch (error) {
-    console.error(
-      "Admin order action failed:",
-      error
-    );
-
+    console.error("Admin order action failed:", error);
     showToast(
-      error?.message ||
-      "The order could not be updated.",
+      error?.message || "The order could not be updated.",
       "error"
     );
-
-    await refreshDashboard({
-      silent: true,
-    });
+    await refreshDashboard({ silent: true });
   } finally {
     setOrderBusy(orderId, false);
   }
 }
 
-async function confirmOrder(orderId) {
-  const {
-    error,
-  } = await customerSupabase.rpc(
-    "admin_confirm_order",
-    {
-      p_order_id: orderId,
-    }
-  );
+async function runOrderRpc(functionName, orderId) {
+  const { error } = await customerSupabase.rpc(functionName, {
+    p_order_id: orderId,
+  });
 
   if (error) {
-    throw new Error(
-      error.message ||
-      "This order could not be confirmed."
-    );
+    throw new Error(error.message || "The order could not be updated.");
   }
-
-  showToast(
-    `${formatOrderNumber(orderId)} confirmed.`,
-    "success"
-  );
-
-  await refreshDashboard({
-    silent: true,
-  });
 }
 
-async function assignRider(
-  orderId,
-  riderUserId
-) {
-  const {
-    error,
-  } = await customerSupabase.rpc(
-    "admin_assign_rider",
-    {
-      p_order_id: orderId,
-      p_rider_user_id: riderUserId,
-    }
-  );
+async function assignRider(orderId, riderUserId) {
+  const { error } = await customerSupabase.rpc("admin_assign_rider", {
+    p_order_id: orderId,
+    p_rider_user_id: riderUserId,
+  });
 
   if (error) {
-    throw new Error(
-      error.message ||
-      "The rider could not be assigned."
-    );
+    throw new Error(error.message || "The rider could not be assigned.");
   }
 
-  const rider = getRiderById(
-    riderUserId
-  );
+  const rider = getRiderById(riderUserId);
 
   showToast(
     rider
@@ -933,41 +741,32 @@ async function assignRider(
     "success"
   );
 
-  await refreshDashboard({
-    silent: true,
-  });
+  await refreshDashboard({ silent: true });
 }
 
-function setOrderBusy(
-  orderId,
-  busy
-) {
+function setOrderBusy(orderId, busy) {
   if (busy) {
     state.busyOrders.add(orderId);
   } else {
     state.busyOrders.delete(orderId);
   }
 
-  for (
-    const button of document.querySelectorAll(
-      `[data-order-id="${cssEscape(orderId)}"] [data-admin-action]`
-    )
-  ) {
+  for (const button of document.querySelectorAll(
+    `[data-order-id="${cssEscape(orderId)}"] [data-admin-action]`
+  )) {
     button.disabled = busy;
   }
 }
 
 function subscribeToRealtime() {
   if (state.channel) {
-    customerSupabase.removeChannel(
-      state.channel
-    );
+    customerSupabase.removeChannel(state.channel);
   }
 
   setLiveState("connecting");
 
   state.channel = customerSupabase
-    .channel("ssupertea-admin-orders-v1")
+    .channel("ssupertea-admin-orders-v2")
     .on(
       "postgres_changes",
       {
@@ -982,8 +781,7 @@ function subscribeToRealtime() {
       {
         event: "*",
         schema: "public",
-        table:
-          "order_delivery_assignments",
+        table: "order_delivery_assignments",
       },
       () => scheduleRealtimeRefresh()
     )
@@ -1005,8 +803,7 @@ function subscribeToRealtime() {
 
 function handleOrderRealtimeChange(payload) {
   const isNewPendingOrder =
-    payload?.eventType === "INSERT" &&
-    payload?.new?.status === "pending";
+    payload?.eventType === "INSERT" && payload?.new?.status === "pending";
 
   if (isNewPendingOrder) {
     showToast(
@@ -1019,19 +816,10 @@ function handleOrderRealtimeChange(payload) {
 }
 
 function scheduleRealtimeRefresh() {
-  window.clearTimeout(
-    state.refreshTimer
-  );
-
-  state.refreshTimer =
-    window.setTimeout(
-      () => {
-        refreshDashboard({
-          silent: true,
-        });
-      },
-      REFRESH_DEBOUNCE_MS
-    );
+  window.clearTimeout(state.refreshTimer);
+  state.refreshTimer = window.setTimeout(() => {
+    refreshDashboard({ silent: true });
+  }, REFRESH_DEBOUNCE_MS);
 }
 
 function setLiveState(value) {
@@ -1046,53 +834,30 @@ function setLiveState(value) {
     return;
   }
 
-  if (value === "live") {
-    label.textContent = "Live updates connected";
-    return;
-  }
-
-  if (value === "connecting") {
-    label.textContent = "Connecting live updates…";
-    return;
-  }
-
   label.textContent =
-    "Live updates disconnected";
+    value === "live"
+      ? "Live updates connected"
+      : value === "connecting"
+        ? "Connecting live updates…"
+        : "Live updates disconnected";
 }
 
 function startRelativeTimeUpdates() {
-  window.clearInterval(
-    state.relativeTimeTimer
-  );
-
-  state.relativeTimeTimer =
-    window.setInterval(
-      updateRelativeTimeLabels,
-      30_000
-    );
+  window.clearInterval(state.relativeTimeTimer);
+  state.relativeTimeTimer = window.setInterval(updateRelativeTimeLabels, 30_000);
 }
 
 function updateRelativeTimeLabels() {
-  for (
-    const node of document.querySelectorAll(
-      ".relative-time[data-created-at]"
-    )
-  ) {
-    node.textContent =
-      formatRelativeTime(
-        node.dataset.createdAt
-      );
+  for (const node of document.querySelectorAll(
+    ".relative-time[data-created-at]"
+  )) {
+    node.textContent = formatRelativeTime(node.dataset.createdAt);
   }
 }
 
-function makeChip(
-  text,
-  className = "",
-  createdAt = ""
-) {
+function makeChip(text, className = "", createdAt = "") {
   const chip = document.createElement("span");
-  chip.className =
-    `admin-meta-chip ${className}`.trim();
+  chip.className = `admin-meta-chip ${className}`.trim();
   chip.textContent = text;
 
   if (createdAt) {
@@ -1112,8 +877,7 @@ function getItemName(item) {
   ];
 
   for (const value of candidates) {
-    const normalized =
-      String(value || "").trim();
+    const normalized = String(value || "").trim();
 
     if (normalized) {
       return normalized;
@@ -1126,13 +890,11 @@ function getItemName(item) {
 function getItemDetails(item) {
   const details = [];
 
-  const optionValues = [
+  for (const value of [
     item?.size_label ?? item?.size,
     item?.sugar_label ?? item?.sugar_level ?? item?.sugar,
     item?.ice_label ?? item?.ice_level ?? item?.ice,
-  ];
-
-  for (const value of optionValues) {
+  ]) {
     const normalized = getOptionDisplayText(value);
 
     if (normalized) {
@@ -1146,34 +908,21 @@ function getItemDetails(item) {
       ? item.add_ons
       : [];
 
-  if (addons.length) {
-    const addonNames = addons
-      .map(getOptionDisplayText)
-      .filter(Boolean);
+  const addonNames = addons.map(getOptionDisplayText).filter(Boolean);
 
-    if (addonNames.length) {
-      details.push(
-        `Add-ons: ${addonNames.join(", ")}`
-      );
-    }
+  if (addonNames.length) {
+    details.push(`Add-ons: ${addonNames.join(", ")}`);
   }
 
   return details.join(" • ");
 }
 
 function getOptionDisplayText(value) {
-  if (
-    value === null ||
-    value === undefined ||
-    value === false
-  ) {
+  if (value === null || value === undefined || value === false) {
     return "";
   }
 
-  if (
-    typeof value === "string" ||
-    typeof value === "number"
-  ) {
+  if (typeof value === "string" || typeof value === "number") {
     return String(value).trim();
   }
 
@@ -1181,24 +930,18 @@ function getOptionDisplayText(value) {
     return "";
   }
 
-  const candidates = [
+  for (const candidate of [
     value.label,
     value.name,
     value.title,
     value.value,
     value.id,
-  ];
-
-  for (const candidate of candidates) {
-    if (
-      typeof candidate !== "string" &&
-      typeof candidate !== "number"
-    ) {
+  ]) {
+    if (typeof candidate !== "string" && typeof candidate !== "number") {
       continue;
     }
 
-    const normalized =
-      String(candidate).trim();
+    const normalized = String(candidate).trim();
 
     if (normalized) {
       return normalized;
@@ -1210,33 +953,23 @@ function getOptionDisplayText(value) {
 
 function normalizeQuantity(value) {
   const quantity = Number(value);
-
-  return Number.isFinite(quantity) &&
-    quantity > 0
+  return Number.isFinite(quantity) && quantity > 0
     ? Math.round(quantity)
     : 1;
 }
 
 function getRiderById(userId) {
-  return state.riders.find(
-    (rider) => rider.user_id === userId
-  ) || null;
+  return state.riders.find((rider) => rider.user_id === userId) || null;
 }
 
 function getRiderDisplayName(rider) {
-  const displayName = String(
-    rider?.display_name || ""
-  ).trim();
-
-  const email = String(
-    rider?.email || ""
-  ).trim();
+  const displayName = String(rider?.display_name || "").trim();
+  const email = String(rider?.email || "").trim();
 
   if (
     displayName &&
     email &&
-    displayName.toLowerCase() !==
-      email.toLowerCase()
+    displayName.toLowerCase() !== email.toLowerCase()
   ) {
     return displayName;
   }
@@ -1246,10 +979,8 @@ function getRiderDisplayName(rider) {
 
 function getRouteSummary(order) {
   const parts = [];
-
-  const distance = Number(
-    order.route_distance_m
-  );
+  const distance = Number(order.route_distance_m);
+  const duration = Number(order.route_duration_s);
 
   if (Number.isFinite(distance)) {
     parts.push(
@@ -1259,37 +990,22 @@ function getRouteSummary(order) {
     );
   }
 
-  const duration = Number(
-    order.route_duration_s
-  );
-
   if (Number.isFinite(duration)) {
-    parts.push(
-      `${Math.max(1, Math.round(duration / 60))} min estimate`
-    );
+    parts.push(`${Math.max(1, Math.round(duration / 60))} min estimate`);
   }
 
-  return parts.join(" • ") ||
-    "Route details unavailable";
+  return parts.join(" • ") || "Route details unavailable";
 }
 
 function getGoogleMapsUrl(order) {
-  const latitude = Number(
-    order.delivery_lat
-  );
-  const longitude = Number(
-    order.delivery_lng
-  );
+  const latitude = Number(order.delivery_lat);
+  const longitude = Number(order.delivery_lng);
 
-  if (
-    !Number.isFinite(latitude) ||
-    !Number.isFinite(longitude)
-  ) {
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return "";
   }
 
-  const destination =
-    `${latitude},${longitude}`;
+  const destination = `${latitude},${longitude}`;
 
   return (
     "https://www.google.com/maps/dir/?api=1" +
@@ -1303,29 +1019,20 @@ function formatOrderNumber(id) {
     .slice(0, 8)
     .toUpperCase();
 
-  return compact
-    ? `SS-${compact}`
-    : "SS-ORDER";
+  return compact ? `SS-${compact}` : "SS-ORDER";
 }
 
 function formatMoney(value) {
   const amount = Number(value);
-
-  return moneyFormatter.format(
-    Number.isFinite(amount)
-      ? amount
-      : 0
-  );
+  return moneyFormatter.format(Number.isFinite(amount) ? amount : 0);
 }
 
 function formatDateTime(value) {
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return "Time unavailable";
-  }
-
-  return dateTimeFormatter.format(date);
+  return Number.isNaN(date.getTime())
+    ? "Time unavailable"
+    : dateTimeFormatter.format(date);
 }
 
 function formatRelativeTime(value) {
@@ -1335,14 +1042,8 @@ function formatRelativeTime(value) {
     return "Just now";
   }
 
-  const elapsedMs = Math.max(
-    0,
-    Date.now() - timestamp
-  );
-
-  const minutes = Math.floor(
-    elapsedMs / 60_000
-  );
+  const elapsedMs = Math.max(0, Date.now() - timestamp);
+  const minutes = Math.floor(elapsedMs / 60_000);
 
   if (minutes < 1) {
     return "Just now";
@@ -1352,25 +1053,16 @@ function formatRelativeTime(value) {
     return `${minutes}m ago`;
   }
 
-  const hours = Math.floor(
-    minutes / 60
-  );
+  const hours = Math.floor(minutes / 60);
 
   if (hours < 24) {
     return `${hours}h ago`;
   }
 
-  const days = Math.floor(
-    hours / 24
-  );
-
-  return `${days}d ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
-function getStatusLabel(
-  status,
-  orderType
-) {
+function getStatusLabel(status, orderType) {
   if (status === "pending") {
     return "Pending";
   }
@@ -1380,9 +1072,7 @@ function getStatusLabel(
   }
 
   if (status === "dispatched") {
-    return orderType === "pickup"
-      ? "Ready for pickup"
-      : "On delivery";
+    return orderType === "pickup" ? "Ready for pickup" : "On delivery";
   }
 
   if (status === "completed") {
@@ -1412,34 +1102,34 @@ function updateLastUpdated() {
     return;
   }
 
-  el["admin-last-updated"].textContent =
-    `Updated ${new Intl.DateTimeFormat(
-      "en-PH",
-      {
-        hour: "numeric",
-        minute: "2-digit",
-        second: "2-digit",
-      }
-    ).format(new Date())}`;
+  el["admin-last-updated"].textContent = `Updated ${new Intl.DateTimeFormat(
+    "en-PH",
+    {
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+    }
+  ).format(new Date())}`;
 }
 
 function getSetupAwareErrorMessage(error) {
-  const message = String(
-    error?.message || ""
-  );
+  const message = String(error?.message || "");
 
   if (
-    /order_delivery_assignments|admin_list_delivery_staff|confirmed_at|schema cache/i
-      .test(message)
+    /order_delivery_assignments|admin_list_delivery_staff|confirmed_at|schema cache/i.test(
+      message
+    )
   ) {
-    return (
-      "Phase 7 database setup is required. Run " +
-      "sql/PHASE_7_ADMIN_ORDERS.sql in Supabase, then refresh this page."
-    );
+    return "Phase 7 database setup is required. Run sql/PHASE_7_ADMIN_ORDERS.sql in Supabase, then refresh this page.";
   }
 
-  return message ||
-    "The live order dashboard could not be loaded.";
+  if (
+    /admin_mark_pickup_ready|admin_complete_pickup_order/i.test(message)
+  ) {
+    return "Phase 8 Rider Core database setup is required for pickup completion controls.";
+  }
+
+  return message || "The live order dashboard could not be loaded.";
 }
 
 function showToast(message, type = "info") {
@@ -1450,27 +1140,18 @@ function showToast(message, type = "info") {
   }
 
   const toast = document.createElement("div");
-  toast.className =
-    `admin-toast is-${type}`;
+  toast.className = `admin-toast is-${type}`;
   toast.setAttribute("role", "status");
   toast.textContent = message;
   region.append(toast);
 
-  window.setTimeout(() => {
-    toast.remove();
-  }, 4200);
+  window.setTimeout(() => toast.remove(), 4200);
 }
 
 function handleInitializationError(error) {
   state.initialized = false;
-  console.error(
-    "Admin dashboard initialization failed:",
-    error
-  );
-  setStatus(
-    getSetupAwareErrorMessage(error),
-    "error"
-  );
+  console.error("Admin dashboard initialization failed:", error);
+  setStatus(getSetupAwareErrorMessage(error), "error");
 }
 
 function setText(node, value) {
@@ -1484,8 +1165,5 @@ function cssEscape(value) {
     return window.CSS.escape(value);
   }
 
-  return String(value).replace(
-    /[^a-zA-Z0-9_-]/g,
-    "\\$&"
-  );
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
 }

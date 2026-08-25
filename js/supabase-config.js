@@ -5,10 +5,7 @@ const ACCOUNT_AUTH_STORAGE_KEY =
 
 const SESSION_REFRESH_WINDOW_SECONDS = 120;
 
-/*
- * Browser-safe project configuration.
- * Never place a secret/service_role key in this file.
- */
+
 const SUPABASE_URL = "https://mugcifqtacilnfotzwaa.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Gtqi4OO9Y4F9FLDofC7hEA_5K7KrM1d";
 

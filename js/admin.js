@@ -1126,15 +1126,14 @@ function getItemName(item) {
 function getItemDetails(item) {
   const details = [];
 
-  const values = [
-    item?.size_label || item?.size,
-    item?.sugar_label || item?.sugar_level || item?.sugar,
-    item?.ice_label || item?.ice_level || item?.ice,
+  const optionValues = [
+    item?.size_label ?? item?.size,
+    item?.sugar_label ?? item?.sugar_level ?? item?.sugar,
+    item?.ice_label ?? item?.ice_level ?? item?.ice,
   ];
 
-  for (const value of values) {
-    const normalized =
-      String(value || "").trim();
+  for (const value of optionValues) {
+    const normalized = getOptionDisplayText(value);
 
     if (normalized) {
       details.push(normalized);
@@ -1149,17 +1148,7 @@ function getItemDetails(item) {
 
   if (addons.length) {
     const addonNames = addons
-      .map((addon) => {
-        if (typeof addon === "string") {
-          return addon;
-        }
-
-        return (
-          addon?.name ||
-          addon?.label ||
-          ""
-        );
-      })
+      .map(getOptionDisplayText)
       .filter(Boolean);
 
     if (addonNames.length) {
@@ -1170,6 +1159,53 @@ function getItemDetails(item) {
   }
 
   return details.join(" • ");
+}
+
+function getOptionDisplayText(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === false
+  ) {
+    return "";
+  }
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+    return String(value).trim();
+  }
+
+  if (typeof value !== "object") {
+    return "";
+  }
+
+  const candidates = [
+    value.label,
+    value.name,
+    value.title,
+    value.value,
+    value.id,
+  ];
+
+  for (const candidate of candidates) {
+    if (
+      typeof candidate !== "string" &&
+      typeof candidate !== "number"
+    ) {
+      continue;
+    }
+
+    const normalized =
+      String(candidate).trim();
+
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return "";
 }
 
 function normalizeQuantity(value) {

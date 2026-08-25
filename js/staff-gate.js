@@ -133,6 +133,36 @@ async function initializeStaffGate() {
         window.location.replace("/");
       }
     );
+
+  /*
+   * Phase-specific staff modules wait for this signal before loading
+   * protected data. Only permission booleans are exposed in the event;
+   * the Auth session/token stays inside the Supabase client module.
+   */
+  document.body.dataset.staffReady =
+    "true";
+  document.body.dataset.canManageOrders =
+    String(
+      data.can_manage_orders === true
+    );
+  document.body.dataset.canDeliverOrders =
+    String(
+      data.can_deliver_orders === true
+    );
+
+  window.dispatchEvent(
+    new CustomEvent(
+      "ssupertea:staff-ready",
+      {
+        detail: {
+          can_manage_orders:
+            data.can_manage_orders === true,
+          can_deliver_orders:
+            data.can_deliver_orders === true,
+        },
+      }
+    )
+  );
 }
 
 function getRoleLabel(data) {

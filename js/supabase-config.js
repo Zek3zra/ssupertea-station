@@ -10,7 +10,7 @@ const SESSION_REFRESH_WINDOW_SECONDS = 120;
  * Never place a secret/service_role key in this file.
  */
 const SUPABASE_URL = "https://mugcifqtacilnfotzwaa.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11Z2NpZnF0YWNpbG5mb3R6d2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NzM1NjEsImV4cCI6MjA5OTM0OTU2MX0.95efZITZi7Zjbg84LSmeIYhGRx3XyUPOlD6S4IHR3OM";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Gtqi4OO9Y4F9FLDofC7hEA_5K7KrM1d";
 
 function validateConfiguration() {
   let parsedUrl;

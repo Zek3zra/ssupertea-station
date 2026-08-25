@@ -1,14 +1,13 @@
 "use strict";
 
-const CACHE_VERSION = "v16";
+const CACHE_VERSION = "v17";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
 
 /*
- * These files exist in Phase 2 and can be safely pre-cached now.
- * Customer/admin HTML, CSS, and feature scripts will be cached at runtime
- * as they are introduced in later phases.
+ * Core app shell. Staff feature modules are included so installed PWAs can
+ * open their protected pages reliably after at least one successful load.
  */
 const APP_SHELL = [
   "/",
@@ -22,6 +21,8 @@ const APP_SHELL = [
   "/css/staff.css",
   "/js/app.js",
   "/js/account.js",
+  "/js/admin.js",
+  "/js/rider.js",
   "/js/auth-callback.js",
   "/js/staff-gate.js",
   "/js/supabase-config.js",
@@ -91,7 +92,9 @@ self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(request.url);
 
   /*
-   * Supabase, Leaflet CDN, and OpenStreetMap tile requests are cross-origin and deliberately excluded. The service worker only caches this application's own files.
+   * Supabase, Leaflet CDN, and OpenStreetMap tile requests are cross-origin
+   * and deliberately excluded. The service worker only caches this app's
+   * own files.
    */
   if (requestUrl.origin !== self.location.origin) {
     return;
@@ -103,14 +106,16 @@ self.addEventListener("fetch", (event) => {
   }
 
   /*
-   * Configuration files should prefer the network so a newly entered API
-   * key or Supabase project setting is not hidden behind an older cache.
+   * App logic and staff modules prefer the network so newly deployed order
+   * and permission behavior is not hidden behind an older cached script.
    */
   if (
     requestUrl.pathname === "/js/openstreetmap-config.js" ||
     requestUrl.pathname === "/js/supabase-config.js" ||
     requestUrl.pathname === "/js/app.js" ||
     requestUrl.pathname === "/js/account.js" ||
+    requestUrl.pathname === "/js/admin.js" ||
+    requestUrl.pathname === "/js/rider.js" ||
     requestUrl.pathname === "/js/auth-callback.js" ||
     requestUrl.pathname === "/js/staff-gate.js" ||
     requestUrl.pathname === "/css/style.css" ||

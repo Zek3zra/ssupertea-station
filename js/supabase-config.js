@@ -50,7 +50,7 @@ export const customerSupabase = createClient(
     global: {
       headers: {
         "X-Client-Info":
-          "ssupertea-station-pwa/2.0.0",
+          "ssupertea-station-pwa/2.1.0",
       },
     },
   }
@@ -227,7 +227,32 @@ export async function registerServiceWorker() {
   );
 }
 
+function shouldLoadLiveGpsModule() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const path = window.location.pathname;
+  return (
+    path === "/" ||
+    path.endsWith("/index.html") ||
+    path.endsWith("/admin.html") ||
+    path.endsWith("/rider.html")
+  );
+}
+
 if (typeof window !== "undefined") {
+  if (shouldLoadLiveGpsModule()) {
+    import("/js/live-gps.js").catch(
+      (error) => {
+        console.warn(
+          "Phase 8B live GPS module could not load:",
+          error
+        );
+      }
+    );
+  }
+
   window.addEventListener(
     "load",
     () => {

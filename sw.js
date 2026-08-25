@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v17";
+const CACHE_VERSION = "v18";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -23,6 +23,7 @@ const APP_SHELL = [
   "/js/account.js",
   "/js/admin.js",
   "/js/rider.js",
+  "/js/live-gps.js",
   "/js/auth-callback.js",
   "/js/staff-gate.js",
   "/js/supabase-config.js",
@@ -106,8 +107,8 @@ self.addEventListener("fetch", (event) => {
   }
 
   /*
-   * App logic and staff modules prefer the network so newly deployed order
-   * and permission behavior is not hidden behind an older cached script.
+   * App logic and staff modules prefer the network so newly deployed order,
+   * permission, and live GPS behavior is not hidden behind older scripts.
    */
   if (
     requestUrl.pathname === "/js/openstreetmap-config.js" ||
@@ -116,6 +117,7 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/js/account.js" ||
     requestUrl.pathname === "/js/admin.js" ||
     requestUrl.pathname === "/js/rider.js" ||
+    requestUrl.pathname === "/js/live-gps.js" ||
     requestUrl.pathname === "/js/auth-callback.js" ||
     requestUrl.pathname === "/js/staff-gate.js" ||
     requestUrl.pathname === "/css/style.css" ||

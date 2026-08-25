@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0E5B3B">
   <meta name="robots" content="noindex, nofollow">
-  <title>Ssupertea Station | Admin workspace</title>
+  <title>Ssupertea Station | Live orders</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/staff.css">
   <script type="module" src="/js/staff-gate.js"></script>
+  <script type="module" src="/js/admin.js"></script>
 </head>
 <body class="staff-page" data-staff-permission="manage">
   <div class="staff-gate" id="staff-gate">
@@ -35,28 +36,112 @@
       </div>
     </header>
 
-    <main class="staff-content">
-      <section class="staff-phase-card">
-        <p class="eyebrow">Backbone ready</p>
-        <h1>Admin workspace</h1>
-        <p>Your staff account can manage orders. The full order dashboard, confirmation workflow, and rider assignment controls will be added in the next admin phase.</p>
+    <main class="staff-content admin-dashboard" id="admin-dashboard">
+      <section class="admin-hero">
+        <div>
+          <p class="eyebrow">Store Admin</p>
+          <h1>Live orders</h1>
+          <p class="admin-hero-copy">
+            Confirm new orders, watch preparation in real time, and assign delivery riders from one screen.
+          </p>
+        </div>
+
+        <div class="admin-live-panel" aria-live="polite">
+          <span class="admin-live-line">
+            <span class="admin-live-dot" id="admin-live-dot" data-state="connecting" aria-hidden="true"></span>
+            <strong id="admin-live-label">Connecting live updates…</strong>
+          </span>
+          <small id="admin-last-updated">Waiting for first refresh</small>
+          <button class="admin-refresh-button" id="admin-refresh-button" type="button">
+            Refresh now
+          </button>
+        </div>
       </section>
 
-      <div class="staff-next-grid">
-        <article class="staff-next-card">
-          <h2>Account routing</h2>
-          <p>Authorized staff accounts are routed away from the customer storefront immediately after sign-in.</p>
+      <p class="admin-status-message" id="admin-status-message" data-type="loading" role="status">
+        Loading live orders…
+      </p>
+
+      <section class="admin-stats" aria-label="Active order counts">
+        <article class="admin-stat-card">
+          <span>Pending</span>
+          <strong id="admin-stat-pending">0</strong>
+          <small>Needs confirmation</small>
         </article>
-        <article class="staff-next-card">
-          <h2>Permission based</h2>
-          <p>Store Admin, Rider, and Store Admin + Rider are separate permission combinations.</p>
+        <article class="admin-stat-card">
+          <span>Preparing</span>
+          <strong id="admin-stat-preparing">0</strong>
+          <small>Accepted by store</small>
         </article>
-        <article class="staff-next-card">
-          <h2>Next phase</h2>
-          <p>The live order-management and rider-delivery interfaces will be built on this protected shell.</p>
+        <article class="admin-stat-card">
+          <span>On delivery</span>
+          <strong id="admin-stat-dispatched">0</strong>
+          <small>Dispatched orders</small>
         </article>
-      </div>
+        <article class="admin-stat-card is-total">
+          <span>Total active</span>
+          <strong id="admin-stat-active">0</strong>
+          <small>Open orders now</small>
+        </article>
+      </section>
+
+      <section class="admin-board" aria-label="Order workflow">
+        <article class="admin-board-column">
+          <header class="admin-column-header">
+            <div>
+              <span class="admin-column-kicker">Step 1</span>
+              <h2>New orders</h2>
+            </div>
+            <span class="admin-count-badge" id="admin-pending-count">0</span>
+          </header>
+          <p class="admin-column-copy">
+            Confirm only after the store accepts the order. Confirmation changes the customer status to Preparing and locks customer cancellation.
+          </p>
+          <div class="admin-order-list" id="admin-pending-list"></div>
+        </article>
+
+        <article class="admin-board-column">
+          <header class="admin-column-header">
+            <div>
+              <span class="admin-column-kicker">Step 2</span>
+              <h2>Preparing</h2>
+            </div>
+            <span class="admin-count-badge" id="admin-preparing-count">0</span>
+          </header>
+          <p class="admin-column-copy">
+            Delivery orders can be assigned to any active rider. Admin + Rider accounts can use Assign to me.
+          </p>
+          <div class="admin-order-list" id="admin-preparing-list"></div>
+        </article>
+
+        <article class="admin-board-column">
+          <header class="admin-column-header">
+            <div>
+              <span class="admin-column-kicker">Step 3</span>
+              <h2>On delivery</h2>
+            </div>
+            <span class="admin-count-badge" id="admin-dispatched-count">0</span>
+          </header>
+          <p class="admin-column-copy">
+            Rider dispatch and live GPS controls will activate in Phase 8. This column is already ready for realtime status updates.
+          </p>
+          <div class="admin-order-list" id="admin-dispatched-list"></div>
+        </article>
+      </section>
+
+      <section class="admin-recent-section">
+        <header class="admin-column-header">
+          <div>
+            <span class="admin-column-kicker">Recent</span>
+            <h2>Finished orders</h2>
+          </div>
+          <span class="admin-count-badge" id="admin-recent-count">0</span>
+        </header>
+        <div class="admin-order-list admin-recent-list" id="admin-recent-list"></div>
+      </section>
     </main>
   </div>
+
+  <div class="admin-toast-region" id="admin-toast-region" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>

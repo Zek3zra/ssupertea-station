@@ -2,17 +2,14 @@
 -- Read-only checks only.
 
 select
-  table_schema,
-  table_name,
-  row_security
-from information_schema.tables t
-join pg_catalog.pg_class c
-  on c.relname = t.table_name
+  n.nspname as table_schema,
+  c.relname as table_name,
+  c.relrowsecurity as row_security
+from pg_catalog.pg_class c
 join pg_catalog.pg_namespace n
   on n.oid = c.relnamespace
-  and n.nspname = t.table_schema
-where t.table_schema = 'public'
-  and t.table_name = 'order_delivery_locations';
+where n.nspname = 'public'
+  and c.relname = 'order_delivery_locations';
 
 select
   column_name,

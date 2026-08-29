@@ -254,6 +254,14 @@ function shouldLoadLiveMapModule() {
   );
 }
 
+function shouldLoadRiderLiveMapModule() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.location.pathname.endsWith("/rider.html");
+}
+
 if (typeof window !== "undefined") {
   if (shouldLoadLiveGpsModule()) {
     import("/js/live-gps.js").catch(
@@ -271,6 +279,17 @@ if (typeof window !== "undefined") {
       (error) => {
         console.warn(
           "Phase 8C live map module could not load:",
+          error
+        );
+      }
+    );
+  }
+
+  if (shouldLoadRiderLiveMapModule()) {
+    import("/js/rider-live-map.js").catch(
+      (error) => {
+        console.warn(
+          "Phase 8C rider live map module could not load:",
           error
         );
       }

@@ -20,6 +20,8 @@ const DEFAULT_MAX_ROUTE_KM = 50;
 const ORS_TIMEOUT_MS = 15000;
 const DELIVERY_FEE_BLOCK_METERS = 300;
 const DELIVERY_FEE_PER_BLOCK = 10;
+const ROUTE_PURPOSE_CHECKOUT = "checkout";
+const ROUTE_PURPOSE_TRACKING = "tracking";
 
 module.exports = async function routeHandler(request, response) {
   response.setHeader("Cache-Control", "no-store");
@@ -55,16 +57,25 @@ module.exports = async function routeHandler(request, response) {
 
   try {
     const body = parseRequestBody(request.body);
+    const purpose = parseRoutePurpose(body?.purpose);
     const destination = parseDestination(body?.destination);
     const shop = getShopLocation();
+    const origin =
+      purpose === ROUTE_PURPOSE_TRACKING
+        ? parseTrackingOrigin(body?.origin)
+        : {
+            latitude: shop.latitude,
+            longitude: shop.longitude,
+          };
+
     const maximumRouteKm = parsePositiveNumber(
       process.env.SSUPERTEA_MAX_ROUTE_KM,
       DEFAULT_MAX_ROUTE_KM
     );
 
     const straightLineDistanceKm = haversineDistanceKm(
-      shop.latitude,
-      shop.longitude,
+      origin.latitude,
+      origin.longitude,
       destination.latitude,
       destination.longitude
     );
@@ -73,7 +84,7 @@ module.exports = async function routeHandler(request, response) {
       return response.status(422).json({
         code: "DESTINATION_TOO_FAR",
         message:
-          `The selected point is outside the ${maximumRouteKm} km delivery area.`,
+          `The selected route is outside the ${maximumRouteKm} km delivery area.`,
       });
     }
 
@@ -95,7 +106,7 @@ module.exports = async function routeHandler(request, response) {
         },
         body: JSON.stringify({
           coordinates: [
-            [shop.longitude, shop.latitude],
+            [origin.longitude, origin.latitude],
             [destination.longitude, destination.latitude],
           ],
           instructions: false,
@@ -165,10 +176,15 @@ module.exports = async function routeHandler(request, response) {
 
     const distanceMeters = Number(summary.distance);
     const durationSeconds = Number(summary.duration);
-    const deliveryFee = calculateDeliveryFee(distanceMeters);
+    const deliveryFee =
+      purpose === ROUTE_PURPOSE_TRACKING
+        ? null
+        : calculateDeliveryFee(distanceMeters);
 
     return response.status(200).json({
+      purpose,
       shop,
+      origin,
       destination,
       summary: {
         distance: distanceMeters,
@@ -226,6 +242,25 @@ function parseRequestBody(value) {
   }
 
   return {};
+}
+
+function parseRoutePurpose(value) {
+  const purpose = String(value || ROUTE_PURPOSE_CHECKOUT)
+    .trim()
+    .toLowerCase();
+
+  if (
+    purpose !== ROUTE_PURPOSE_CHECKOUT &&
+    purpose !== ROUTE_PURPOSE_TRACKING
+  ) {
+    const error = new Error("Invalid route purpose.");
+    error.code = "INVALID_ROUTE_PURPOSE";
+    error.statusCode = 400;
+    error.publicMessage = "The route purpose is not supported.";
+    throw error;
+  }
+
+  return purpose;
 }
 
 function isSameOriginBrowserRequest(request) {
@@ -295,19 +330,30 @@ function getShopLocation() {
 }
 
 function parseDestination(value) {
+  return parsePhilippinePoint(
+    value,
+    "destination",
+    "Select a valid delivery point within the Philippines."
+  );
+}
+
+function parseTrackingOrigin(value) {
+  return parsePhilippinePoint(
+    value,
+    "tracking origin",
+    "The rider location is not valid for route tracking."
+  );
+}
+
+function parsePhilippinePoint(value, label, publicMessage) {
   const latitude = Number(value?.latitude);
   const longitude = Number(value?.longitude);
 
   if (!isPhilippineCoordinate(latitude, longitude)) {
-    const error = new Error(
-      "Invalid Philippine destination coordinates."
-    );
-
-    error.code = "INVALID_DESTINATION";
+    const error = new Error(`Invalid Philippine ${label} coordinates.`);
+    error.code = "INVALID_ROUTE_POINT";
     error.statusCode = 400;
-    error.publicMessage =
-      "Select a valid delivery point within the Philippines.";
-
+    error.publicMessage = publicMessage;
     throw error;
   }
 
@@ -372,7 +418,6 @@ function haversineDistanceKm(
     Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   );
 }
-
 
 function calculateDeliveryFee(distanceMeters) {
   const safeDistance = Number(distanceMeters);

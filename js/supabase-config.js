@@ -241,12 +241,36 @@ function shouldLoadLiveGpsModule() {
   );
 }
 
+function shouldLoadLiveMapModule() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const path = window.location.pathname;
+  return (
+    path === "/" ||
+    path.endsWith("/index.html") ||
+    path.endsWith("/admin.html")
+  );
+}
+
 if (typeof window !== "undefined") {
   if (shouldLoadLiveGpsModule()) {
     import("/js/live-gps.js").catch(
       (error) => {
         console.warn(
           "Phase 8B live GPS module could not load:",
+          error
+        );
+      }
+    );
+  }
+
+  if (shouldLoadLiveMapModule()) {
+    import("/js/live-map.js").catch(
+      (error) => {
+        console.warn(
+          "Phase 8C live map module could not load:",
           error
         );
       }

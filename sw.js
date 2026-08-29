@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v19";
+const CACHE_VERSION = "v20";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -25,6 +25,7 @@ const APP_SHELL = [
   "/js/rider.js",
   "/js/live-gps.js",
   "/js/live-map.js",
+  "/js/rider-live-map.js",
   "/js/auth-callback.js",
   "/js/staff-gate.js",
   "/js/supabase-config.js",
@@ -121,6 +122,7 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/js/rider.js" ||
     requestUrl.pathname === "/js/live-gps.js" ||
     requestUrl.pathname === "/js/live-map.js" ||
+    requestUrl.pathname === "/js/rider-live-map.js" ||
     requestUrl.pathname === "/js/auth-callback.js" ||
     requestUrl.pathname === "/js/staff-gate.js" ||
     requestUrl.pathname === "/css/style.css" ||

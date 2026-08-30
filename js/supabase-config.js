@@ -50,7 +50,7 @@ export const customerSupabase = createClient(
     global: {
       headers: {
         "X-Client-Info":
-          "ssupertea-station-pwa/2.1.0",
+          "ssupertea-station-pwa/2.2.0",
       },
     },
   }
@@ -99,11 +99,6 @@ export async function getVerifiedAccountSession({
     return null;
   }
 
-  /*
-   * Phase 6 no longer creates anonymous customers. If an old anonymous
-   * browser session survived a deployment, remove it from the new account
-   * storage and ask the customer to sign in normally.
-   */
   if (isAnonymousSession(storedSession)) {
     await clearCustomerSession().catch(() => {});
     return null;
@@ -156,8 +151,8 @@ export async function getVerifiedAccountSession({
 }
 
 /*
- * Kept for the existing tracking code. Unlike Phase 5, this function NEVER
- * creates an anonymous account. It only returns a verified permanent account.
+ * Kept for existing tracking code. This function never creates an anonymous
+ * customer; it only returns a verified permanent account session.
  */
 export async function ensureCustomerSession({
   forceRefresh = false,
@@ -262,12 +257,26 @@ function shouldLoadRiderLiveMapModule() {
   return window.location.pathname.endsWith("/rider.html");
 }
 
+function shouldLoadFinalPolishModule() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const path = window.location.pathname;
+  return (
+    path === "/" ||
+    path.endsWith("/index.html") ||
+    path.endsWith("/admin.html") ||
+    path.endsWith("/rider.html")
+  );
+}
+
 if (typeof window !== "undefined") {
   if (shouldLoadLiveGpsModule()) {
     import("/js/live-gps.js").catch(
       (error) => {
         console.warn(
-          "Phase 8B live GPS module could not load:",
+          "Live GPS module could not load:",
           error
         );
       }
@@ -278,7 +287,7 @@ if (typeof window !== "undefined") {
     import("/js/live-map.js").catch(
       (error) => {
         console.warn(
-          "Phase 8C live map module could not load:",
+          "Live delivery map module could not load:",
           error
         );
       }
@@ -289,7 +298,18 @@ if (typeof window !== "undefined") {
     import("/js/rider-live-map.js").catch(
       (error) => {
         console.warn(
-          "Phase 8C rider live map module could not load:",
+          "Rider live map module could not load:",
+          error
+        );
+      }
+    );
+  }
+
+  if (shouldLoadFinalPolishModule()) {
+    import("/js/final-polish.js").catch(
+      (error) => {
+        console.warn(
+          "Final production polish module could not load:",
           error
         );
       }

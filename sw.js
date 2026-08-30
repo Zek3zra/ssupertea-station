@@ -1,18 +1,19 @@
 "use strict";
 
-const CACHE_VERSION = "v20";
+const CACHE_VERSION = "v21";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
 
 /*
- * Core app shell. Staff feature modules are included so installed PWAs can
- * open their protected pages reliably after at least one successful load.
+ * Core app shell. Staff and account feature modules are included so installed
+ * PWAs can open protected and recovery pages reliably after a successful load.
  */
 const APP_SHELL = [
   "/",
   "/index.html",
   "/auth-callback.html",
+  "/reset-password.html",
   "/admin.html",
   "/rider.html",
   "/manifest.json",
@@ -26,6 +27,8 @@ const APP_SHELL = [
   "/js/live-gps.js",
   "/js/live-map.js",
   "/js/rider-live-map.js",
+  "/js/final-polish.js",
+  "/js/reset-password.js",
   "/js/auth-callback.js",
   "/js/staff-gate.js",
   "/js/supabase-config.js",
@@ -109,9 +112,9 @@ self.addEventListener("fetch", (event) => {
   }
 
   /*
-   * App logic and staff modules prefer the network so newly deployed order,
-   * permission, live GPS, and live map behavior is not hidden behind older
-   * scripts.
+   * App logic and staff/account modules prefer the network so newly deployed
+   * order, permission, recovery, GPS, and live-map behavior is not hidden
+   * behind older scripts.
    */
   if (
     requestUrl.pathname === "/js/openstreetmap-config.js" ||
@@ -123,6 +126,8 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/js/live-gps.js" ||
     requestUrl.pathname === "/js/live-map.js" ||
     requestUrl.pathname === "/js/rider-live-map.js" ||
+    requestUrl.pathname === "/js/final-polish.js" ||
+    requestUrl.pathname === "/js/reset-password.js" ||
     requestUrl.pathname === "/js/auth-callback.js" ||
     requestUrl.pathname === "/js/staff-gate.js" ||
     requestUrl.pathname === "/css/style.css" ||

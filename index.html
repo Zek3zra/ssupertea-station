@@ -546,6 +546,15 @@
               required
             >
           </label>
+          <label class="checkout-field" for="customer-phone">
+            <span>Mobile number</span>
+            <input id="customer-phone" name="customer-phone" type="tel" inputmode="tel"
+              autocomplete="tel" maxlength="25" placeholder="0917 123 4567" required
+              aria-describedby="customer-contact-note">
+          </label>
+          <p class="customer-details-note" id="customer-contact-note">The store and your assigned rider may use this number to contact you about this order.</p>
+          <button class="secondary-button" id="save-checkout-contact" type="button">Save name and mobile to my profile</button>
+          <p class="account-auth-status" id="checkout-profile-status" role="status" aria-live="polite" hidden></p>
         </section>
 
         <section
@@ -588,6 +597,10 @@
             </div>
           </div>
 
+          <div class="saved-address-actions">
+            <button class="secondary-button" id="use-saved-address" type="button" hidden>Use my saved address</button>
+            <p class="customer-details-note" id="checkout-saved-address" hidden></p>
+          </div>
           <div class="delivery-address-grid">
             <label class="checkout-field" for="address-line1">
               <span>House number and purok</span>
@@ -658,6 +671,8 @@
             Select a map pin or use your current location to fill the city and province.
           </div>
 
+          <button class="secondary-button" id="save-delivery-address" type="button">Save this delivery address</button>
+          <p class="customer-details-note">Saving an address does not place an order. Reusing it recalculates the current delivery fee.</p>
           <div class="delivery-map-toolbar">
             <button
               class="map-action-button map-location-button"
@@ -1233,6 +1248,21 @@
           </div>
         </div>
 
+        <form class="account-form customer-profile-form" id="customer-profile-form">
+          <fieldset id="customer-profile-fields" disabled>
+            <legend>Your details</legend>
+            <label><span>Full name</span><input id="profile-full-name" type="text" autocomplete="name" minlength="2" maxlength="120" required></label>
+            <label><span>Mobile number</span><input id="profile-mobile-number" type="tel" inputmode="tel" autocomplete="tel" maxlength="25" placeholder="0917 123 4567" required></label>
+            <button class="account-submit-button" type="submit">Save profile</button>
+          </fieldset>
+        </form>
+        <p class="account-auth-status" id="customer-profile-status" role="status" aria-live="polite" hidden></p>
+        <button class="secondary-button" id="profile-retry-button" type="button" hidden>Retry loading profile</button>
+        <section class="profile-address-section" aria-labelledby="saved-address-heading">
+          <h3 id="saved-address-heading">Saved delivery address</h3>
+          <p id="profile-saved-address">No saved delivery address yet.</p>
+          <button class="secondary-button" id="profile-remove-address" type="button" hidden>Remove saved address</button>
+        </section>
         <div
           class="account-active-order"
           id="account-active-order-card"

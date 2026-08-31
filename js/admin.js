@@ -2,6 +2,7 @@ import {
   customerSupabase,
   getVerifiedAccountSession,
 } from "/js/supabase-config.js";
+import { createOrderContact } from "/js/order-contact.js";
 
 const ACTIVE_STATUSES = new Set([
   "pending",
@@ -17,6 +18,7 @@ const TERMINAL_STATUSES = new Set([
 const ORDER_QUERY_COLUMNS = [
   "id",
   "customer_name",
+  "customer_phone",
   "order_type",
   "items",
   "items_subtotal",
@@ -344,6 +346,7 @@ function createOrderCard(order) {
   card.append(
     header,
     meta,
+    createOrderContact(order.customer_phone),
     createItemsBlock(order.items),
     createTotalsBlock(order)
   );

@@ -331,13 +331,62 @@ The checks execute the feature code with simulated authentication, request timin
 
 A full acceptance check still requires a real customer account and staff accounts: password reset email → callback → new password → sign-in; personal order history; Admin/Rider switching; and the existing delivery/GPS workflow.
 
+## Customer Profiles and Checkout Contacts
+
+Customers can save their full name and Philippine mobile number from **Profile**.
+Checkout uses those details as defaults, while allowing a different recipient for
+an individual order. **Save name and mobile to my profile** is an explicit action;
+placing an order does not silently replace the saved profile.
+
+In delivery checkout, select a map pin, complete the address, and choose **Save
+this delivery address**. This saves one default address with house/purok, city,
+province, optional landmark, and coordinates without placing an order. It is
+reused when delivery checkout is opened, and **Use my saved address** restores it
+after changes. The route and delivery fee are recalculated each time. Customers
+can remove the saved address from Profile; past orders remain unchanged.
+
+Every new pickup/delivery order requires a valid mobile number and stores it in
+`orders.customer_phone`. Admin and the assigned rider see a click-to-call contact
+on the orders they are already authorized to read. Old orders display **No
+contact number recorded**. Profile edits do not rewrite past order contacts.
+
+Database migration: `supabase/migrations/20260831151830_customer_profiles_and_order_contact.sql`.
+This additive migration was applied to the existing production schema using the
+Supabase connector; it is not a complete database bootstrap. It creates
+`public.profiles`, backfills names for existing non-anonymous accounts, and adds
+the nullable historical-order phone column. New accounts create their profile on
+their first save, without adding a trigger that could disrupt Auth signup.
+
+- Profile reads/inserts/updates are restricted to the owner using RLS, including
+  both `USING` and `WITH CHECK` for updates. Anonymous sessions are blocked.
+- Customer grants exclude deletion and managed timestamps. Profiles contain no
+  passwords or staff roles; existing order/staff/GPS policies are unchanged.
+- Name/mobile saves and address saves are partial updates, so one does not erase
+  the other. Saved personal details are not placed in browser local storage.
+- Account changes clear checkout fields and discard stale profile, map, and order
+  responses. PWA cache **v23** includes the new modules.
+
+Verification:
+
+```sh
+node tests/final-functionality.test.cjs
+node tests/customer-profiles.test.cjs
+```
+
+These run 35 automated checks without sending email or writing real orders. The
+owner-run `sql/VERIFY_CUSTOMER_PROFILES.sql` checks live profile ownership,
+partial upserts, constraints, and anonymous access inside a rolled-back
+transaction. Production verification should also include saving a real account's
+profile, reusing/changing its delivery address, and checking the new order contact
+in Admin and Rider Mode.
+
 ## Planned Improvements
 
 Future work may include:
 
-- customer profile management
 - improved email verification and account onboarding UX
-- saved customer addresses
+- store ordering availability and catalog synchronization
+- actual business menu, sold-out controls, and branding
 - additional user-interface polish
 - further monitoring and operational tools
 - optional Capacitor/native-app packaging for stronger background mobile behavior

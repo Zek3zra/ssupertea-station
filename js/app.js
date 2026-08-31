@@ -1,7 +1,10 @@
 import {
   customerSupabase,
   ensureCustomerSession,
+  getVerifiedAccountSession,
 } from "/js/supabase-config.js";
+
+import { loadCustomerProfile, saveCustomerProfile, getCachedCustomerProfile, normalizeMobileNumber, normalizeProfilePatch, formatSavedAddress } from "/js/customer-profile.js";
 
 import {
   initializeAccountSystem,
@@ -270,6 +273,9 @@ const state = {
   installPrompt: null,
   cart: loadCart(),
   checkout: {
+    customerUserId: null,
+    savingProfile: false,
+    applyingSavedAddress: false,
     map: null,
     marker: null,
     shopMarker: null,
@@ -317,7 +323,7 @@ async function initializeApp() {
   applyShortcutView();
   updateScrolledHeader();
   updateCurrentYear();
-  restoreSavedCustomerName();
+  // Personal checkout details are loaded from the current account, not shared local storage.
 
   await initializeAccountSystem();
 
@@ -353,6 +359,12 @@ function cacheElements() {
     "close-checkout-button",
     "order-type-options",
     "customer-name",
+    "customer-phone",
+    "save-checkout-contact",
+    "checkout-profile-status",
+    "use-saved-address",
+    "checkout-saved-address",
+    "save-delivery-address",
     "pickup-details",
     "delivery-details",
     "address-line1",
@@ -489,6 +501,19 @@ function bindEvents() {
 
   elements["close-checkout-button"].addEventListener("click", closeCheckoutDialog);
   elements["checkout-form"].addEventListener("submit", handleCheckoutSubmit);
+  elements["save-checkout-contact"].addEventListener("click", saveCheckoutContact);
+  elements["save-delivery-address"].addEventListener("click", saveCheckoutAddress);
+  elements["use-saved-address"].addEventListener("click", useSavedDeliveryAddress);
+  window.addEventListener("ssupertea:profile-cleared", clearCheckoutCustomer);
+  window.addEventListener("ssupertea:profile-updated", updateSavedAddressControls);
+  for (const id of ["address-city", "address-province"]) {
+    elements[id].addEventListener("input", () => {
+      if (!elements[id].readOnly) {
+        state.checkout.addressResolved = Boolean(elements["address-city"].value.trim() && elements["address-province"].value.trim());
+        renderCheckoutSummary();
+      }
+    });
+  }
   elements["order-type-options"].addEventListener(
     "change",
     handleOrderTypeChange
@@ -1319,12 +1344,20 @@ async function handleCheckoutRequest() {
     return;
   }
 
-  /*
-   * Use the account name as a convenient default, while still allowing the
-   * customer to edit the order name before submission.
-   */
+  if (state.checkout.customerUserId !== session.user.id) clearCheckoutCustomer();
+  state.checkout.customerUserId = session.user.id;
+  let profile = null;
+  try {
+    profile = await loadCustomerProfile(session.user.id);
+  } catch (error) {
+    if (error.code === "PROFILE_SESSION_CHANGED") return;
+    setCheckoutProfileStatus("Saved details could not be loaded. You can enter your details for this order or reopen checkout to retry.", true);
+  }
+  const currentSession = await getVerifiedAccountSession();
+  if (currentSession?.user?.id !== session.user.id || state.checkout.customerUserId !== session.user.id) return;
   const accountName =
     String(
+      profile?.full_name ||
       session.user?.user_metadata?.full_name ||
       session.user?.user_metadata?.name ||
       ""
@@ -1340,7 +1373,11 @@ async function handleCheckoutRequest() {
       accountName;
   }
 
+  if (!elements["customer-phone"].value.trim()) elements["customer-phone"].value = profile?.mobile_number || "";
+  updateSavedAddressControls();
+
   openCheckoutDialog();
+  if (getSelectedOrderType() === "delivery" && !state.checkout.selectedLocation && profile?.address_line1) await useSavedDeliveryAddress();
 }
 
 function openCheckoutDialog() {
@@ -1373,8 +1410,110 @@ function closeCheckoutDialog() {
   }
 }
 
-function handleOrderTypeChange() {
+async function handleOrderTypeChange() {
   syncCheckoutOrderType();
+  if (getSelectedOrderType() === "delivery" && !state.checkout.selectedLocation && getCachedCustomerProfile(state.checkout.customerUserId)?.address_line1) {
+    await useSavedDeliveryAddress();
+  }
+}
+
+function clearCheckoutCustomer() {
+  state.checkout.customerUserId = null;
+  state.checkout.savingProfile = false;
+  state.checkout.applyingSavedAddress = false;
+  for (const id of ["save-checkout-contact", "save-delivery-address", "use-saved-address"]) elements[id].disabled = false;
+  for (const id of ["customer-name", "customer-phone", "address-line1", "address-landmark"]) elements[id].value = "";
+  clearSelectedDeliveryLocation();
+  setCheckoutProfileStatus("");
+  updateSavedAddressControls();
+  if (elements["checkout-dialog"].open) elements["checkout-dialog"].close();
+  // The old shared-browser name is no longer used as an account default.
+  try { localStorage.removeItem(CUSTOMER_NAME_STORAGE_KEY); } catch {}
+}
+
+function updateSavedAddressControls() {
+  const profile = getCachedCustomerProfile(state.checkout.customerUserId);
+  const address = formatSavedAddress(profile);
+  elements["use-saved-address"].hidden = !address;
+  elements["checkout-saved-address"].hidden = !address;
+  elements["checkout-saved-address"].textContent = address ? `Saved: ${address}` : "";
+}
+
+function setCheckoutProfileStatus(message, error = false) {
+  const status = elements["checkout-profile-status"];
+  status.textContent = message;
+  status.hidden = !message;
+  status.dataset.type = error ? "error" : "success";
+}
+
+function setCheckoutProfileBusy(busy) {
+  state.checkout.savingProfile = busy;
+  for (const id of ["save-checkout-contact", "save-delivery-address"]) elements[id].disabled = busy;
+  renderCheckoutSummary();
+}
+
+async function saveCheckoutContact() {
+  if (state.checkout.savingProfile || state.checkout.isSubmitting || !state.checkout.customerUserId) return;
+  const owner = state.checkout.customerUserId;
+  setCheckoutProfileBusy(true);
+  try {
+    const profile = await saveCustomerProfile({ full_name: elements["customer-name"].value, mobile_number: elements["customer-phone"].value }, owner);
+    if (state.checkout.customerUserId !== owner) return;
+    elements["customer-phone"].value = profile.mobile_number;
+    setCheckoutProfileStatus("Your name and mobile number are saved for future checkouts.");
+  } catch (error) {
+    if (state.checkout.customerUserId === owner) setCheckoutProfileStatus(error.message || "Your details could not be saved. Try again.", true);
+  } finally {
+    if (state.checkout.customerUserId === owner) setCheckoutProfileBusy(false);
+  }
+}
+
+async function saveCheckoutAddress() {
+  if (state.checkout.savingProfile || state.checkout.isSubmitting || !state.checkout.customerUserId) return;
+  const owner = state.checkout.customerUserId;
+  setCheckoutProfileBusy(true);
+  try {
+    if (!state.checkout.selectedLocation || !state.checkout.addressResolved) throw new Error("Select a map pin and complete the city and province before saving.");
+    const address = normalizeProfilePatch({
+      address_line1: elements["address-line1"].value,
+      city: elements["address-city"].value,
+      province: elements["address-province"].value,
+      landmark: elements["address-landmark"].value,
+      latitude: state.checkout.selectedLocation.latitude,
+      longitude: state.checkout.selectedLocation.longitude,
+    });
+    await saveCustomerProfile(address, owner);
+    if (state.checkout.customerUserId === owner) setCheckoutProfileStatus("Delivery address saved. No order has been placed.");
+  } catch (error) {
+    if (state.checkout.customerUserId === owner) setCheckoutProfileStatus(error.message || "Your address could not be saved. Try again.", true);
+  } finally {
+    if (state.checkout.customerUserId === owner) setCheckoutProfileBusy(false);
+  }
+}
+
+async function useSavedDeliveryAddress() {
+  if (state.checkout.applyingSavedAddress || state.checkout.isSubmitting) return;
+  const owner = state.checkout.customerUserId;
+  const profile = getCachedCustomerProfile(owner);
+  if (!profile?.address_line1) return;
+  state.checkout.applyingSavedAddress = true;
+  elements["use-saved-address"].disabled = true;
+  renderCheckoutSummary();
+  try {
+    await showDeliveryMap();
+    if (state.checkout.customerUserId !== owner || getSelectedOrderType() !== "delivery") return;
+    if (!state.checkout.map) throw new Error("The map could not load. Reopen it to try your saved address again.");
+    selectDeliveryLocation(profile.latitude, profile.longitude, { source: "saved", savedAddress: profile });
+    setCheckoutProfileStatus("Saved address loaded. Checking the current route and delivery fee…");
+  } catch (error) {
+    if (state.checkout.customerUserId === owner) setCheckoutProfileStatus(error.message || "Your saved address could not be loaded.", true);
+  } finally {
+    if (state.checkout.customerUserId === owner) {
+      state.checkout.applyingSavedAddress = false;
+      elements["use-saved-address"].disabled = false;
+      renderCheckoutSummary();
+    }
+  }
 }
 
 function getSelectedOrderType() {
@@ -1495,6 +1634,8 @@ function renderCheckoutSummary() {
   elements["checkout-submit-button"].disabled =
     state.cart.length === 0 ||
     state.checkout.isSubmitting ||
+    state.checkout.savingProfile ||
+    state.checkout.applyingSavedAddress ||
     !deliveryIsReady;
 }
 
@@ -2135,7 +2276,9 @@ async function useCurrentDeliveryLocation() {
     return;
   }
 
+  const owner = state.checkout.customerUserId;
   await showDeliveryMap();
+  if (!owner || state.checkout.customerUserId !== owner) return;
 
   if (!window.isSecureContext) {
     setMapStatus(
@@ -2179,6 +2322,7 @@ async function useCurrentDeliveryLocation() {
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
+      if (state.checkout.customerUserId !== owner) { finishLocationRequest(); return; }
       const latitude = Number(position.coords.latitude);
       const longitude = Number(position.coords.longitude);
       const accuracy = Number(position.coords.accuracy);
@@ -2239,6 +2383,7 @@ function selectDeliveryLocation(
     source = "map",
     centerMap = true,
     accuracy = null,
+    savedAddress = null,
   } = {}
 ) {
   const normalizedLatitude = Number(latitude);
@@ -2377,10 +2522,18 @@ function selectDeliveryLocation(
     normalizedLongitude
   );
 
-  reverseGeocodeDeliveryLocation(
-    normalizedLatitude,
-    normalizedLongitude
-  );
+  if (savedAddress) {
+    clearResolvedDeliveryAddress();
+    elements["address-line1"].value = savedAddress.address_line1;
+    elements["address-city"].value = savedAddress.city;
+    elements["address-province"].value = savedAddress.province;
+    elements["address-landmark"].value = savedAddress.landmark || "";
+    state.checkout.addressResolved = true;
+    setLocationAddressStatus("Your saved address and map pin are selected. You can choose a different location for this order.", "success");
+    renderCheckoutSummary();
+  } else {
+    reverseGeocodeDeliveryLocation(normalizedLatitude, normalizedLongitude);
+  }
 }
 
 function clearSelectedDeliveryLocation() {
@@ -2888,6 +3041,8 @@ async function reverseGeocodeDeliveryLocation(
       return;
     }
 
+    if (requestId !== state.checkout.reverseGeocodeRequestId) return;
+
     console.error(
       "Delivery reverse geocoding failed:",
       error
@@ -2954,7 +3109,7 @@ function setLocationAddressStatus(
 async function handleCheckoutSubmit(event) {
   event.preventDefault();
 
-  if (state.checkout.isSubmitting) {
+  if (state.checkout.isSubmitting || state.checkout.savingProfile || state.checkout.applyingSavedAddress) {
     return;
   }
 
@@ -2983,6 +3138,14 @@ async function handleCheckoutSubmit(event) {
   }
 
   const orderType = getSelectedOrderType();
+  let customerPhone;
+  try { customerPhone = normalizeMobileNumber(elements["customer-phone"].value); }
+  catch (error) {
+    elements["customer-phone"].setCustomValidity(error.message);
+    elements["customer-phone"].reportValidity();
+    elements["customer-phone"].setCustomValidity("");
+    return;
+  }
   let deliveryAddress = null;
   let deliveryLatitude = null;
   let deliveryLongitude = null;
@@ -3058,6 +3221,7 @@ async function handleCheckoutSubmit(event) {
     return;
   }
 
+  const checkoutOwner = state.checkout.customerUserId;
   setCheckoutSubmitting(true);
 
   const expectedTotal = roundCurrency(
@@ -3075,6 +3239,7 @@ async function handleCheckoutSubmit(event) {
     const orderPayload = {
       id: clientOrderId,
       customer_name: customerName,
+      customer_phone: customerPhone,
       order_type: orderType,
       items: buildDatabaseOrderItems(),
       delivery_address: deliveryAddress,
@@ -3089,6 +3254,8 @@ async function handleCheckoutSubmit(event) {
       orderPayload
     );
 
+    if (state.checkout.customerUserId !== checkoutOwner) return;
+
     const sessionToken = session?.user?.id;
 
     if (!sessionToken) {
@@ -3098,11 +3265,6 @@ async function handleCheckoutSubmit(event) {
     safeSetLocalStorage(
       CUSTOMER_SESSION_TOKEN_STORAGE_KEY,
       sessionToken
-    );
-
-    safeSetLocalStorage(
-      CUSTOMER_NAME_STORAGE_KEY,
-      customerName
     );
 
     saveLastOrderFromDatabaseOrder(
@@ -3149,6 +3311,7 @@ async function handleCheckoutSubmit(event) {
       });
     }
   } catch (error) {
+    if (state.checkout.customerUserId !== checkoutOwner) return;
     console.error("Order submission failed:", error);
 
     showToast({
@@ -3158,7 +3321,7 @@ async function handleCheckoutSubmit(event) {
       duration: 5200,
     });
   } finally {
-    setCheckoutSubmitting(false);
+    if (state.checkout.customerUserId === checkoutOwner) setCheckoutSubmitting(false);
   }
 }
 
@@ -3216,6 +3379,10 @@ async function createOrderWithSessionRecovery(
     await ensureCustomerSession({
       forceRefresh: true,
     });
+
+  if (!state.checkout.customerUserId || session.user.id !== state.checkout.customerUserId) {
+    throw new Error("Your account changed. Reopen checkout before placing this order.");
+  }
 
   const order =
     await createOrderViaServer(
@@ -3383,6 +3550,7 @@ function setCheckoutSubmitting(isSubmitting) {
 
   elements["checkout-submit-button"].disabled =
     state.checkout.isSubmitting || state.cart.length === 0;
+  renderCheckoutSummary();
 
   elements["close-checkout-button"].disabled =
     state.checkout.isSubmitting;
@@ -4469,21 +4637,6 @@ function formatOrderDate(value) {
       timeStyle: "short",
     }
   ).format(date);
-}
-
-function restoreSavedCustomerName() {
-  try {
-    const savedName = localStorage.getItem(
-      CUSTOMER_NAME_STORAGE_KEY
-    );
-
-    if (savedName) {
-      elements["customer-name"].value =
-        normalizeCustomerName(savedName);
-    }
-  } catch {
-    // Checkout remains usable without name persistence.
-  }
 }
 
 function safeSetLocalStorage(key, value) {

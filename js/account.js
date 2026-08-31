@@ -4,6 +4,8 @@ import {
   getVerifiedAccountSession,
 } from "/js/supabase-config.js";
 
+import { initializeCustomerProfile, getCachedCustomerProfile } from "/js/customer-profile.js";
+
 const ACTIVE_ORDER_STATUSES = [
   "pending",
   "preparing",
@@ -25,6 +27,8 @@ const el = {};
 export async function initializeAccountSystem() {
   cacheAccountElements();
   bindAccountEvents();
+  initializeCustomerProfile();
+  window.addEventListener("ssupertea:profile-updated", renderAccountUI);
 
   await refreshAccountState({
     allowStaffRedirect: true,
@@ -896,7 +900,7 @@ function setAuthMode(mode) {
 
   el["account-dialog-copy"].textContent =
     signedIn
-      ? "Track your current order and manage your session."
+      ? "Manage your details, saved address, and orders."
       : "Sign in before placing an order.";
 
   setAuthStatus("", "info");
@@ -938,6 +942,7 @@ function setAuthStatus(
 
 function getDisplayName(user) {
   return String(
+    getCachedCustomerProfile(user?.id)?.full_name ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     ""

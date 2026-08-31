@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v22";
+const CACHE_VERSION = "v23";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -22,6 +22,8 @@ const APP_SHELL = [
   "/css/staff.css",
   "/js/app.js",
   "/js/account.js",
+  "/js/customer-profile.js",
+  "/js/order-contact.js",
   "/js/admin.js",
   "/js/rider.js",
   "/js/live-gps.js",

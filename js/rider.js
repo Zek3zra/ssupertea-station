@@ -2,6 +2,7 @@ import {
   customerSupabase,
   getVerifiedAccountSession,
 } from "/js/supabase-config.js";
+import { createOrderContact } from "/js/order-contact.js";
 
 const ACTIVE_DELIVERY_STATUSES = new Set([
   "preparing",
@@ -169,6 +170,7 @@ async function refreshDashboard({ silent = false } = {}) {
         [
           "id",
           "customer_name",
+          "customer_phone",
           "order_type",
           "items",
           "items_subtotal",
@@ -300,6 +302,7 @@ function createDeliveryCard(order) {
   address.textContent = order.delivery_address || "Delivery address unavailable";
 
   addressBlock.append(addressLabel, address);
+  addressBlock.append(createOrderContact(order.customer_phone));
 
   const mapUrl = getGoogleMapsUrl(order);
   if (mapUrl) {

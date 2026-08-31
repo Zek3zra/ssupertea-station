@@ -111,6 +111,7 @@ module.exports = async function createOrderHandler(request, response) {
     const databaseOrder = {
       id: orderInput.id,
       customer_name: orderInput.customerName,
+      customer_phone: orderInput.customerPhone,
       order_type: orderInput.orderType,
       items: pricedOrder.items,
       items_subtotal: itemsSubtotal,
@@ -292,6 +293,7 @@ function validateOrderInput(value) {
   )
     .trim()
     .replace(/\s+/g, " ");
+  const customerPhone = normalizeCustomerPhone(value?.customer_phone);
 
   const orderType =
     value?.order_type === "delivery"
@@ -385,12 +387,22 @@ function validateOrderInput(value) {
   return {
     id,
     customerName,
+    customerPhone,
     orderType,
     items,
     deliveryAddress,
     deliveryLatitude,
     deliveryLongitude,
   };
+}
+
+function normalizeCustomerPhone(value) {
+  const phone = String(value || "").trim().replace(/[\s()-]/g, "");
+  if (/^09\d{9}$/.test(phone)) return "+63" + phone.slice(1);
+  if (/^639\d{9}$/.test(phone)) return "+" + phone;
+  if (/^\+639\d{9}$/.test(phone)) return phone;
+  throw publicError("INVALID_CUSTOMER_PHONE", 400,
+    "Enter a valid Philippine mobile number. If no mobile field is visible, refresh the app before placing your order.");
 }
 
 async function priceItems(configuration, rawItems) {
@@ -520,6 +532,7 @@ async function insertOrder(
   const columns = [
     "id",
     "customer_name",
+    "customer_phone",
     "order_type",
     "items",
     "items_subtotal",

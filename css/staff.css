@@ -809,3 +809,14 @@ body.staff-page {
     grid-column: auto;
   }
 }
+.staff-order-contact {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 10px 0;
+  font-size: .8rem;
+  overflow-wrap: anywhere;
+}
+.staff-order-contact > span:first-child { font-weight: 700; }
+.staff-order-contact a { color: #0e5b3b; text-decoration: underline; text-underline-offset: 3px; }

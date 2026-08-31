@@ -76,14 +76,24 @@ export async function initializeAccountSystem() {
       window.location.search
     );
 
-  if (
-    query.get("auth") === "login"
-  ) {
+  const passwordWasReset = query.get("reset") === "success";
+
+  if (query.get("auth") === "login" || passwordWasReset) {
     openAccountDialog({
       mode: "login",
-      message:
-        "Sign in to continue.",
+      message: passwordWasReset
+        ? "Password updated. Sign in with your new password."
+        : "Sign in to continue.",
     });
+
+    if (passwordWasReset) {
+      setAuthStatus("Password updated. Sign in with your new password.", "success");
+      query.delete("reset");
+      const search = query.toString();
+      window.history.replaceState({}, "",
+        `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`
+      );
+    }
   }
 
   accountState.initialized = true;
@@ -141,6 +151,7 @@ export async function getActiveOrderForCurrentAccount() {
     return null;
   }
 
+  const userId = accountState.session.user.id;
   const {
     data,
     error,
@@ -165,6 +176,7 @@ export async function getActiveOrderForCurrentAccount() {
         "created_at",
       ].join(",")
     )
+    .eq("customer_session_token", userId)
     .in("status", ACTIVE_ORDER_STATUSES)
     .order("created_at", {
       ascending: false,
@@ -179,6 +191,8 @@ export async function getActiveOrderForCurrentAccount() {
     );
     return null;
   }
+
+  if (accountState.session?.user?.id !== userId) return null;
 
   accountState.activeOrder =
     data || null;

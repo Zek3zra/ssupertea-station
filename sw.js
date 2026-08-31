@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v21";
+const CACHE_VERSION = "v22";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -153,19 +153,23 @@ self.addEventListener("fetch", (event) => {
 
 async function networkFirstNavigation(event) {
   const { request } = event;
+  const { pathname } = new URL(request.url);
   const runtimeCache = await caches.open(RUNTIME_CACHE);
 
   try {
     const preloadResponse = await event.preloadResponse;
     const networkResponse = preloadResponse || (await fetch(request));
 
-    if (isCacheableResponse(networkResponse)) {
+    if (pathname !== "/auth-callback.html" && isCacheableResponse(networkResponse)) {
       await runtimeCache.put(request, networkResponse.clone());
     }
 
     return networkResponse;
   } catch {
-    const exactCachedPage = await runtimeCache.match(request);
+    // Match the neutral app shell without caching an auth callback code.
+    const exactCachedPage =
+      (pathname !== "/auth-callback.html" && await runtimeCache.match(request)) ||
+      (await (await caches.open(STATIC_CACHE)).match(pathname));
 
     if (exactCachedPage) {
       return exactCachedPage;

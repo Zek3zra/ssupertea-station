@@ -11,8 +11,10 @@ const ACTIVE_ORDER_STATUSES = new Set([
 
 const state = {
   initialized: false,
-  historyLoading: false,
   historyLoadedForUser: null,
+  historyRevision: 0,
+  historyRequest: null,
+  resetSending: false,
 };
 
 start().catch((error) => {
@@ -65,7 +67,6 @@ function isRiderPage() {
 function initializeCustomerPolish() {
   installForgotPasswordControl();
   ensureOrderHistoryPanel();
-  showPasswordResetSuccess();
 
   for (const eventName of [
     "ssupertea:account-changed",
@@ -73,8 +74,8 @@ function initializeCustomerPolish() {
     "ssupertea:order-changed",
   ]) {
     window.addEventListener(eventName, () => {
-      state.historyLoadedForUser = null;
-      window.setTimeout(loadOrderHistory, 100);
+      invalidateOrderHistory(eventName !== "ssupertea:order-changed");
+      window.setTimeout(loadOrderHistory, 0);
     });
   }
 
@@ -86,7 +87,20 @@ function initializeCustomerPolish() {
     .getElementById("mobile-profile-button")
     ?.addEventListener("click", () => window.setTimeout(loadOrderHistory, 100));
 
-  window.setTimeout(loadOrderHistory, 180);
+  window.addEventListener("ssupertea:account-signed-out", clearOrderHistory);
+
+  // Invalidate immediately, before account.js finishes its asynchronous refresh.
+  // Do not await Supabase calls inside an auth state change callback.
+  customerSupabase.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_OUT") {
+      clearOrderHistory();
+    } else if (event === "SIGNED_IN") {
+      invalidateOrderHistory(true);
+      window.setTimeout(loadOrderHistory, 0);
+    }
+  });
+
+  loadOrderHistory();
 }
 
 function installForgotPasswordControl() {
@@ -103,50 +117,61 @@ function installForgotPasswordControl() {
 }
 
 async function handleForgotPassword() {
+  if (state.resetSending) return;
+
   const emailInput = document.getElementById("login-email");
+  const button = document.getElementById("forgot-password-button");
   const email = String(emailInput?.value || "").trim().toLowerCase();
 
-  if (!email || !email.includes("@")) {
-    setAuthStatus("Enter your email first, then choose Forgot password.", "error");
+  if (!email || !emailInput.checkValidity()) {
+    setAuthStatus("Enter a valid email first, then choose Forgot password.", "error");
     emailInput?.focus();
     return;
   }
 
+  state.resetSending = true;
+  if (button) button.disabled = true;
   setAuthStatus("Sending password reset email…", "loading");
 
-  const callback =
-    `${window.location.origin}/auth-callback.html?next=${encodeURIComponent("/reset-password.html")}`;
+  try {
+    const callback =
+      `${window.location.origin}/auth-callback.html?next=${encodeURIComponent("/reset-password.html")}`;
+    const { error } = await customerSupabase.auth.resetPasswordForEmail(email, {
+      redirectTo: callback,
+    });
 
-  const { error } = await customerSupabase.auth.resetPasswordForEmail(email, {
-    redirectTo: callback,
-  });
+    if (error) throw error;
 
-  if (error) {
     setAuthStatus(
-      error.message || "The password reset email could not be sent.",
+      "If an account exists for this email, a reset link has been sent. Open it in the same browser where you requested it.",
+      "success"
+    );
+  } catch (error) {
+    setAuthStatus(
+      error.message || "The reset email could not be sent. Check your connection and try again.",
       "error"
     );
-    return;
+  } finally {
+    state.resetSending = false;
+    if (button) button.disabled = false;
   }
-
-  setAuthStatus(
-    "Password reset email sent. Open the link in your email to choose a new password.",
-    "success"
-  );
 }
 
-function showPasswordResetSuccess() {
-  const query = new URLSearchParams(window.location.search);
-  if (query.get("reset") !== "success") return;
+function invalidateOrderHistory(clear = false) {
+  state.historyRevision += 1;
+  state.historyLoadedForUser = null;
+  state.historyRequest = null;
 
-  window.setTimeout(() => {
-    setAuthStatus("Password updated. Sign in with your new password.", "success");
-  }, 180);
+  if (clear) {
+    document.querySelector("[data-history-list]")?.replaceChildren();
+  }
+}
 
-  query.delete("reset");
-  const nextQuery = query.toString();
-  const cleanUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
-  window.history.replaceState({}, "", cleanUrl);
+function clearOrderHistory() {
+  invalidateOrderHistory(true);
+  document.querySelector("[data-history-list]")?.replaceChildren(
+    createHistoryMessage("Sign in to view your orders.")
+  );
 }
 
 function ensureOrderHistoryPanel() {
@@ -179,42 +204,54 @@ function ensureOrderHistoryPanel() {
   panel
     .querySelector("[data-history-refresh]")
     ?.addEventListener("click", () => {
-      state.historyLoadedForUser = null;
+      invalidateOrderHistory();
       loadOrderHistory();
     });
 }
 
 async function loadOrderHistory() {
-  if (state.historyLoading) return;
+  if (state.historyRequest !== null) return;
 
   ensureOrderHistoryPanel();
   const list = document.querySelector("[data-history-list]");
   if (!list) return;
 
-  const session = await getVerifiedAccountSession({ forceRefresh: false });
-  const userId = session?.user?.id || null;
-
-  if (!session || !userId) {
-    state.historyLoadedForUser = null;
-    list.replaceChildren(createHistoryMessage("Sign in to view your orders."));
-    return;
-  }
-
-  if (state.historyLoadedForUser === userId) return;
-
-  state.historyLoading = true;
-  list.replaceChildren(createHistoryMessage("Loading your orders…"));
+  const requestId = ++state.historyRevision;
+  state.historyRequest = requestId;
 
   try {
+    const session = await getVerifiedAccountSession({ forceRefresh: false });
+    if (requestId !== state.historyRevision) return;
+
+    const userId = session?.user?.id;
+    if (!userId) {
+      clearOrderHistory();
+      return;
+    }
+
+    if (state.historyLoadedForUser === userId) return;
+    list.replaceChildren(createHistoryMessage("Loading your orders…"));
+
     const { data, error } = await customerSupabase
       .from("orders")
       .select(
         "id,order_type,items_subtotal,delivery_fee,total_price,status,created_at"
       )
+      // Staff RLS can allow more rows; My Orders must still show only this user.
+      .eq("customer_session_token", userId)
       .order("created_at", { ascending: false })
       .limit(20);
 
+    if (requestId !== state.historyRevision) return;
     if (error) throw error;
+
+    const { data: currentAuth, error: authError } =
+      await customerSupabase.auth.getSession();
+    if (requestId !== state.historyRevision) return;
+    if (authError || currentAuth?.session?.user?.id !== userId) {
+      clearOrderHistory();
+      return;
+    }
 
     const orders = Array.isArray(data) ? data : [];
     list.replaceChildren();
@@ -229,12 +266,13 @@ async function loadOrderHistory() {
 
     state.historyLoadedForUser = userId;
   } catch (error) {
+    if (requestId !== state.historyRevision) return;
     console.warn("Unable to load customer order history:", error);
     list.replaceChildren(
       createHistoryMessage("Order history is temporarily unavailable. Try again shortly.")
     );
   } finally {
-    state.historyLoading = false;
+    if (state.historyRequest === requestId) state.historyRequest = null;
   }
 }
 

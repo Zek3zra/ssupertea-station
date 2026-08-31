@@ -304,6 +304,33 @@ Current production functionality includes:
 - privacy cleanup on delivery completion
 - PWA support
 
+## Final Account and Staff Update
+
+The account update adds the latest 20 orders to **My Orders**, a password recovery flow, and clearer Admin/Rider mode switching.
+
+- Customer history and active-order lookups explicitly filter by the signed-in customer, including accounts that also have staff access.
+- Signing out or switching accounts immediately clears old history; late responses cannot replace the new account's results.
+- Failed history or password requests can be retried, and repeated reset clicks cannot submit duplicate requests.
+- Password fields remain disabled until the account session is verified. A changed session blocks the password update.
+- The callback accepts only safe local return paths and removes authorization codes from browser history. The PWA does not cache callback URLs containing codes.
+- Successful password updates return to the login dialog with a confirmation message.
+
+No new tables, database migrations, or staff permissions are required for this update.
+
+Password recovery uses Supabase's PKCE flow. Open the email link in the **same browser** that requested it. The production callback URL must be allowed in Supabase Auth URL Configuration. See [Supabase password recovery](https://supabase.com/docs/reference/javascript/auth-resetpasswordforemail) and [redirect URL configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+
+### Regression checks
+
+Run with Node.js:
+
+```sh
+node tests/final-functionality.test.cjs
+```
+
+The checks execute the feature code with simulated authentication, request timing, and DOM boundaries. They cover ownership filtering, sign-out/account-switch races, request failures, duplicate submissions, session changes, callback redirects, and offline page fallback. They do not send emails, change real passwords, or write to Supabase.
+
+A full acceptance check still requires a real customer account and staff accounts: password reset email → callback → new password → sign-in; personal order history; Admin/Rider switching; and the existing delivery/GPS workflow.
+
 ## Planned Improvements
 
 Future work may include:

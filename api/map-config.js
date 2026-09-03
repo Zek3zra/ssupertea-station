@@ -19,9 +19,7 @@ module.exports = async function mapConfigHandler(
     });
   }
 
-  // ArcGIS API keys used by browser maps are client-visible.
-  // Restrict the credential in ArcGIS to the Ssupertea web referrer
-  // and grant only the Basemaps privilege.
+  
   const key = String(
     process.env.ARCGIS_API_KEY ||
     process.env.ESRI_API_KEY ||

@@ -407,7 +407,7 @@ function normalizeCustomerPhone(value) {
 
 async function priceItems(configuration, rawItems) {
   const response = await fetch(
-    `${configuration.supabaseUrl}/rest/v1/rpc/price_customer_order`,
+    `${configuration.supabaseUrl}/rest/v1/rpc/price_catalog_order`,
     {
       method: "POST",
       headers: serviceHeaders(configuration),
@@ -434,7 +434,7 @@ async function priceItems(configuration, rawItems) {
     error.code = "ORDER_PRICING_FAILED";
     error.statusCode = 422;
     error.publicMessage =
-      "One of the drinks or options is no longer available. Refresh the menu and try again.";
+      "One of the menu items or options is no longer available. Refresh the menu and try again.";
     throw error;
   }
 

@@ -1,0 +1,112 @@
+[
+  {
+    "source": "DSCF6011.JPG",
+    "output": "DSCF6011_even_lighting.JPG",
+    "source_sha256": "321b82a03a7ed5964378efd6445950247037003ea2fe379b16b574d89f3a65a9",
+    "output_sha256": "dbe679948a2c2d27767a95510cbd39bb13cedb426b5d59e95d0627b21aa29f91",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6012.JPG",
+    "output": "DSCF6012_even_lighting.JPG",
+    "source_sha256": "be30a043569ccc5c766ab2630fed39d490515ba018b077bb8978bf2fd326553a",
+    "output_sha256": "721efb74a8884edeee973aecb9970dfa034970762d21572380511ecf7b9d44a0",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6013.JPG",
+    "output": "DSCF6013_even_lighting.JPG",
+    "source_sha256": "51a1d45aee230b879d7d78050cdba4cff2dc24540c81dfb7e3b2a9acff80d0d1",
+    "output_sha256": "d0024819b78a51294c3fe312556461a98c4fb2a3e3cb966bb51e6842c941561d",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6019.JPG",
+    "output": "DSCF6019_even_lighting.JPG",
+    "source_sha256": "52e7d05248c43d8c28418437d274409c51614e62ec464ee6cc69f93c4768bd5d",
+    "output_sha256": "430e4ffd09b304c2a9848e8f6432942cb9263bd1a1c0d2856afc3a8213bcc00c",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6020.JPG",
+    "output": "DSCF6020_even_lighting.JPG",
+    "source_sha256": "e125bc795e37baf56b1c839e3d7b809ffbe50714771a191803fe74f3e9765dba",
+    "output_sha256": "99c80f0619aeb74b1d8e34b166a6a18c5e1dfb3daaf8aca4e63e690e4a0a741a",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6021.JPG",
+    "output": "DSCF6021_even_lighting.JPG",
+    "source_sha256": "285f8f95250110e42899709a39c62970b0ab7f6a03c26e85a5076678a4a482a5",
+    "output_sha256": "0aeee470eb614aac3a505b89fbd5718037e3b73ccdf27fafdadb718a7dc9060f",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6024.JPG",
+    "output": "DSCF6024_even_lighting.JPG",
+    "source_sha256": "74d652f32ee22e4e816fa89aff859a74e7298b3876b6b31bf523120b348a79f0",
+    "output_sha256": "e7fec88368745fdc384d169389bc8e2b443e9ac3c2645d3a1c90f5bfe0f129c9",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6030.JPG",
+    "output": "DSCF6030_even_lighting.JPG",
+    "source_sha256": "844bd2626f8349ee01f27f8e48c486af732ec1b706cbbbd26f4a3143d5995439",
+    "output_sha256": "033beb9d6c00e153362c68893b5ef7b6db74ad84b2f09293591fa16e132347e0",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6031.JPG",
+    "output": "DSCF6031_even_lighting.JPG",
+    "source_sha256": "a6faffe9526dcdd5a0d31fc3e85af6d128be49f23b8d451cf0be2f30748dce57",
+    "output_sha256": "7ee455ff7358f95241fa16b280cb27754a2a9a37be0f438bec547abe1faa6fe8",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6034.JPG",
+    "output": "DSCF6034_even_lighting.JPG",
+    "source_sha256": "8b90edc8a539e70726f63709ea56e927f518b4cef6311201822b50414c7b8f12",
+    "output_sha256": "b950df52d9b7d16bef001b796a4178a1eb5c0166fef48312cec562bb469a5402",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  },
+  {
+    "source": "DSCF6035.JPG",
+    "output": "DSCF6035_even_lighting.JPG",
+    "source_sha256": "8a167004ae50ec952bf0aa4e0895d2ce74824aee96d0006da645d8764a35e620",
+    "output_sha256": "186847c440135ac85221a7f183caeaa5647a9328c939721614bd3a88641c9b93",
+    "dimensions": [
+      6000,
+      4000
+    ]
+  }
+]

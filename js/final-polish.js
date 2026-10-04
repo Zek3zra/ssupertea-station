@@ -464,7 +464,7 @@ function injectStyles() {
       padding: 3px 0;
       border: 0;
       background: transparent;
-      color: var(--green-800, #0e5b3b);
+      color: var(--green-800, #484848);
       font: inherit;
       font-size: .72rem;
       font-weight: 800;
@@ -474,7 +474,7 @@ function injectStyles() {
     .account-order-history {
       margin-top: 16px;
       padding-top: 15px;
-      border-top: 1px solid var(--border, rgba(14,91,59,.14));
+      border-top: 1px solid var(--border, rgba(72,72,72,.14));
     }
     .account-history-heading,
     .account-history-order-top,
@@ -486,17 +486,17 @@ function injectStyles() {
     }
     .account-history-heading > div { display: grid; gap: 2px; }
     .account-history-heading span {
-      color: var(--ink-500, #6b7b73);
+      color: var(--ink-500, #777777);
       font-size: .62rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: .05em;
     }
-    .account-history-heading strong { color: var(--green-950, #153c2e); }
+    .account-history-heading strong { color: var(--green-950, #333333); }
     .account-history-heading button {
       border: 0;
       background: transparent;
-      color: var(--green-800, #0e5b3b);
+      color: var(--green-800, #484848);
       font: inherit;
       font-size: .66rem;
       font-weight: 850;
@@ -514,50 +514,50 @@ function injectStyles() {
       margin: 0;
       padding: 13px;
       border-radius: 12px;
-      background: var(--cream-100, #f8f4e8);
-      color: var(--ink-500, #6b7b73);
+      background: var(--cream-100, #f4f4f4);
+      color: var(--ink-500, #777777);
       font-size: .68rem;
       line-height: 1.5;
     }
     .account-history-order {
       padding: 11px 12px;
-      border: 1px solid var(--border, rgba(14,91,59,.14));
+      border: 1px solid var(--border, rgba(72,72,72,.14));
       border-radius: 13px;
-      background: #fff;
+      background: #ffffff;
     }
     .account-history-order[data-active="true"] {
-      border-color: rgba(14,91,59,.28);
-      background: #f7fbf8;
+      border-color: rgba(72,72,72,.28);
+      background: #fafafa;
     }
     .account-history-order-top > div { display: grid; gap: 2px; min-width: 0; }
     .account-history-order-top > div strong {
-      color: var(--green-950, #153c2e);
+      color: var(--green-950, #333333);
       font-size: .73rem;
     }
     .account-history-order-top > div span,
     .account-history-facts span {
-      color: var(--ink-500, #6b7b73);
+      color: var(--ink-500, #777777);
       font-size: .61rem;
     }
     .account-history-status {
       padding: 5px 7px;
       border-radius: 999px;
-      background: #eef4f1;
-      color: #355c4c;
+      background: #f3f3f3;
+      color: #535353;
       font-size: .56rem;
       font-weight: 900;
       white-space: nowrap;
     }
-    .account-history-status.status-completed { background: #eaf6ed; color: #34724a; }
-    .account-history-status.status-cancelled { background: #fff0f0; color: #963b3b; }
-    .account-history-status.status-dispatched { background: #efecff; color: #51458e; }
+    .account-history-status.status-completed { background: #f3f3f3; color: #626262; }
+    .account-history-status.status-cancelled { background: #f3f3f3; color: #4e4e4e; }
+    .account-history-status.status-dispatched { background: #eeeeee; color: #4d4d4d; }
     .account-history-facts {
       margin-top: 8px;
       padding-top: 8px;
-      border-top: 1px solid var(--border, rgba(14,91,59,.1));
+      border-top: 1px solid var(--border, rgba(72,72,72,.1));
     }
     .account-history-facts strong {
-      color: var(--green-950, #153c2e);
+      color: var(--green-950, #333333);
       font-size: .72rem;
     }
     .staff-mode-switch {
@@ -567,8 +567,8 @@ function injectStyles() {
       align-items: center;
       justify-content: center;
       border-color: rgba(255,255,255,.28) !important;
-      background: #fff !important;
-      color: var(--green-800, #0e5b3b) !important;
+      background: #ffffff !important;
+      color: var(--green-800, #484848) !important;
       font-weight: 900 !important;
     }
   `;

@@ -28,7 +28,7 @@ body.staff-page {
   justify-content: space-between;
   gap: 18px;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255,255,255, 0.96);
   backdrop-filter: blur(16px);
 }
 
@@ -92,7 +92,7 @@ body.staff-page {
 
 .staff-action-link:hover,
 .staff-signout-button:hover {
-  border-color: rgba(14, 91, 59, 0.25);
+  border-color: rgba(72,72,72, 0.25);
   background: var(--green-100);
 }
 
@@ -168,7 +168,7 @@ body.staff-page {
   border-radius: 28px;
   background: var(--green-800);
   color: var(--white);
-  box-shadow: 0 20px 48px rgba(12, 62, 43, 0.12);
+  box-shadow: 0 20px 48px rgba(50,50,50, 0.12);
 }
 
 .admin-hero .eyebrow {
@@ -184,7 +184,7 @@ body.staff-page {
 .admin-hero-copy {
   margin-top: 10px;
   max-width: 62ch;
-  color: rgba(255, 255, 255, 0.76);
+  color: rgba(255,255,255, 0.76);
   line-height: 1.6;
 }
 
@@ -193,9 +193,9 @@ body.staff-page {
   padding: 16px;
   display: grid;
   gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255,255,255, 0.18);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255,255,255, 0.08);
 }
 
 .admin-live-line {
@@ -210,22 +210,22 @@ body.staff-page {
   height: 9px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: #d9a514;
-  box-shadow: 0 0 0 4px rgba(217, 165, 20, 0.15);
+  background: #a6a6a6;
+  box-shadow: 0 0 0 4px rgba(166,166,166, 0.15);
 }
 
 .admin-live-dot[data-state="live"] {
-  background: #79c267;
-  box-shadow: 0 0 0 4px rgba(121, 194, 103, 0.16);
+  background: #acacac;
+  box-shadow: 0 0 0 4px rgba(172,172,172, 0.16);
 }
 
 .admin-live-dot[data-state="offline"] {
-  background: #d85c5c;
-  box-shadow: 0 0 0 4px rgba(216, 92, 92, 0.16);
+  background: #767676;
+  box-shadow: 0 0 0 4px rgba(118,118,118, 0.16);
 }
 
 .admin-live-panel small {
-  color: rgba(255, 255, 255, 0.66);
+  color: rgba(255,255,255, 0.66);
   font-size: 0.68rem;
 }
 
@@ -233,7 +233,7 @@ body.staff-page {
   min-height: 40px;
   margin-top: 2px;
   padding: 0 13px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255,255,255, 0.2);
   border-radius: 11px;
   background: var(--white);
   color: var(--green-800);
@@ -260,13 +260,13 @@ body.staff-page {
 }
 
 .admin-status-message[data-type="loading"] {
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255,255,255, 0.72);
 }
 
 .admin-status-message[data-type="error"] {
-  border: 1px solid rgba(172, 55, 55, 0.18);
-  background: #fff1f1;
-  color: #8a3030;
+  border: 1px solid rgba(80,80,80, 0.18);
+  background: #f4f4f4;
+  color: #434343;
 }
 
 .admin-stats {
@@ -303,7 +303,7 @@ body.staff-page {
 }
 
 .admin-stat-card.is-total {
-  border-color: rgba(14, 91, 59, 0.2);
+  border-color: rgba(72,72,72, 0.2);
   background: var(--green-100);
 }
 
@@ -321,7 +321,7 @@ body.staff-page {
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.68);
+  background: rgba(255,255,255, 0.68);
 }
 
 .admin-column-header {
@@ -376,7 +376,7 @@ body.staff-page {
 
 .admin-empty-state {
   padding: 24px 16px;
-  border: 1px dashed rgba(14, 91, 59, 0.18);
+  border: 1px dashed rgba(72,72,72, 0.18);
   border-radius: 16px;
   color: var(--ink-500);
   font-size: 0.7rem;
@@ -390,27 +390,27 @@ body.staff-page {
   border: 1px solid var(--border);
   border-radius: 17px;
   background: var(--white);
-  box-shadow: 0 8px 22px rgba(27, 55, 44, 0.055);
+  box-shadow: 0 8px 22px rgba(48,48,48, 0.055);
 }
 
 .admin-order-card.status-pending {
-  border-top: 3px solid #d89a24;
+  border-top: 3px solid #9f9f9f;
 }
 
 .admin-order-card.status-preparing {
-  border-top: 3px solid #2f80b7;
+  border-top: 3px solid #737373;
 }
 
 .admin-order-card.status-dispatched {
-  border-top: 3px solid #6457b2;
+  border-top: 3px solid #606060;
 }
 
 .admin-order-card.status-completed {
-  border-top: 3px solid #4b9a64;
+  border-top: 3px solid #858585;
 }
 
 .admin-order-card.status-cancelled {
-  border-top: 3px solid #aa6262;
+  border-top: 3px solid #717171;
 }
 
 .admin-order-header {
@@ -446,23 +446,23 @@ body.staff-page {
 }
 
 .admin-status-pill.status-pending {
-  background: #fff5dc;
-  color: #825a0d;
+  background: #f5f5f5;
+  color: #5d5d5d;
 }
 
 .admin-status-pill.status-preparing {
-  background: #e9f4fb;
-  color: #25658f;
+  background: #f2f2f2;
+  color: #5a5a5a;
 }
 
 .admin-status-pill.status-dispatched {
-  background: #efecff;
-  color: #51458e;
+  background: #eeeeee;
+  color: #4d4d4d;
 }
 
 .admin-status-pill.status-cancelled {
-  background: #fff0f0;
-  color: #8a4646;
+  background: #f3f3f3;
+  color: #545454;
 }
 
 .admin-order-meta {
@@ -586,7 +586,7 @@ body.staff-page {
 .admin-action-button {
   min-height: 38px;
   padding: 0 11px;
-  border: 1px solid rgba(14, 91, 59, 0.2);
+  border: 1px solid rgba(72,72,72, 0.2);
   border-radius: 10px;
   background: var(--white);
   color: var(--green-800);
@@ -669,23 +669,23 @@ body.staff-page {
   border-radius: 13px;
   background: var(--white);
   color: var(--green-950);
-  box-shadow: 0 14px 38px rgba(18, 54, 41, 0.16);
+  box-shadow: 0 14px 38px rgba(45,45,45, 0.16);
   font-size: 0.69rem;
   font-weight: 800;
   line-height: 1.45;
 }
 
 .admin-toast.is-success {
-  border-color: rgba(72, 147, 89, 0.3);
+  border-color: rgba(127,127,127, 0.3);
 }
 
 .admin-toast.is-error {
-  border-color: rgba(170, 70, 70, 0.28);
-  color: #873d3d;
+  border-color: rgba(91,91,91, 0.28);
+  color: #4d4d4d;
 }
 
 .admin-toast.is-info {
-  border-color: rgba(49, 111, 155, 0.26);
+  border-color: rgba(101,101,101, 0.26);
 }
 
 @media (max-width: 1060px) {
@@ -819,4 +819,4 @@ body.staff-page {
   overflow-wrap: anywhere;
 }
 .staff-order-contact > span:first-child { font-weight: 700; }
-.staff-order-contact a { color: #0e5b3b; text-decoration: underline; text-underline-offset: 3px; }
+.staff-order-contact a { color: #484848; text-decoration: underline; text-underline-offset: 3px; }

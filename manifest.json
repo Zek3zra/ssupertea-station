@@ -1,7 +1,7 @@
 {
   "name": "Ssupertea Station",
   "short_name": "Ssupertea",
-  "description": "Order drinks for pickup or delivery and track your Ssupertea Station order.",
+  "description": "Order drinks, food, and combos for pickup or delivery from Ssupertea Station.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -9,8 +9,8 @@
   "dir": "ltr",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#F7F3E9",
-  "theme_color": "#0E5B3B",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "categories": [
     "food",
     "shopping"
@@ -18,22 +18,10 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/assets/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/maskable-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "/assets/icons/brand-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -44,9 +32,9 @@
       "url": "/?view=menu",
       "icons": [
         {
-          "src": "/assets/icons/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "/assets/icons/brand-icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     },
@@ -57,9 +45,9 @@
       "url": "/?view=cart",
       "icons": [
         {
-          "src": "/assets/icons/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "/assets/icons/brand-icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     },
@@ -70,9 +58,9 @@
       "url": "/?view=tracking",
       "icons": [
         {
-          "src": "/assets/icons/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "/assets/icons/brand-icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     }

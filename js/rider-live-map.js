@@ -468,7 +468,7 @@ function drawRoute(routeFeature) {
 
   state.routeLayer = window.L.geoJSON(routeFeature, {
     style: {
-      color: "#1473e6",
+      color: "#676767",
       weight: 6,
       opacity: 0.92,
       lineCap: "round",
@@ -718,7 +718,7 @@ function escapeHtml(value) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll("'", "&#303030;");
 }
 
 function cleanup() {
@@ -736,7 +736,7 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = "ssupertea-rider-live-map-style";
   style.textContent = `
-    .rider-live-map-panel{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}.rider-live-map-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.rider-live-map-header>div{display:grid;gap:2px}.rider-live-map-header span{color:var(--ink-500);font-size:.56rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.rider-live-map-header strong{color:var(--green-950);font-size:.76rem}.rider-live-map-header button{min-height:34px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#f7fbf8;color:var(--green-800);font:inherit;font-size:.6rem;font-weight:850}.rider-live-map-canvas{height:240px;border-radius:13px;overflow:hidden;background:#eef3ef}.rider-live-map-summary{margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.rider-live-map-summary>div{padding:9px 10px;border-radius:11px;background:var(--cream-100);display:grid;gap:2px}.rider-live-map-summary span{color:var(--ink-500);font-size:.54rem;font-weight:850;text-transform:uppercase;letter-spacing:.05em}.rider-live-map-summary strong{color:var(--green-950);font-size:.72rem}.rider-live-map-status{margin-top:8px;padding:8px 9px;border-radius:10px;background:#eff8f2;color:#315447;font-size:.59rem;font-weight:750;line-height:1.45}.rider-live-map-status[data-state=waiting]{background:#fff8e7;color:#7a601e}.rider-live-map-status[data-state=stale],.rider-live-map-status[data-state=error]{background:#fff0f0;color:#8a3030}.rider-live-map-note{margin-top:7px;color:var(--ink-500);font-size:.56rem;line-height:1.45}.rider-live-map-div-icon{background:transparent;border:0}.rider-live-map-marker{width:38px;height:38px;display:grid;place-items:center;border:3px solid #fff;border-radius:50%;box-shadow:0 5px 16px rgba(18,58,43,.24);font-weight:950}.rider-live-map-marker-rider{background:#fff6d8;color:#173b2c;font-size:1.15rem}.rider-live-map-marker-customer{background:#1473e6;color:#fff;font-size:.85rem}@media(max-width:560px){.rider-live-map-canvas{height:220px}}
+    .rider-live-map-panel{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}.rider-live-map-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.rider-live-map-header>div{display:grid;gap:2px}.rider-live-map-header span{color:var(--ink-500);font-size:.56rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.rider-live-map-header strong{color:var(--green-950);font-size:.76rem}.rider-live-map-header button{min-height:34px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#fafafa;color:var(--green-800);font:inherit;font-size:.6rem;font-weight:850}.rider-live-map-canvas{height:240px;border-radius:13px;overflow:hidden;background:#f2f2f2}.rider-live-map-summary{margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.rider-live-map-summary>div{padding:9px 10px;border-radius:11px;background:var(--cream-100);display:grid;gap:2px}.rider-live-map-summary span{color:var(--ink-500);font-size:.54rem;font-weight:850;text-transform:uppercase;letter-spacing:.05em}.rider-live-map-summary strong{color:var(--green-950);font-size:.72rem}.rider-live-map-status{margin-top:8px;padding:8px 9px;border-radius:10px;background:#f6f6f6;color:#4c4c4c;font-size:.59rem;font-weight:750;line-height:1.45}.rider-live-map-status[data-state=waiting]{background:#f8f8f8;color:#616161}.rider-live-map-status[data-state=stale],.rider-live-map-status[data-state=error]{background:#f3f3f3;color:#434343}.rider-live-map-note{margin-top:7px;color:var(--ink-500);font-size:.56rem;line-height:1.45}.rider-live-map-div-icon{background:transparent;border:0}.rider-live-map-marker{width:38px;height:38px;display:grid;place-items:center;border:3px solid #ffffff;border-radius:50%;box-shadow:0 5px 16px rgba(48,48,48,.24);font-weight:950}.rider-live-map-marker-rider{background:#f6f6f6;color:#323232;font-size:1.15rem}.rider-live-map-marker-customer{background:#676767;color:#ffffff;font-size:.85rem}@media(max-width:560px){.rider-live-map-canvas{height:220px}}
   `;
   document.head.append(style);
 }

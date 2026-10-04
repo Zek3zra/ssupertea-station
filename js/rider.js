@@ -549,7 +549,7 @@ function getItemName(item) {
     }
   }
 
-  return "Drink";
+  return "Item";
 }
 
 function getItemDetails(item) {
@@ -560,6 +560,7 @@ function getItemDetails(item) {
     item?.sugar_label ?? item?.sugar_level ?? item?.sugar,
     item?.ice_label ?? item?.ice_level ?? item?.ice,
   ]) {
+    if (value && typeof value === "object" && ["regular","standard","not-applicable"].includes(value.id)) continue;
     const normalized = getOptionDisplayText(value);
     if (normalized) {
       details.push(normalized);

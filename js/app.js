@@ -1,3 +1,5 @@
+import { bindSheetDismiss } from "/js/sheet-dismiss.js";
+import { normalizeCatalogProduct, catalogIcon, getSizeOptions, getAddonOptions, calculateCatalogPrice, SUGAR_OPTIONS, getSugarOption, getSugarSummary } from "/js/catalog.js";
 import {
   customerSupabase,
   ensureCustomerSession,
@@ -17,7 +19,7 @@ import {
   OPENSTREETMAP_CONFIG,
 } from "/js/openstreetmap-config.js";
 
-const CART_STORAGE_KEY = "ssupertea-cart-v1";
+const CART_STORAGE_KEY = "ssupertea-cart-v2";
 const CUSTOMER_NAME_STORAGE_KEY = "ssupertea-customer-name-v1";
 const CUSTOMER_SESSION_TOKEN_STORAGE_KEY =
   "ssupertea-customer-session-token-v1";
@@ -43,213 +45,7 @@ const TERMINAL_ORDER_STATUSES = new Set([
 let leafletLoadPromise = null;
 let esriLeafletLoadPromise = null;
 
-const MENU_ITEMS = Object.freeze([
-  {
-    id: "brown-sugar-pearl-milk-tea",
-    name: "Brown Sugar Pearl Milk Tea",
-    category: "Milk Tea",
-    description: "Creamy milk tea with deep brown sugar flavor and chewy pearls.",
-    basePrice: 95,
-    featured: true,
-    pearls: true,
-    visual: {
-      background: "#F3E8D2",
-      top: "#F3DFC2",
-      middle: "#C48A58",
-      bottom: "#563323",
-      rotation: "-2deg",
-    },
-  },
-  {
-    id: "strawberry-jasmine-tea",
-    name: "Strawberry Jasmine Tea",
-    category: "Fruit Tea",
-    description: "Bright strawberry flavor blended with fragrant jasmine tea.",
-    basePrice: 85,
-    featured: true,
-    pearls: false,
-    visual: {
-      background: "#FBE6E2",
-      top: "#FFD7CF",
-      middle: "#EC8C7C",
-      bottom: "#C84D55",
-      rotation: "2deg",
-    },
-  },
-  {
-    id: "iced-matcha-latte",
-    name: "Iced Matcha Latte",
-    category: "Matcha",
-    description: "Earthy matcha layered with creamy milk and refreshing ice.",
-    basePrice: 95,
-    featured: true,
-    pearls: false,
-    visual: {
-      background: "#E8F0D8",
-      top: "#F4EFD9",
-      middle: "#A9C87A",
-      bottom: "#5E8C51",
-      rotation: "1deg",
-    },
-  },
-  {
-    id: "oreo-cheesecake-milk-tea",
-    name: "Oreo Cheesecake Milk Tea",
-    category: "Specialty",
-    description: "Milk tea finished with cookie crumbs and rich cheesecake foam.",
-    basePrice: 105,
-    featured: false,
-    pearls: true,
-    visual: {
-      background: "#ECE9E5",
-      top: "#F1E8D5",
-      middle: "#9B816B",
-      bottom: "#3E342E",
-      rotation: "-1deg",
-    },
-  },
-  {
-    id: "wintermelon-milk-tea",
-    name: "Wintermelon Milk Tea",
-    category: "Milk Tea",
-    description: "Smooth milk tea with a mellow, caramel-like wintermelon finish.",
-    basePrice: 85,
-    featured: false,
-    pearls: false,
-    visual: {
-      background: "#F3EBDD",
-      top: "#F4E5C6",
-      middle: "#C5A16F",
-      bottom: "#80613F",
-      rotation: "2deg",
-    },
-  },
-  {
-    id: "taro-milk-tea",
-    name: "Taro Milk Tea",
-    category: "Milk Tea",
-    description: "Creamy and lightly sweet taro milk tea with a nutty aroma.",
-    basePrice: 90,
-    featured: false,
-    pearls: false,
-    visual: {
-      background: "#EFE6F5",
-      top: "#F0E7F5",
-      middle: "#B9A0CC",
-      bottom: "#7D6797",
-      rotation: "-2deg",
-    },
-  },
-  {
-    id: "classic-milk-tea",
-    name: "Classic Milk Tea",
-    category: "Milk Tea",
-    description: "A balanced house milk tea with a smooth, comforting finish.",
-    basePrice: 80,
-    featured: false,
-    pearls: true,
-    visual: {
-      background: "#F5EBDD",
-      top: "#F4E0BF",
-      middle: "#C89462",
-      bottom: "#765039",
-      rotation: "1deg",
-    },
-  },
-  {
-    id: "hokkaido-milk-tea",
-    name: "Hokkaido Milk Tea",
-    category: "Milk Tea",
-    description: "Rich and creamy milk tea with a toasted caramel profile.",
-    basePrice: 95,
-    featured: false,
-    pearls: true,
-    visual: {
-      background: "#F4E7D4",
-      top: "#F7DFBB",
-      middle: "#C88755",
-      bottom: "#6E432F",
-      rotation: "-1deg",
-    },
-  },
-  {
-    id: "thai-milk-tea",
-    name: "Thai Milk Tea",
-    category: "Specialty",
-    description: "Bold tea, aromatic spices, and creamy milk over ice.",
-    basePrice: 95,
-    featured: false,
-    pearls: false,
-    visual: {
-      background: "#FBE8D2",
-      top: "#FFE1B7",
-      middle: "#E99046",
-      bottom: "#B24F27",
-      rotation: "2deg",
-    },
-  },
-  {
-    id: "mango-fruit-tea",
-    name: "Mango Fruit Tea",
-    category: "Fruit Tea",
-    description: "Juicy mango flavor mixed with light tea for a tropical sip.",
-    basePrice: 85,
-    featured: false,
-    pearls: false,
-    visual: {
-      background: "#FFF0CF",
-      top: "#FFE9A8",
-      middle: "#F4C454",
-      bottom: "#DE8F2B",
-      rotation: "-2deg",
-    },
-  },
-  {
-    id: "lychee-fruit-tea",
-    name: "Lychee Fruit Tea",
-    category: "Fruit Tea",
-    description: "Floral lychee sweetness with a clean and refreshing tea base.",
-    basePrice: 85,
-    featured: false,
-    pearls: false,
-    visual: {
-      background: "#FDEBEF",
-      top: "#FFF0F1",
-      middle: "#F3B2BD",
-      bottom: "#D66F83",
-      rotation: "1deg",
-    },
-  },
-  {
-    id: "lemon-yakult",
-    name: "Lemon Yakult",
-    category: "Yakult",
-    description: "A tangy lemon and Yakult blend that is bright and refreshing.",
-    basePrice: 90,
-    featured: false,
-    pearls: false,
-    visual: {
-      background: "#F8F5D8",
-      top: "#FFF9D2",
-      middle: "#E7E27B",
-      bottom: "#B9B444",
-      rotation: "-1deg",
-    },
-  },
-]);
-
-const SIZE_OPTIONS = Object.freeze([
-  { id: "medium", label: "Medium", shortLabel: "M", price: 0 },
-  { id: "large", label: "Large", shortLabel: "L", price: 15 },
-]);
-
-const SUGAR_OPTIONS = Object.freeze([
-  { id: "0", label: "0%" },
-  { id: "25", label: "25%" },
-  { id: "50", label: "50%" },
-  { id: "75", label: "75%" },
-  { id: "100", label: "100%" },
-]);
+let MENU_ITEMS = [];
 
 const ICE_OPTIONS = Object.freeze([
   { id: "no-ice", label: "No ice" },
@@ -258,12 +54,8 @@ const ICE_OPTIONS = Object.freeze([
   { id: "extra-ice", label: "Extra" },
 ]);
 
-const ADDON_OPTIONS = Object.freeze([
-  { id: "pearl", label: "Pearl", price: 15 },
-  { id: "pudding", label: "Pudding", price: 15 },
-  { id: "aloe-vera", label: "Aloe Vera", price: 15 },
-  { id: "cheese-foam", label: "Cheese Foam", price: 25 },
-]);
+const STANDARD_SUGAR = Object.freeze({ id: "standard", label: "Standard" });
+const STANDARD_ICE = Object.freeze({ id: "not-applicable", label: "Not applicable" });
 
 const state = {
   activeCategory: "All",
@@ -271,7 +63,8 @@ const state = {
   selectedProductId: null,
   customizeQuantity: 1,
   installPrompt: null,
-  cart: loadCart(),
+  cart: [],
+  catalogStatus: "loading",
   checkout: {
     customerUserId: null,
     savingProfile: false,
@@ -325,7 +118,13 @@ async function initializeApp() {
   updateCurrentYear();
   // Personal checkout details are loaded from the current account, not shared local storage.
 
+  const catalogPromise = loadMenuCatalog();
+  document.getElementById("catalog-retry-button").addEventListener("click", loadMenuCatalog);
+  document.addEventListener("error", event => {
+    if (event.target?.matches?.("img.catalog-image")) event.target.hidden = true;
+  }, true);
   await initializeAccountSystem();
+  await catalogPromise;
 
   await restoreOrderTracking();
 }
@@ -344,7 +143,6 @@ function cacheElements() {
     "mobile-cart-count",
     "cart-panel",
     "page-overlay",
-    "close-cart-button",
     "cart-empty-state",
     "cart-list",
     "cart-footer",
@@ -436,7 +234,6 @@ function cacheElements() {
     "tracking-google-maps-link",
     "customize-dialog",
     "customize-form",
-    "close-customize-button",
     "dialog-drink-visual",
     "dialog-product-category",
     "dialog-product-name",
@@ -477,13 +274,13 @@ function bindEvents() {
 
   elements["header-cart-button"].addEventListener("click", openCart);
   elements["mobile-cart-button"].addEventListener("click", openCart);
-  elements["close-cart-button"].addEventListener("click", closeCart);
+  bindSheetDismiss(elements["cart-panel"], closeCart);
+  bindSheetDismiss(elements["customize-dialog"], closeCustomizeDialog);
   elements["page-overlay"].addEventListener("click", closeCart);
   elements["browse-menu-button"].addEventListener("click", handleBrowseMenu);
   elements["clear-cart-button"].addEventListener("click", clearCart);
   elements["cart-list"].addEventListener("click", handleCartListClick);
 
-  elements["close-customize-button"].addEventListener("click", closeCustomizeDialog);
   elements["customize-form"].addEventListener("submit", handleCustomizeSubmit);
   elements["customize-form"].addEventListener("change", updateCustomizeTotal);
   elements["customize-decrease-button"].addEventListener(
@@ -591,7 +388,9 @@ function bindEvents() {
   });
 
   elements["customize-dialog"].addEventListener("click", (event) => {
-    if (event.target === elements["customize-dialog"]) {
+    const dialog = elements["customize-dialog"];
+    const rect = dialog.getBoundingClientRect();
+    if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) {
       closeCustomizeDialog();
     }
   });
@@ -659,6 +458,43 @@ function bindEvents() {
   });
 }
 
+async function loadMenuCatalog() {
+  state.catalogStatus = "loading";
+  renderMenu();
+  try {
+    const { data, error } = await customerSupabase.from("menu_catalog")
+      .select("id,name,category,description,icon,image_url,featured,customizable,variant_label,sort_order,menu_catalog_variants(id,label,price,active,sort_order),menu_catalog_addons(id,label,price,active,sort_order)")
+      .eq("active", true).order("sort_order")
+      .abortSignal(AbortSignal.timeout(15000));
+    if (error) throw error;
+    MENU_ITEMS = (data || []).filter(row => row.menu_catalog_variants?.some(option => option.active))
+      .map(normalizeCatalogProduct);
+    state.catalogStatus = "ready";
+    state.cart = loadCart();
+    renderCategories();
+    renderMenu();
+    renderCart();
+  } catch (error) {
+    console.warn("Menu catalog could not be loaded:", error);
+    state.catalogStatus = "error";
+    renderMenu();
+  }
+}
+
+function createCatalogVisual(product) {
+  return catalogIcon(product?.icon) + (product?.imageUrl
+    ? `<img class="catalog-image" src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy" decoding="async">`
+    : "");
+}
+
+function getItemOptionSummary(item) {
+  return [item.size?.id !== "regular" ? item.size?.label : "",
+    getSugarSummary(item.sugar),
+    item.ice?.id !== "not-applicable" ? item.ice?.label : "",
+    ...(item.addons || []).map(addon => addon.label || addon.name)
+  ].filter(Boolean).join(" · ");
+}
+
 function renderCategories() {
   const categories = [
     "All",
@@ -682,6 +518,16 @@ function renderCategories() {
 }
 
 function renderMenu() {
+  const ready = state.catalogStatus === "ready";
+  elements["header-cart-button"].disabled = !ready;
+  elements["mobile-cart-button"].disabled = !ready;
+  document.getElementById("catalog-load-error").hidden = state.catalogStatus !== "error";
+  if (!ready) {
+    elements["menu-grid"].hidden = true;
+    elements["menu-empty-state"].hidden = true;
+    elements["menu-status"].textContent = state.catalogStatus === "loading" ? "Loading our menu…" : "Menu temporarily unavailable";
+    return;
+  }
   const normalizedQuery = state.searchQuery.trim().toLocaleLowerCase("en-PH");
 
   const filteredItems = MENU_ITEMS.filter((item) => {
@@ -699,7 +545,7 @@ function renderMenu() {
 
   elements["menu-grid"].innerHTML = filteredItems.map(createProductCard).join("");
 
-  const countLabel = filteredItems.length === 1 ? "drink" : "drinks";
+  const countLabel = filteredItems.length === 1 ? "item" : "items";
   elements["menu-status"].textContent = `${filteredItems.length} ${countLabel} available`;
 
   const hasResults = filteredItems.length > 0;
@@ -708,36 +554,19 @@ function renderMenu() {
 }
 
 function createProductCard(product) {
-  const visualVariables = getVisualVariables(product);
-
   return `
     <article class="product-card" data-product-id="${escapeHtml(product.id)}">
-      <div class="product-visual" style="${visualVariables}" aria-hidden="true">
-        <span class="product-straw"></span>
-        <span class="product-lid"></span>
-        ${product.pearls ? '<span class="product-pearls"></span>' : ""}
+      <div class="product-visual catalog-visual" aria-hidden="true">
+        ${createCatalogVisual(product)}
+        ${product.featured ? '<span class="product-badge">Customer favorite</span>' : ""}
       </div>
-
       <div class="product-card-content">
         <p class="product-category">${escapeHtml(product.category)}</p>
         <h3>${escapeHtml(product.name)}</h3>
         <p class="product-description">${escapeHtml(product.description)}</p>
-
         <div class="product-card-footer">
-          <p class="product-price">
-            ${formatCurrency(product.basePrice)}
-            <small>from</small>
-          </p>
-
-          <button
-            class="customize-button"
-            type="button"
-            data-action="customize"
-            data-product-id="${escapeHtml(product.id)}"
-            aria-label="Customize ${escapeHtml(product.name)}"
-          >
-            Customize
-          </button>
+          <p class="product-price">${formatCurrency(product.basePrice)}${product.variants.some(option => option.price !== product.basePrice) ? '<small>from</small>' : ""}</p>
+          <button class="customize-button" type="button" data-action="customize" data-product-id="${escapeHtml(product.id)}" aria-label="Add ${escapeHtml(product.name)} to cart">Add to cart</button>
         </div>
       </div>
     </article>
@@ -793,7 +622,7 @@ function openCustomizeDialog(productId) {
   if (!product) {
     showToast({
       type: "error",
-      title: "Drink unavailable",
+      title: "Item unavailable",
       message: "This menu item could not be loaded.",
     });
 
@@ -807,7 +636,8 @@ function openCustomizeDialog(productId) {
   elements["dialog-product-category"].textContent = product.category;
   elements["dialog-product-name"].textContent = product.name;
   elements["dialog-product-description"].textContent = product.description;
-  elements["dialog-drink-visual"].setAttribute("style", getVisualVariables(product));
+  elements["dialog-drink-visual"].classList.add("catalog-visual");
+  elements["dialog-drink-visual"].innerHTML = createCatalogVisual(product);
 
   renderCustomizeOptions();
   updateCustomizeQuantityOutput();
@@ -817,80 +647,34 @@ function openCustomizeDialog(productId) {
   elements["customize-dialog"].showModal();
 
   requestAnimationFrame(() => {
-    const firstOption = elements["customize-form"].querySelector("input");
+    const firstOption = elements["customize-form"].querySelector("input:not([disabled]), button:not([disabled])");
     firstOption?.focus();
   });
 }
 
 function renderCustomizeOptions() {
-  elements["size-options"].innerHTML = SIZE_OPTIONS.map(
-    (option, index) => `
-      <div class="option-card">
-        <input
-          id="size-${escapeHtml(option.id)}"
-          name="size"
-          type="radio"
-          value="${escapeHtml(option.id)}"
-          ${index === 0 ? "checked" : ""}
-          required
-        >
-        <label for="size-${escapeHtml(option.id)}">
-          ${escapeHtml(option.label)}
-          <small>${option.price > 0 ? `+${formatCurrency(option.price)}` : "Base price"}</small>
-        </label>
-      </div>
-    `
-  ).join("");
-
-  elements["sugar-options"].innerHTML = SUGAR_OPTIONS.map(
-    (option) => `
-      <div class="option-card">
-        <input
-          id="sugar-${escapeHtml(option.id)}"
-          name="sugar"
-          type="radio"
-          value="${escapeHtml(option.id)}"
-          ${option.id === "50" ? "checked" : ""}
-          required
-        >
-        <label for="sugar-${escapeHtml(option.id)}">${escapeHtml(option.label)}</label>
-      </div>
-    `
-  ).join("");
-
-  elements["ice-options"].innerHTML = ICE_OPTIONS.map(
-    (option) => `
-      <div class="option-card">
-        <input
-          id="ice-${escapeHtml(option.id)}"
-          name="ice"
-          type="radio"
-          value="${escapeHtml(option.id)}"
-          ${option.id === "regular-ice" ? "checked" : ""}
-          required
-        >
-        <label for="ice-${escapeHtml(option.id)}">${escapeHtml(option.label)}</label>
-      </div>
-    `
-  ).join("");
-
-  elements["addon-options"].innerHTML = ADDON_OPTIONS.map(
-    (addon) => `
-      <div class="addon-card">
-        <input
-          id="addon-${escapeHtml(addon.id)}"
-          name="addons"
-          type="checkbox"
-          value="${escapeHtml(addon.id)}"
-        >
-        <label for="addon-${escapeHtml(addon.id)}">
-          <span class="addon-check" aria-hidden="true">✓</span>
-          <span class="addon-name">${escapeHtml(addon.label)}</span>
-          <span class="addon-price">+${formatCurrency(addon.price)}</span>
-        </label>
-      </div>
-    `
-  ).join("");
+  const product = getProductById(state.selectedProductId);
+  if (!product) return;
+  document.getElementById("variant-label").textContent = product.variantLabel;
+  const radio = (name, options, selected, priced = false) => options.map(option => `
+    <div class="option-card">
+      <input id="${name}-${escapeHtml(option.id)}" name="${name}" type="radio" value="${escapeHtml(option.id)}" ${option.id === selected ? "checked" : ""} required>
+      <label for="${name}-${escapeHtml(option.id)}">${escapeHtml(option.label)}${priced ? `<small>${formatCurrency(option.price)}</small>` : ""}</label>
+    </div>`).join("");
+  const hasVariants = getSizeOptions(product).length > 1;
+  document.getElementById("size-group").hidden = !hasVariants;
+  elements["size-options"].innerHTML = hasVariants ? radio("size", getSizeOptions(product), product.variants[0].id, true) : "";
+  elements["sugar-options"].innerHTML = product.customizable ? radio("sugar", SUGAR_OPTIONS, "original-recipe") : "";
+  elements["ice-options"].innerHTML = product.customizable ? radio("ice", ICE_OPTIONS, "regular-ice") : "";
+  document.getElementById("sugar-group").hidden = !product.customizable;
+  document.getElementById("ice-group").hidden = !product.customizable;
+  const addons = getAddonOptions(product);
+  document.getElementById("addon-group").hidden = addons.length === 0;
+  elements["addon-options"].innerHTML = addons.map(addon => `
+    <div class="addon-card">
+      <input id="addon-${escapeHtml(addon.id)}" name="addons" type="checkbox" value="${escapeHtml(addon.id)}">
+      <label for="addon-${escapeHtml(addon.id)}"><span class="addon-check" aria-hidden="true">✓</span><span class="addon-name">${escapeHtml(addon.label)}</span><span class="addon-price">+${formatCurrency(addon.price)}</span></label>
+    </div>`).join("");
 }
 
 function closeCustomizeDialog() {
@@ -935,10 +719,11 @@ function updateCustomizeTotal() {
 function getCustomizeSelection() {
   const formData = new FormData(elements["customize-form"]);
 
+  const product = getProductById(state.selectedProductId);
   return {
-    sizeId: String(formData.get("size") || "medium"),
-    sugarId: String(formData.get("sugar") || "50"),
-    iceId: String(formData.get("ice") || "regular-ice"),
+    sizeId: String(formData.get("size") || product?.variants[0]?.id || "regular"),
+    sugarId: product?.customizable ? String(formData.get("sugar") || "original-recipe") : STANDARD_SUGAR.id,
+    iceId: product?.customizable ? String(formData.get("ice") || "regular-ice") : STANDARD_ICE.id,
     addonIds: formData.getAll("addons").map(String),
   };
 }
@@ -956,25 +741,25 @@ function handleCustomizeSubmit(event) {
     showToast({
       type: "error",
       title: "Unable to add item",
-      message: "The selected drink no longer exists.",
+      message: "The selected item no longer exists.",
     });
 
     return;
   }
 
   const selection = getCustomizeSelection();
-  const size = SIZE_OPTIONS.find((option) => option.id === selection.sizeId);
-  const sugar = SUGAR_OPTIONS.find((option) => option.id === selection.sugarId);
-  const ice = ICE_OPTIONS.find((option) => option.id === selection.iceId);
+  const size = getSizeOptions(product).find((option) => option.id === selection.sizeId);
+  const sugar = product.customizable ? getSugarOption(selection.sugarId) : STANDARD_SUGAR;
+  const ice = product.customizable ? ICE_OPTIONS.find((option) => option.id === selection.iceId) : STANDARD_ICE;
   const addons = selection.addonIds
-    .map((addonId) => ADDON_OPTIONS.find((addon) => addon.id === addonId))
+    .map((addonId) => getAddonOptions(product).find((addon) => addon.id === addonId))
     .filter(Boolean);
 
   if (!size || !sugar || !ice) {
     showToast({
       type: "error",
       title: "Check your options",
-      message: "Choose a valid size, sugar level, and ice level.",
+      message: "Choose the available options for this item.",
     });
 
     return;
@@ -1023,7 +808,7 @@ function handleCustomizeSubmit(event) {
       })),
       unitPrice,
       quantity: state.customizeQuantity,
-      visual: product.visual,
+      icon: product.icon,
     });
   }
 
@@ -1039,13 +824,7 @@ function handleCustomizeSubmit(event) {
 }
 
 function calculateUnitPrice(product, selection) {
-  const size = SIZE_OPTIONS.find((option) => option.id === selection.sizeId);
-  const addonTotal = selection.addonIds.reduce((total, addonId) => {
-    const addon = ADDON_OPTIONS.find((option) => option.id === addonId);
-    return total + (addon?.price || 0);
-  }, 0);
-
-  return roundCurrency(product.basePrice + (size?.price || 0) + addonTotal);
+  return calculateCatalogPrice(product, selection);
 }
 
 function createCartKey({ productId, sizeId, sugarId, iceId, addonIds }) {
@@ -1107,8 +886,7 @@ function setElementHidden(element, shouldHide) {
 
 function createCartItemMarkup(item) {
   const product = getProductById(item.productId);
-  const visualSource = product?.visual || item.visual || MENU_ITEMS[0].visual;
-  const visualVariables = visualToCssVariables(visualSource);
+  const options = getItemOptionSummary({ ...item, addons: [] });
   const itemTotal = roundCurrency(item.unitPrice * item.quantity);
   const addonText =
     item.addons.length > 0
@@ -1117,7 +895,7 @@ function createCartItemMarkup(item) {
 
   return `
     <article class="cart-item" data-cart-key="${escapeHtml(item.cartKey)}">
-      <div class="cart-item-visual" style="${visualVariables}" aria-hidden="true"></div>
+      <div class="cart-item-visual catalog-visual" aria-hidden="true">${createCatalogVisual(product)}</div>
 
       <div class="cart-item-content">
         <div class="cart-item-title-row">
@@ -1126,9 +904,8 @@ function createCartItemMarkup(item) {
         </div>
 
         <p class="cart-item-options">
-          ${escapeHtml(item.size.label)} · ${escapeHtml(item.sugar.label)} sugar ·
-          ${escapeHtml(item.ice.label)}
-          <span class="cart-item-addon">${escapeHtml(addonText)}</span>
+          ${escapeHtml(options)}
+          ${item.addons.length ? `<span class="cart-item-addon">${escapeHtml(addonText)}</span>` : ""}
         </p>
 
         <div class="cart-item-actions">
@@ -1216,7 +993,7 @@ function updateCartQuantity(cartKey, delta) {
     showToast({
       type: "info",
       title: "Maximum quantity reached",
-      message: `A customized item can have up to ${MAX_ITEM_QUANTITY} drinks.`,
+      message: `A customized item can have up to ${MAX_ITEM_QUANTITY} units.`,
     });
   }
 
@@ -1260,7 +1037,7 @@ function clearCart() {
   showToast({
     type: "info",
     title: "Cart cleared",
-    message: "All drinks were removed from your cart.",
+    message: "All items were removed from your cart.",
   });
 }
 
@@ -1271,11 +1048,11 @@ function openCart() {
   elements["page-overlay"].hidden = false;
 
   requestAnimationFrame(() => {
-    elements["page-overlay"].classList.add("is-visible");
+    if (elements["cart-panel"].classList.contains("is-open")) elements["page-overlay"].classList.add("is-visible");
   });
 
   document.body.classList.add("panel-open");
-  elements["close-cart-button"].focus();
+  document.getElementById("cart-title").focus({ preventScroll: true });
 }
 
 function closeCart() {
@@ -1284,14 +1061,15 @@ function closeCart() {
   }
 
   elements["cart-panel"].classList.remove("is-open");
+  if (elements["cart-panel"].contains(document.activeElement)) elements["header-cart-button"].focus({ preventScroll: true });
   elements["cart-panel"].setAttribute("aria-hidden", "true");
   elements["header-cart-button"].setAttribute("aria-expanded", "false");
   elements["page-overlay"].classList.remove("is-visible");
   document.body.classList.remove("panel-open");
 
   window.setTimeout(() => {
-    elements["page-overlay"].hidden = true;
-  }, 190);
+    if (!elements["cart-panel"].classList.contains("is-open")) elements["page-overlay"].hidden = true;
+  }, 250);
 }
 
 function handleBrowseMenu() {
@@ -1304,7 +1082,7 @@ async function handleCheckoutRequest() {
     showToast({
       type: "warning",
       title: "Your cart is empty",
-      message: "Add at least one drink before continuing.",
+      message: "Add at least one item before continuing.",
     });
 
     return;
@@ -1579,22 +1357,12 @@ function renderCheckoutSummary() {
         item.unitPrice * item.quantity
       );
 
-      const addonLabel =
-        item.addons.length > 0
-          ? item.addons
-              .map((addon) => addon.label)
-              .join(", ")
-          : "No add-ons";
-
       return `
         <article class="checkout-summary-item">
           <strong>${item.quantity}× ${escapeHtml(item.name)}</strong>
           <span>${formatCurrency(itemTotal)}</span>
           <p>
-            ${escapeHtml(item.size.label)} ·
-            ${escapeHtml(item.sugar.label)} sugar ·
-            ${escapeHtml(item.ice.label)} ·
-            ${escapeHtml(addonLabel)}
+            ${escapeHtml(getItemOptionSummary(item))}
           </p>
         </article>
       `;
@@ -3117,7 +2885,7 @@ async function handleCheckoutSubmit(event) {
     showToast({
       type: "warning",
       title: "Your cart changed",
-      message: "Add at least one drink before placing the order.",
+      message: "Add at least one item before placing the order.",
     });
 
     closeCheckoutDialog();
@@ -3497,7 +3265,7 @@ function getOrderSubmissionMessage(error) {
     errorCode === "order_pricing_failed"
   ) {
     return (
-      "One of the drinks or add-ons is no longer available. Refresh the menu and try again."
+      "One of the items or extras is no longer available. Refresh the menu and try again."
     );
   }
 
@@ -4297,24 +4065,11 @@ function renderTrackingItems(order) {
     items.length > 0
       ? items
           .map((item) => {
-            const addonText =
-              Array.isArray(item.addons) &&
-              item.addons.length > 0
-                ? item.addons
-                    .map(
-                      (addon) =>
-                        addon.label ||
-                        addon.name
-                    )
-                    .filter(Boolean)
-                    .join(", ")
-                : "No add-ons";
-
             return `
               <article class="tracking-item">
                 <strong>
                   ${Number(item.quantity) || 1}×
-                  ${escapeHtml(item.name || "Drink")}
+                  ${escapeHtml(item.name || "Item")}
                 </strong>
                 <span>
                   ${formatCurrency(
@@ -4327,16 +4082,7 @@ function renderTrackingItems(order) {
                   )}
                 </span>
                 <p>
-                  ${escapeHtml(
-                    item.size?.label || ""
-                  )} ·
-                  ${escapeHtml(
-                    item.sugar?.label || ""
-                  )} sugar ·
-                  ${escapeHtml(
-                    item.ice?.label || ""
-                  )} ·
-                  ${escapeHtml(addonText)}
+                  ${escapeHtml(getItemOptionSummary(item))}
                 </p>
               </article>
             `;
@@ -4576,7 +4322,7 @@ function getTrackingStatusMessage(
 
   if (status === "preparing") {
     return (
-      "The Ssupertea team is preparing your drinks."
+      "The Ssupertea team is preparing your order."
     );
   }
 
@@ -4764,20 +4510,20 @@ function normalizeStoredCartItem(item) {
   }
 
   const product = getProductById(String(item.productId || ""));
-  const size = SIZE_OPTIONS.find((option) => option.id === item.size?.id);
-  const sugar = SUGAR_OPTIONS.find((option) => option.id === item.sugar?.id);
-  const ice = ICE_OPTIONS.find((option) => option.id === item.ice?.id);
+  const size = getSizeOptions(product).find((option) => option.id === item.size?.id);
+  const sugar = product?.customizable ? getSugarOption(item.sugar?.id) : STANDARD_SUGAR;
+  const ice = product?.customizable ? ICE_OPTIONS.find((option) => option.id === item.ice?.id) : STANDARD_ICE;
 
   if (!product || !size || !sugar || !ice) {
     return null;
   }
 
   const addonIds = Array.isArray(item.addons)
-    ? item.addons.map((addon) => addon?.id).filter(Boolean)
+    ? [...new Set(item.addons.map((addon) => addon?.id).filter(Boolean))]
     : [];
 
   const addons = addonIds
-    .map((addonId) => ADDON_OPTIONS.find((option) => option.id === addonId))
+    .map((addonId) => getAddonOptions(product).find((option) => option.id === addonId))
     .filter(Boolean);
 
   const selection = {
@@ -4815,12 +4561,12 @@ function normalizeStoredCartItem(item) {
     })),
     unitPrice: calculateUnitPrice(product, selection),
     quantity: clamp(toSafeInteger(item.quantity, 1), 1, MAX_ITEM_QUANTITY),
-    visual: product.visual,
+    icon: product.icon,
   };
 }
 
 function handleStorageSync(event) {
-  if (event.key !== CART_STORAGE_KEY) {
+  if (event.key !== CART_STORAGE_KEY || state.catalogStatus !== "ready") {
     return;
   }
 
@@ -4982,28 +4728,6 @@ function showToast({
 
 function getProductById(productId) {
   return MENU_ITEMS.find((item) => item.id === productId) || null;
-}
-
-function getVisualVariables(product) {
-  return visualToCssVariables(product.visual);
-}
-
-function visualToCssVariables(visual) {
-  return [
-    `--visual-bg:${sanitizeCssColor(visual.background, "#EEF6D7")}`,
-    `--drink-top:${sanitizeCssColor(visual.top, "#E9D8AA")}`,
-    `--drink-middle:${sanitizeCssColor(visual.middle, "#BB8455")}`,
-    `--drink-bottom:${sanitizeCssColor(visual.bottom, "#573526")}`,
-    `--cup-rotation:${sanitizeRotation(visual.rotation)}`,
-  ].join(";");
-}
-
-function sanitizeCssColor(value, fallback) {
-  return /^#[0-9A-Fa-f]{6}$/.test(String(value || "")) ? value : fallback;
-}
-
-function sanitizeRotation(value) {
-  return /^-?\d{1,2}deg$/.test(String(value || "")) ? value : "0deg";
 }
 
 function formatCurrency(value) {

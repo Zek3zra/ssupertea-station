@@ -801,10 +801,11 @@ function renderAccountUI() {
   }
 
   if (el["header-profile-avatar"]) {
-    el["header-profile-avatar"].textContent =
-      signedIn
-        ? initial
-        : "";
+    if (signedIn) {
+      el["header-profile-avatar"].textContent = initial;
+    } else {
+      el["header-profile-avatar"].innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.5 3.6-7 8-7s8 2.5 8 7"></path></svg>';
+    }
   }
 
   if (el["mobile-profile-label"]) {

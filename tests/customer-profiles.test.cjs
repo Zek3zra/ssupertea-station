@@ -288,7 +288,7 @@ function orderApiHarness() {
       requests.push({ url, options });
       const response = data => ({ ok: true, status: 200, json: async () => data });
       if (url.endsWith("/auth/v1/user")) return response({ id: "11111111-1111-4111-8111-111111111111", is_anonymous: false });
-      if (url.includes("/rpc/price_customer_order")) return response({ items: [{ name: "Classic Milk Tea", quantity: 1 }], total_price: 80 });
+      if (url.includes("/rpc/price_catalog_order")) return response({ items: [{ name: "Classic Milk Tea", quantity: 1 }], total_price: 80 });
       if (url.includes("/rest/v1/orders") && options.method === "POST") { storedOrder = JSON.parse(options.body); return response([storedOrder]); }
       if (url.includes("/rest/v1/orders")) return response([]);
       throw new Error("Unexpected network call: " + url);

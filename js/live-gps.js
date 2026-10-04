@@ -716,9 +716,9 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = "ssupertea-live-gps-style";
   style.textContent = `
-    .live-gps-indicator{margin-top:10px;padding:10px 11px;display:flex;align-items:center;gap:9px;border:1px solid rgba(14,91,59,.16);border-radius:12px;background:rgba(239,248,242,.92);color:#315447;font-size:.64rem;font-weight:750;line-height:1.4}
-    .live-gps-indicator[hidden]{display:none!important}.live-gps-indicator strong{display:block;color:#173b2c;font-size:.66rem}.live-gps-indicator span:not(.live-gps-dot){display:block}.live-gps-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#d9a514;box-shadow:0 0 0 4px rgba(217,165,20,.14)}
-    .live-gps-dot[data-gps-state="live"]{background:#4b9a64;box-shadow:0 0 0 4px rgba(75,154,100,.14)}.live-gps-dot[data-gps-state="error"],.live-gps-dot[data-gps-state="stale"]{background:#d85c5c;box-shadow:0 0 0 4px rgba(216,92,92,.14)}.live-gps-dot[data-gps-state="idle"]{background:#8a9a92;box-shadow:0 0 0 4px rgba(138,154,146,.12)}
+    .live-gps-indicator{margin-top:10px;padding:10px 11px;display:flex;align-items:center;gap:9px;border:1px solid rgba(72,72,72,.16);border-radius:12px;background:rgba(246,246,246,.92);color:#4c4c4c;font-size:.64rem;font-weight:750;line-height:1.4}
+    .live-gps-indicator[hidden]{display:none!important}.live-gps-indicator strong{display:block;color:#323232;font-size:.66rem}.live-gps-indicator span:not(.live-gps-dot){display:block}.live-gps-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#a6a6a6;box-shadow:0 0 0 4px rgba(166,166,166,.14)}
+    .live-gps-dot[data-gps-state="live"]{background:#858585;box-shadow:0 0 0 4px rgba(133,133,133,.14)}.live-gps-dot[data-gps-state="error"],.live-gps-dot[data-gps-state="stale"]{background:#767676;box-shadow:0 0 0 4px rgba(118,118,118,.14)}.live-gps-dot[data-gps-state="idle"]{background:#969696;box-shadow:0 0 0 4px rgba(150,150,150,.12)}
     .live-gps-rider{margin-top:2px;border-color:rgba(255,255,255,.17);background:rgba(255,255,255,.08);color:rgba(255,255,255,.78)}.live-gps-admin{margin-top:9px}.live-gps-customer{margin-top:12px}
   `;
   document.head.append(style);

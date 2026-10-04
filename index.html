@@ -3,19 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0E5B3B">
-  <meta name="description" content="Order milk tea, fruit tea, and specialty drinks from Ssupertea Station.">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Order milk tea, iced coffee, meals, snacks, and combos from Ssupertea Station.">
   <meta name="robots" content="index, follow">
 
   <title>Ssupertea Station | Order Online</title>
 
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
-  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/brand-icon.svg">
+  <link rel="apple-touch-icon" href="/assets/brand/ssupertea-logo.jpg">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/account.css">
 
   <script type="module" src="/js/app.js"></script>
+  <link rel="stylesheet" href="/css/theme.css">
 </head>
 
 <body>
@@ -25,12 +26,7 @@
     <header class="site-header" id="home">
       <div class="header-inner">
         <a class="brand" href="#home" aria-label="Ssupertea Station home">
-          <span class="brand-mark" aria-hidden="true">
-            <span class="brand-leaf brand-leaf-left"></span>
-            <span class="brand-leaf brand-leaf-right"></span>
-            S
-          </span>
-
+          <span class="brand-mark" aria-hidden="true"><img class="brand-logo" src="/assets/brand/ssupertea-logo.jpg" alt="" width="38" height="52"></span>
           <span class="brand-copy">
             <strong>ssupertea</strong>
             <small>STATION</small>
@@ -93,21 +89,21 @@
     <main id="main-content">
       <section class="hero section-shell" aria-labelledby="hero-title">
         <div class="hero-content">
-          <p class="eyebrow">Freshly made for you</p>
+          <p class="eyebrow">Sip. Chill. Recharge.</p>
 
           <h1 id="hero-title">
-            Good tea.
-            <span>Great day.</span>
+            Good food.
+            <span>Great company.</span>
           </h1>
 
           <p class="hero-description">
-            Pick your favorite drink, choose your sweetness and add-ons,
-            then enjoy it your way.
+            Milk tea, iced coffee, comfort meals, and something to share.
+            Find your everyday favorites at Ssupertea Station.
           </p>
 
           <div class="hero-actions">
             <a class="primary-button" href="#menu">
-              Order now
+              Explore the menu
               <svg aria-hidden="true" viewBox="0 0 24 24">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
@@ -115,26 +111,12 @@
 
             <p class="hero-note">
               <span aria-hidden="true">●</span>
-              Made fresh upon order
+              Good drinks. Greater grace.
             </p>
           </div>
         </div>
 
-        <div class="hero-art" aria-hidden="true">
-          <span class="hero-leaf hero-leaf-one"></span>
-          <span class="hero-leaf hero-leaf-two"></span>
-          <span class="hero-leaf hero-leaf-three"></span>
-
-          <div class="hero-cup">
-            <span class="hero-straw"></span>
-            <span class="hero-lid"></span>
-            <span class="hero-drink"></span>
-            <span class="hero-ice hero-ice-one"></span>
-            <span class="hero-ice hero-ice-two"></span>
-            <span class="hero-pearls"></span>
-            <span class="hero-logo">S</span>
-          </div>
-        </div>
+        <div class="brand-showcase"><img src="/assets/brand/ssupertea-logo.jpg" alt="Ssupertea Station" width="679" height="960" fetchpriority="high"></div>
       </section>
 
       <section class="menu-section section-shell" id="menu" aria-labelledby="menu-title">
@@ -145,7 +127,7 @@
           </div>
 
           <p class="section-copy">
-            Customize the size, sweetness, ice, and add-ons before adding a drink to your cart.
+            From your first sip to your favorite bite. Choose an item to see available sizes and extras.
           </p>
         </div>
 
@@ -156,12 +138,12 @@
               <path d="m20 20-4-4"></path>
             </svg>
 
-            <span class="sr-only">Search drinks</span>
+            <span class="sr-only">Search the menu</span>
 
             <input
               id="menu-search"
               type="search"
-              placeholder="Search drinks"
+              placeholder="Search the menu"
               autocomplete="off"
               maxlength="60"
             >
@@ -174,14 +156,15 @@
           Loading menu…
         </div>
 
+        <div class="catalog-load-error" id="catalog-load-error" hidden role="status"><h3>We couldn’t load the menu</h3><p>Check your connection and try again.</p><button class="secondary-button" id="catalog-retry-button" type="button">Try again</button></div>
         <div class="menu-grid" id="menu-grid" aria-live="polite"></div>
 
         <div class="empty-state" id="menu-empty-state" hidden>
           <div class="empty-icon" aria-hidden="true">⌕</div>
-          <h3>No drinks found</h3>
+          <h3>No items found</h3>
           <p>Try another search or category.</p>
           <button class="secondary-button" id="reset-menu-button" type="button">
-            Show all drinks
+            Show all items
           </button>
         </div>
       </section>
@@ -198,8 +181,8 @@
           <li>
             <span class="step-number">1</span>
             <div>
-              <h3>Pick a drink</h3>
-              <p>Browse milk tea, fruit tea, matcha, and specialty favorites.</p>
+              <h3>Find a favorite</h3>
+              <p>Browse drinks, sandwiches, silog meals, and sharing combos.</p>
             </div>
           </li>
 
@@ -207,7 +190,7 @@
             <span class="step-number">2</span>
             <div>
               <h3>Make it yours</h3>
-              <p>Choose your size, sugar level, ice level, and add-ons.</p>
+              <p>Choose an available size, drink flavor, or meal extra.</p>
             </div>
           </li>
 
@@ -225,14 +208,14 @@
     <footer class="site-footer">
       <div class="section-shell footer-inner">
         <a class="brand brand-footer" href="#home" aria-label="Ssupertea Station home">
-          <span class="brand-mark" aria-hidden="true">S</span>
+          <span class="brand-mark" aria-hidden="true"><img class="brand-logo" src="/assets/brand/ssupertea-logo.jpg" alt="" width="38" height="52"></span>
           <span class="brand-copy">
             <strong>ssupertea</strong>
             <small>STATION</small>
           </span>
         </a>
 
-        <p>Fresh drinks, made your way.</p>
+        <p>Good food. Good drinks. Great company.</p>
         <p>© <span id="current-year"></span> Ssupertea Station</p>
       </div>
     </footer>
@@ -293,24 +276,15 @@
     aria-labelledby="cart-title"
     aria-hidden="true"
   >
-    <div class="panel-handle" aria-hidden="true"></div>
+    <div class="panel-handle sheet-drag-region" aria-hidden="true"></div>
 
-    <div class="cart-header">
+    <div class="cart-header sheet-drag-region">
       <div>
         <p class="eyebrow">Your order</p>
-        <h2 id="cart-title">My cart</h2>
+        <h2 id="cart-title" tabindex="-1">My cart</h2>
+        <p class="sheet-dismiss-hint">Swipe down or tap outside to close</p>
       </div>
 
-      <button
-        class="icon-button panel-close-button"
-        id="close-cart-button"
-        type="button"
-        aria-label="Close cart"
-      >
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="m6 6 12 12M18 6 6 18"/>
-        </svg>
-      </button>
     </div>
 
     <div class="cart-body">
@@ -321,7 +295,7 @@
           </svg>
         </div>
         <h3>Your cart is empty</h3>
-        <p>Add a drink from the menu to get started.</p>
+        <p>Add a favorite from the menu to get started.</p>
         <button class="secondary-button" id="browse-menu-button" type="button">
           Browse menu
         </button>
@@ -358,19 +332,9 @@
     </div>
   </aside>
 
-  <dialog class="customize-dialog" id="customize-dialog">
+  <dialog class="customize-dialog" id="customize-dialog" aria-labelledby="dialog-product-name">
     <form method="dialog" id="customize-form">
-      <div class="dialog-hero">
-        <button
-          class="icon-button dialog-close-button"
-          id="close-customize-button"
-          type="button"
-          aria-label="Close customization"
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <path d="m6 6 12 12M18 6 6 18"/>
-          </svg>
-        </button>
+      <div class="dialog-hero sheet-drag-region">
 
         <div class="dialog-drink-visual" id="dialog-drink-visual" aria-hidden="true"></div>
 
@@ -378,20 +342,21 @@
           <p class="product-category" id="dialog-product-category"></p>
           <h2 id="dialog-product-name"></h2>
           <p id="dialog-product-description"></p>
+          <p class="sheet-dismiss-hint">Swipe down or tap outside to close</p>
         </div>
       </div>
 
       <div class="dialog-content">
-        <fieldset class="option-group">
+        <fieldset class="option-group" id="size-group">
           <legend>
-            Size
+            <span id="variant-label">Size</span>
             <span>Required</span>
           </legend>
 
           <div class="segmented-options" id="size-options"></div>
         </fieldset>
 
-        <fieldset class="option-group">
+        <fieldset class="option-group" id="sugar-group">
           <legend>
             Sugar level
             <span>Required</span>
@@ -400,7 +365,7 @@
           <div class="chip-options" id="sugar-options"></div>
         </fieldset>
 
-        <fieldset class="option-group">
+        <fieldset class="option-group" id="ice-group">
           <legend>
             Ice level
             <span>Required</span>
@@ -409,7 +374,7 @@
           <div class="chip-options" id="ice-options"></div>
         </fieldset>
 
-        <fieldset class="option-group">
+        <fieldset class="option-group" id="addon-group">
           <legend>
             Add-ons
             <span>Optional</span>
@@ -421,7 +386,7 @@
         <div class="quantity-row">
           <div>
             <strong>Quantity</strong>
-            <span>Maximum 20 per customized item</span>
+            <span>Maximum 20 per item</span>
           </div>
 
           <div class="quantity-control" aria-label="Quantity">
@@ -1020,7 +985,7 @@
             <span class="tracking-step-marker">2</span>
             <div>
               <strong>Preparing</strong>
-              <p>The team is making your drinks.</p>
+              <p>The team is preparing your order.</p>
             </div>
           </li>
           <li data-tracking-step="dispatched">

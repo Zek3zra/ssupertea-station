@@ -1,0 +1,1953 @@
+[
+  {
+    "id": "milk-tea-cookies-and-cream-milk-tea",
+    "name": "Cookies & Cream Milk Tea",
+    "category": "Milk Tea",
+    "description": "Classic milk tea with crushed cookies instead of pearls.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": true,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 0,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 39
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 45
+      },
+      {
+        "id": "large",
+        "label": "Large",
+        "price": 65
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milk-tea-okinawa-milk-tea",
+    "name": "Okinawa Milk Tea",
+    "category": "Milk Tea",
+    "description": "Classic milk tea with crushed cookies instead of pearls.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 1,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 39
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 45
+      },
+      {
+        "id": "large",
+        "label": "Large",
+        "price": 65
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milk-tea-taro-milk-tea",
+    "name": "Taro Milk Tea",
+    "category": "Milk Tea",
+    "description": "Classic milk tea with crushed cookies instead of pearls.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 2,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 39
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 45
+      },
+      {
+        "id": "large",
+        "label": "Large",
+        "price": 65
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milk-tea-wintermelon-milk-tea",
+    "name": "Wintermelon Milk Tea",
+    "category": "Milk Tea",
+    "description": "Classic milk tea with crushed cookies instead of pearls.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 3,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 39
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 45
+      },
+      {
+        "id": "large",
+        "label": "Large",
+        "price": 65
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milk-tea-red-velvet-milk-tea",
+    "name": "Red Velvet Milk Tea",
+    "category": "Milk Tea",
+    "description": "Premium milk tea with crushed cookies instead of pearls.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 4,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      },
+      {
+        "id": "large",
+        "label": "Large",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milk-tea-chocolate-milk-tea",
+    "name": "Chocolate Milk Tea",
+    "category": "Milk Tea",
+    "description": "Premium milk tea with crushed cookies instead of pearls.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 5,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      },
+      {
+        "id": "large",
+        "label": "Large",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milk-tea-matcha-milk-tea",
+    "name": "Matcha Milk Tea",
+    "category": "Milk Tea",
+    "description": "Premium milk tea with crushed cookies instead of pearls.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": true,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 6,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      },
+      {
+        "id": "large",
+        "label": "Large",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-classic-iced-coffee",
+    "name": "Classic Iced Coffee",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 7,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-signature-coffee",
+    "name": "Signature Coffee",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 8,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-iced-latte",
+    "name": "Iced Latte",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 9,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-americano",
+    "name": "Americano",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 10,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-spanish-latte",
+    "name": "Spanish Latte",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 11,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-caramel-latte",
+    "name": "Caramel Latte",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 12,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-chocolate-coffee",
+    "name": "Chocolate Coffee",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 13,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-dirty-matcha",
+    "name": "Dirty Matcha",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 14,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 85
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-pink-coffee",
+    "name": "Pink Coffee",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 15,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "iced-coffee-biscoff-latte",
+    "name": "Biscoff Latte",
+    "category": "Iced Coffee",
+    "description": "From our iced coffee menu.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": true,
+    "customizable": true,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 16,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 145
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "special-drinks-matcha-latte",
+    "name": "Matcha Latte",
+    "category": "Special Drinks",
+    "description": "Your choice of a small or medium special drink.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": true,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 17,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 45
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "special-drinks-strawberry-milk",
+    "name": "Strawberry Milk",
+    "category": "Special Drinks",
+    "description": "Your choice of a small or medium special drink.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 18,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 45
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "special-drinks-blueberry-milk",
+    "name": "Blueberry Milk",
+    "category": "Special Drinks",
+    "description": "Your choice of a small or medium special drink.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 19,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 45
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "special-drinks-oreo-milk",
+    "name": "Oreo Milk",
+    "category": "Special Drinks",
+    "description": "Your choice of a small or medium special drink.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 20,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 45
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "special-drinks-chocolate-milk",
+    "name": "Chocolate Milk",
+    "category": "Special Drinks",
+    "description": "Your choice of a small or medium special drink.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 21,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 45
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "special-drinks-iced-coffee",
+    "name": "Iced Coffee",
+    "category": "Special Drinks",
+    "description": "Your choice of a small or medium special drink.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": true,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 22,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 45
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "special-drinks-iced-choco",
+    "name": "Iced Choco",
+    "category": "Special Drinks",
+    "description": "Your choice of a small or medium special drink.",
+    "icon": "cup",
+    "image_url": null,
+    "featured": true,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 23,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 45
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "fruit-soda-lychee-fruit-soda",
+    "name": "Lychee Fruit Soda",
+    "category": "Fruit Soda",
+    "description": "Refreshing sparkling fruit drink.",
+    "icon": "soda",
+    "image_url": null,
+    "featured": true,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 24,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "fruit-soda-strawberry-fruit-soda",
+    "name": "Strawberry Fruit Soda",
+    "category": "Fruit Soda",
+    "description": "Refreshing sparkling fruit drink.",
+    "icon": "soda",
+    "image_url": null,
+    "featured": true,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 25,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "fruit-soda-peach-fruit-soda",
+    "name": "Peach Fruit Soda",
+    "category": "Fruit Soda",
+    "description": "Refreshing sparkling fruit drink.",
+    "icon": "soda",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 26,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "fruit-soda-blueberry-fruit-soda",
+    "name": "Blueberry Fruit Soda",
+    "category": "Fruit Soda",
+    "description": "Refreshing sparkling fruit drink.",
+    "icon": "soda",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 27,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "fruit-soda-green-apple-fruit-soda",
+    "name": "Green Apple Fruit Soda",
+    "category": "Fruit Soda",
+    "description": "Refreshing sparkling fruit drink.",
+    "icon": "soda",
+    "image_url": null,
+    "featured": false,
+    "customizable": true,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 28,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milkshakes-avocado-milkshake",
+    "name": "Avocado Milkshake",
+    "category": "Milkshakes",
+    "description": "A creamy milkshake in your choice of size.",
+    "icon": "shake",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 29,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milkshakes-cookies-and-cream-milkshake",
+    "name": "Cookies & Cream Milkshake",
+    "category": "Milkshakes",
+    "description": "A creamy milkshake in your choice of size.",
+    "icon": "shake",
+    "image_url": null,
+    "featured": true,
+    "customizable": false,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 30,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milkshakes-chocolate-milkshake",
+    "name": "Chocolate Milkshake",
+    "category": "Milkshakes",
+    "description": "A creamy milkshake in your choice of size.",
+    "icon": "shake",
+    "image_url": null,
+    "featured": true,
+    "customizable": false,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 31,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milkshakes-strawberry-milkshake",
+    "name": "Strawberry Milkshake",
+    "category": "Milkshakes",
+    "description": "A creamy milkshake in your choice of size.",
+    "icon": "shake",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 32,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "milkshakes-mango-milkshake",
+    "name": "Mango Milkshake",
+    "category": "Milkshakes",
+    "description": "A creamy milkshake in your choice of size.",
+    "icon": "shake",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Size",
+    "active": true,
+    "sort_order": 33,
+    "variants": [
+      {
+        "id": "small",
+        "label": "Small",
+        "price": 49
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "sandwiches-toast-bread",
+    "name": "Toast Bread",
+    "category": "Sandwiches",
+    "description": "",
+    "icon": "sandwich",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 34,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 35
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "sandwiches-cheese-melt",
+    "name": "Cheese Melt",
+    "category": "Sandwiches",
+    "description": "",
+    "icon": "sandwich",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 35,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 45
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "sandwiches-ham-and-cheese",
+    "name": "Ham and Cheese",
+    "category": "Sandwiches",
+    "description": "",
+    "icon": "sandwich",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 36,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "sandwiches-egg-and-cheese",
+    "name": "Egg and Cheese",
+    "category": "Sandwiches",
+    "description": "",
+    "icon": "sandwich",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 37,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 65
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "sandwiches-cheesy-tuna",
+    "name": "Cheesy Tuna",
+    "category": "Sandwiches",
+    "description": "",
+    "icon": "sandwich",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 38,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "hot-and-cold-drinks-plain-coffee",
+    "name": "Plain Coffee",
+    "category": "Hot & Cold Drinks",
+    "description": "",
+    "icon": "coffee",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 39,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 20
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "hot-and-cold-drinks-coffee-with-milk",
+    "name": "Coffee with Milk",
+    "category": "Hot & Cold Drinks",
+    "description": "",
+    "icon": "coffee",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 40,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 25
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "hot-and-cold-drinks-milo",
+    "name": "Milo",
+    "category": "Hot & Cold Drinks",
+    "description": "",
+    "icon": "coffee",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 41,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 25
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "hot-and-cold-drinks-iced-tea-glass",
+    "name": "Iced Tea (Glass)",
+    "category": "Hot & Cold Drinks",
+    "description": "",
+    "icon": "cup",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 42,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 20
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "hot-and-cold-drinks-cucumber-lemonade",
+    "name": "Cucumber Lemonade",
+    "category": "Hot & Cold Drinks",
+    "description": "",
+    "icon": "soda",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 43,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 49
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "hot-and-cold-drinks-iced-tea-pitcher",
+    "name": "Iced Tea (Pitcher)",
+    "category": "Hot & Cold Drinks",
+    "description": "",
+    "icon": "pitcher",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 44,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 60
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "hot-and-cold-drinks-cucumber-lemonade-pitcher",
+    "name": "Cucumber Lemonade (Pitcher)",
+    "category": "Hot & Cold Drinks",
+    "description": "",
+    "icon": "pitcher",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 45,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 95
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-fries",
+    "name": "Fries",
+    "category": "Merienda",
+    "description": "",
+    "icon": "fries",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 46,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 25
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-lumpia",
+    "name": "Lumpia",
+    "category": "Merienda",
+    "description": "",
+    "icon": "snack",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 47,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 30
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-fried-siomai",
+    "name": "Fried Siomai",
+    "category": "Merienda",
+    "description": "",
+    "icon": "snack",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 48,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 30
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-burger",
+    "name": "Burger",
+    "category": "Merienda",
+    "description": "",
+    "icon": "burger",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 49,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 40
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-cheese-burger",
+    "name": "Cheese Burger",
+    "category": "Merienda",
+    "description": "",
+    "icon": "burger",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 50,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 45
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-ham-burger",
+    "name": "Ham Burger",
+    "category": "Merienda",
+    "description": "",
+    "icon": "burger",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 51,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 50
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-chicken-burger",
+    "name": "Chicken Burger",
+    "category": "Merienda",
+    "description": "",
+    "icon": "burger",
+    "image_url": null,
+    "featured": true,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 52,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 55
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-pancit-canton",
+    "name": "Pancit Canton",
+    "category": "Merienda",
+    "description": "",
+    "icon": "noodles",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 53,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 45
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-sotanghon",
+    "name": "Sotanghon",
+    "category": "Merienda",
+    "description": "",
+    "icon": "noodles",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 54,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-nachos",
+    "name": "Nachos",
+    "category": "Merienda",
+    "description": "",
+    "icon": "snack",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 55,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-cheesy-fries",
+    "name": "Cheesy Fries",
+    "category": "Merienda",
+    "description": "",
+    "icon": "fries",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 56,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 90
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "merienda-nacho-fries",
+    "name": "Nacho Fries",
+    "category": "Merienda",
+    "description": "",
+    "icon": "fries",
+    "image_url": null,
+    "featured": true,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 57,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 100
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "silog-meals-hotdog-silog",
+    "name": "Hotdog Silog",
+    "category": "Silog Meals",
+    "description": "Served with rice and egg.",
+    "icon": "meal",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 58,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": [
+      {
+        "id": "extra-egg",
+        "label": "Extra egg",
+        "price": 20
+      },
+      {
+        "id": "extra-rice",
+        "label": "Extra rice",
+        "price": 15
+      }
+    ]
+  },
+  {
+    "id": "silog-meals-longganisa-silog",
+    "name": "Longganisa Silog",
+    "category": "Silog Meals",
+    "description": "Served with rice and egg.",
+    "icon": "meal",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 59,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": [
+      {
+        "id": "extra-egg",
+        "label": "Extra egg",
+        "price": 20
+      },
+      {
+        "id": "extra-rice",
+        "label": "Extra rice",
+        "price": 15
+      }
+    ]
+  },
+  {
+    "id": "silog-meals-lumpia-silog",
+    "name": "Lumpia Silog",
+    "category": "Silog Meals",
+    "description": "Served with rice and egg.",
+    "icon": "meal",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 60,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": [
+      {
+        "id": "extra-egg",
+        "label": "Extra egg",
+        "price": 20
+      },
+      {
+        "id": "extra-rice",
+        "label": "Extra rice",
+        "price": 15
+      }
+    ]
+  },
+  {
+    "id": "silog-meals-spam-silog",
+    "name": "Spam Silog",
+    "category": "Silog Meals",
+    "description": "Served with rice and egg.",
+    "icon": "meal",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 61,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": [
+      {
+        "id": "extra-egg",
+        "label": "Extra egg",
+        "price": 20
+      },
+      {
+        "id": "extra-rice",
+        "label": "Extra rice",
+        "price": 15
+      }
+    ]
+  },
+  {
+    "id": "silog-meals-burger-steak-silog",
+    "name": "Burger Steak Silog",
+    "category": "Silog Meals",
+    "description": "Served with rice and egg.",
+    "icon": "meal",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 62,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 75
+      }
+    ],
+    "addons": [
+      {
+        "id": "extra-egg",
+        "label": "Extra egg",
+        "price": 20
+      },
+      {
+        "id": "extra-rice",
+        "label": "Extra rice",
+        "price": 15
+      }
+    ]
+  },
+  {
+    "id": "silog-meals-tocino-silog",
+    "name": "Tocino Silog",
+    "category": "Silog Meals",
+    "description": "Served with rice and egg.",
+    "icon": "meal",
+    "image_url": null,
+    "featured": true,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 63,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 85
+      }
+    ],
+    "addons": [
+      {
+        "id": "extra-egg",
+        "label": "Extra egg",
+        "price": 20
+      },
+      {
+        "id": "extra-rice",
+        "label": "Extra rice",
+        "price": 15
+      }
+    ]
+  },
+  {
+    "id": "silog-meals-corned-beef-silog",
+    "name": "Corned Beef Silog",
+    "category": "Silog Meals",
+    "description": "Served with rice and egg.",
+    "icon": "meal",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 64,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 90
+      }
+    ],
+    "addons": [
+      {
+        "id": "extra-egg",
+        "label": "Extra egg",
+        "price": 20
+      },
+      {
+        "id": "extra-rice",
+        "label": "Extra rice",
+        "price": 15
+      }
+    ]
+  },
+  {
+    "id": "silog-meals-hungarian-silog",
+    "name": "Hungarian Silog",
+    "category": "Silog Meals",
+    "description": "Served with rice and egg.",
+    "icon": "meal",
+    "image_url": null,
+    "featured": true,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 65,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 100
+      }
+    ],
+    "addons": [
+      {
+        "id": "extra-egg",
+        "label": "Extra egg",
+        "price": 20
+      },
+      {
+        "id": "extra-rice",
+        "label": "Extra rice",
+        "price": 15
+      }
+    ]
+  },
+  {
+    "id": "combos-nacho-fries-and-iced-tea",
+    "name": "Nacho Fries & Iced Tea",
+    "category": "Combos",
+    "description": "Nacho fries with one pitcher of iced tea. Made to share.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 66,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 150
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "combos-3-burgers-and-iced-tea",
+    "name": "3 Burgers & Iced Tea",
+    "category": "Combos",
+    "description": "Three burgers with one pitcher of iced tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 67,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 170
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "combos-chicken-burger-and-special-drink",
+    "name": "Chicken Burger & Special Drink",
+    "category": "Combos",
+    "description": "A chicken burger with your choice of a 12 oz special drink.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": true,
+    "customizable": false,
+    "variant_label": "Choose your drink",
+    "active": true,
+    "sort_order": 68,
+    "variants": [
+      {
+        "id": "matcha-latte",
+        "label": "Matcha Latte · 12 oz",
+        "price": 89
+      },
+      {
+        "id": "iced-coffee",
+        "label": "Iced Coffee · 12 oz",
+        "price": 89
+      },
+      {
+        "id": "iced-choco",
+        "label": "Iced Choco · 12 oz",
+        "price": 89
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "combos-chicken-burger-and-strawberry-soda",
+    "name": "Chicken Burger & Strawberry Soda",
+    "category": "Combos",
+    "description": "A chicken burger with strawberry soda.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 69,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 99
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "budget-meals-b1-burger-meal",
+    "name": "B1 · Burger Meal",
+    "category": "Budget Meals",
+    "description": "Burger, fries, and iced tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 70,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 80
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "budget-meals-b2-cheese-burger-meal",
+    "name": "B2 · Cheese Burger Meal",
+    "category": "Budget Meals",
+    "description": "Cheese Burger, fries, and iced tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 71,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 85
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "budget-meals-b3-ham-burger-meal",
+    "name": "B3 · Ham Burger Meal",
+    "category": "Budget Meals",
+    "description": "Ham Burger, fries, and iced tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 72,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 90
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "budget-meals-b4-chicken-burger-meal",
+    "name": "B4 · Chicken Burger Meal",
+    "category": "Budget Meals",
+    "description": "Chicken Burger, fries, and iced tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Serving",
+    "active": true,
+    "sort_order": 73,
+    "variants": [
+      {
+        "id": "regular",
+        "label": "Regular",
+        "price": 95
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "budget-meals-m1-burger-and-milk-tea",
+    "name": "M1 · Burger & Milk Tea",
+    "category": "Budget Meals",
+    "description": "Burger, fries, and a small classic milk tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Choose your milk tea",
+    "active": true,
+    "sort_order": 74,
+    "variants": [
+      {
+        "id": "cookies-and-cream",
+        "label": "Cookies & Cream · Small",
+        "price": 95
+      },
+      {
+        "id": "okinawa",
+        "label": "Okinawa · Small",
+        "price": 95
+      },
+      {
+        "id": "taro",
+        "label": "Taro · Small",
+        "price": 95
+      },
+      {
+        "id": "wintermelon",
+        "label": "Wintermelon · Small",
+        "price": 95
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "budget-meals-m2-cheese-burger-and-milk-tea",
+    "name": "M2 · Cheese Burger & Milk Tea",
+    "category": "Budget Meals",
+    "description": "Cheese Burger, fries, and a small classic milk tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Choose your milk tea",
+    "active": true,
+    "sort_order": 75,
+    "variants": [
+      {
+        "id": "cookies-and-cream",
+        "label": "Cookies & Cream · Small",
+        "price": 100
+      },
+      {
+        "id": "okinawa",
+        "label": "Okinawa · Small",
+        "price": 100
+      },
+      {
+        "id": "taro",
+        "label": "Taro · Small",
+        "price": 100
+      },
+      {
+        "id": "wintermelon",
+        "label": "Wintermelon · Small",
+        "price": 100
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "budget-meals-m3-ham-burger-and-milk-tea",
+    "name": "M3 · Ham Burger & Milk Tea",
+    "category": "Budget Meals",
+    "description": "Ham Burger, fries, and a small classic milk tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Choose your milk tea",
+    "active": true,
+    "sort_order": 76,
+    "variants": [
+      {
+        "id": "cookies-and-cream",
+        "label": "Cookies & Cream · Small",
+        "price": 105
+      },
+      {
+        "id": "okinawa",
+        "label": "Okinawa · Small",
+        "price": 105
+      },
+      {
+        "id": "taro",
+        "label": "Taro · Small",
+        "price": 105
+      },
+      {
+        "id": "wintermelon",
+        "label": "Wintermelon · Small",
+        "price": 105
+      }
+    ],
+    "addons": []
+  },
+  {
+    "id": "budget-meals-m4-chicken-burger-and-milk-tea",
+    "name": "M4 · Chicken Burger & Milk Tea",
+    "category": "Budget Meals",
+    "description": "Chicken Burger, fries, and a small classic milk tea.",
+    "icon": "combo",
+    "image_url": null,
+    "featured": false,
+    "customizable": false,
+    "variant_label": "Choose your milk tea",
+    "active": true,
+    "sort_order": 77,
+    "variants": [
+      {
+        "id": "cookies-and-cream",
+        "label": "Cookies & Cream · Small",
+        "price": 110
+      },
+      {
+        "id": "okinawa",
+        "label": "Okinawa · Small",
+        "price": 110
+      },
+      {
+        "id": "taro",
+        "label": "Taro · Small",
+        "price": 110
+      },
+      {
+        "id": "wintermelon",
+        "label": "Wintermelon · Small",
+        "price": 110
+      }
+    ],
+    "addons": []
+  }
+]

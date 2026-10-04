@@ -1,0 +1,782 @@
+[
+  {
+    "source": "DSCF5894.JPG",
+    "output": "DSCF5894_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.74,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "9801251a43816e248092df29e85e82bbe0b9c9be3265483ab2de8d958331305b",
+    "output_sha256": "3a6592517630cd7425acc460944aa876ab8f90d975cad85524f66b5650d51165",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 146.31748962402344,
+    "mean_brightness_after": 163.51583862304688
+  },
+  {
+    "source": "DSCF5896.JPG",
+    "output": "DSCF5896_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.6,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "b4d2e3c2320735d7c5dff8ff6f3e1b50dd3cc7ad0fa2e440b7bb850598d4c5a2",
+    "output_sha256": "4e2690728e531f5f70842482cf7657aec9d26fa27bd783dee7f95467d54b959f",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 85.37218475341797,
+    "mean_brightness_after": 119.46167755126953
+  },
+  {
+    "source": "DSCF5898.JPG",
+    "output": "DSCF5898_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.66,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "f6a475b1bc9799250b4a430099688e1df41192c7a0f695e622c86dd34a48fc1f",
+    "output_sha256": "e1adfcb1ec5d1496b49a6850b8bdb8ac8d0be3f09b15555bc2e71dfc0a855276",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 111.72139739990234,
+    "mean_brightness_after": 139.4438018798828
+  },
+  {
+    "source": "DSCF5899.JPG",
+    "output": "DSCF5899_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.66,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "161f5ca35a80d84817744bff7aaa71ea7a58003cdc5289aecbbdfff24904f9d3",
+    "output_sha256": "9d1ea42e3e36e7aee43c4a9935e4a077e6a9fa44eff69e4e07e60da3efb56e67",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 115.31193542480469,
+    "mean_brightness_after": 141.55606079101562
+  },
+  {
+    "source": "DSCF5902.JPG",
+    "output": "DSCF5902_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.63,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "74bb9d6800b5696f28576ce0b363e9252f1f70d0a8454493a476d8f5e94551ca",
+    "output_sha256": "19af25ac921372bbf168b348d692ebd8d6b5e470f474e7eb7ec012eae8e2adcc",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 113.43246459960938,
+    "mean_brightness_after": 143.16343688964844
+  },
+  {
+    "source": "DSCF5903.JPG",
+    "output": "DSCF5903_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.65,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "989b0e7755d69e7ec17fa7429591788ab768f02c35a08e8f3bdca5a29795b6a2",
+    "output_sha256": "ab80c90d8126356a1395ae551780f67f1d29ddef851f37659d1366bad8122b6d",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 122.4107666015625,
+    "mean_brightness_after": 149.29261779785156
+  },
+  {
+    "source": "DSCF5904.JPG",
+    "output": "DSCF5904_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.65,
+      "white_balance": [
+        0.9900000095367432,
+        1.0049999952316284,
+        1.0449999570846558
+      ]
+    },
+    "source_sha256": "055ac3740149384435bf13deed1d93faff0819454f116c5506b5aff79788155d",
+    "output_sha256": "90816d405a71acd8cca8c44c9c017900f9a8e4998eabf5ccfe56b51c11b597c7",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 71.36453247070312,
+    "mean_brightness_after": 103.1039810180664
+  },
+  {
+    "source": "DSCF5906.JPG",
+    "output": "DSCF5906_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.65,
+      "white_balance": [
+        0.9900000095367432,
+        1.0049999952316284,
+        1.0449999570846558
+      ]
+    },
+    "source_sha256": "0a441a915183a804519def6482562da0ff97c40bca0156b840f2969c70ade55a",
+    "output_sha256": "b66b0b6f8bf12d66527d997dc1b4da1a01d6a9996eaebb06f00ebdee0f90b6b3",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 72.48712158203125,
+    "mean_brightness_after": 102.214111328125
+  },
+  {
+    "source": "DSCF5907.JPG",
+    "output": "DSCF5907_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.65,
+      "white_balance": [
+        0.9900000095367432,
+        1.0049999952316284,
+        1.0449999570846558
+      ]
+    },
+    "source_sha256": "3a6d9394b09e978aa03fdf56581f284ceaf31d53e9a8a048c97f46fbc4ead0ae",
+    "output_sha256": "22ea373182e2888bc02d32f9dd5b554e52c48d43888b47feb1d3e384c9c6c120",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 78.72920227050781,
+    "mean_brightness_after": 107.79017639160156
+  },
+  {
+    "source": "DSCF5908.JPG",
+    "output": "DSCF5908_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.68,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "8dbc6db4b176d69f3f9f72988734772f3dab7b69c4aecfde907d6d22b0597a86",
+    "output_sha256": "4265b67d54d4c6b615e3db17c6f5c8ceddfa3fbb814c23722c52b6a96bf2a25f",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 104.43657684326172,
+    "mean_brightness_after": 130.92559814453125
+  },
+  {
+    "source": "DSCF5910.JPG",
+    "output": "DSCF5910_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.7,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "e8c60fcab587f759424354c709e5be656062b95d6087fcd6c8e8075830f880bb",
+    "output_sha256": "908d9e3b5dd30cff526aa5cf056309cf43ed076dbc77489932398247fe0873e5",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 118.90251922607422,
+    "mean_brightness_after": 143.0880889892578
+  },
+  {
+    "source": "DSCF5952.JPG",
+    "output": "DSCF5952_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.63,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "bde45f65c068618c0550c71ad905b65d05f44b16ed4f9b591dfa664640b95dbe",
+    "output_sha256": "1b084a4cd238761c515a9f4d8741d493b4be734ad5919a3dd33860fdc0ae8d73",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 124.57228088378906,
+    "mean_brightness_after": 154.02000427246094
+  },
+  {
+    "source": "DSCF5953.JPG",
+    "output": "DSCF5953_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.63,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "0c25c517372edcd38e8b397467e379cf49eeda2cb68ec6d5237bc69e9436eacd",
+    "output_sha256": "1e5a59d427ccf25870c313b4e508cfac4bd3516189ced54841b2dbf00172fe4e",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 123.11345672607422,
+    "mean_brightness_after": 152.93545532226562
+  },
+  {
+    "source": "DSCF5954.JPG",
+    "output": "DSCF5954_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.63,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "d8b9d3bf618982e0ff09f7a985344cea7b489307f78df35d973c581d3ecbe827",
+    "output_sha256": "4a48fb9b4fb6f0af72f5211a06270d251df649aa2aa3e3be2d7be34bd40a648e",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 123.54119873046875,
+    "mean_brightness_after": 153.1569061279297
+  },
+  {
+    "source": "DSCF5957.JPG",
+    "output": "DSCF5957_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.7,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "b4a8d974cfc46c071389663f095be022ac31727b3252bf297d66a67e00217c11",
+    "output_sha256": "b1ed01343620dae60c5ec35b1b178f18538d2b62b5d1c4493f95cfbb7ecf1ab7",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 137.92385864257812,
+    "mean_brightness_after": 158.66421508789062
+  },
+  {
+    "source": "DSCF5958.JPG",
+    "output": "DSCF5958_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.7,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "0de5cb7a20b2c9cb1a27e2feb3443d39203874861cbbe6d2ccbf942cd33312e4",
+    "output_sha256": "dd1b9e78f418341ec80ed700bf783fa9d7a2d8baa12c2f72ba585f8f2a9c1cc1",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 138.89491271972656,
+    "mean_brightness_after": 159.79644775390625
+  },
+  {
+    "source": "DSCF5976.JPG",
+    "output": "DSCF5976_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.69,
+      "white_balance": [
+        0.9900000095367432,
+        1.0049999952316284,
+        1.0449999570846558
+      ]
+    },
+    "source_sha256": "32109d348c5aaab58468742ee008cb863ce5b88f282937c50bbe288b59fcdf4c",
+    "output_sha256": "8e82403e52f4a71776f638c841a65183a5ed09c1b1bec49d5bd0b8c7a512c40f",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 112.66544342041016,
+    "mean_brightness_after": 136.23101806640625
+  },
+  {
+    "source": "DSCF5981.JPG",
+    "output": "DSCF5981_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.67,
+      "white_balance": [
+        0.9900000095367432,
+        1.0049999952316284,
+        1.0449999570846558
+      ]
+    },
+    "source_sha256": "ea3f860882adad626d2c4ecdb5e665c5a685c2e48d84d304e07efb6fffe74763",
+    "output_sha256": "a2bb2c74b8fae1af65343805ee8b7112fbfd3f71add68e556cf227f107881e79",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 94.59028625488281,
+    "mean_brightness_after": 121.77296447753906
+  },
+  {
+    "source": "DSCF5982.JPG",
+    "output": "DSCF5982_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.69,
+      "white_balance": [
+        0.9900000095367432,
+        1.0049999952316284,
+        1.0449999570846558
+      ]
+    },
+    "source_sha256": "8309296e3511ee1c2bb2b2af6e04b9ad30709d8a262fd13be81da986700cf54a",
+    "output_sha256": "c923a87f7b377579b16b33d4e0257bb91cf323f44d469a5594f5f059a9cf3690",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 113.46348571777344,
+    "mean_brightness_after": 136.82884216308594
+  },
+  {
+    "source": "DSCF5990.JPG",
+    "output": "DSCF5990_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.64,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "891f0bfda07e1d47fd6fe50367282d9318ebd2bb626587be90e121d8ab691706",
+    "output_sha256": "d1d0bea7cf761cb9489d90b90daef02595e2687cbdb6e054504ad9e2341f751d",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 134.03933715820312,
+    "mean_brightness_after": 159.49107360839844
+  },
+  {
+    "source": "DSCF5996.JPG",
+    "output": "DSCF5996_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.61,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "7d5e74327f34ee14df2a7841f000aff0f36e890242204933f9ca20186c57b789",
+    "output_sha256": "68a4885bb58479e76682acee7bd3715b0d12f1060c75e97dd795887bc6e6759a",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 127.52043151855469,
+    "mean_brightness_after": 155.825439453125
+  },
+  {
+    "source": "DSCF5997.JPG",
+    "output": "DSCF5997_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.61,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "994807b2cb7d6dd143b0d7d699cbd158c3e3a10ee40f8e09e75b7d96b45600a7",
+    "output_sha256": "404c2e3929d37387f60950179a49cf6ada58724f359a82bd4bde319c98abf5d6",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 120.06654357910156,
+    "mean_brightness_after": 149.06521606445312
+  },
+  {
+    "source": "DSCF5998.JPG",
+    "output": "DSCF5998_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.61,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "a86963a950364c9b9e163e3cde56464b15e6120d0f0bca636eb722eda46989ef",
+    "output_sha256": "a83589c99038a5ad695115f1c4fbcbf2e22d8577ca4f47dc91225cf85d0ee989",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 118.26966857910156,
+    "mean_brightness_after": 147.24095153808594
+  },
+  {
+    "source": "DSCF5999.JPG",
+    "output": "DSCF5999_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.61,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "4abc36a093c08d9e05d2359b76606af680c5011760d98e8975847e00d266fd20",
+    "output_sha256": "dbc793c4a17762000b76295f3760d628d1ce824b2c11ad491e4651099b3847ec",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 121.77951049804688,
+    "mean_brightness_after": 150.25762939453125
+  },
+  {
+    "source": "DSCF6001.JPG",
+    "output": "DSCF6001_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.61,
+      "white_balance": [
+        0.9900000095367432,
+        1.0049999952316284,
+        1.0449999570846558
+      ]
+    },
+    "source_sha256": "2470a6f4d33888630a73e93277c463b1a6d7e08886c4f878bf05993ef3498614",
+    "output_sha256": "342537dfe39207c0b390e440ee3d0d892147c7e61ba8b0e6a59510296888629a",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 81.97260284423828,
+    "mean_brightness_after": 118.70053100585938
+  },
+  {
+    "source": "DSCF6009.JPG",
+    "output": "DSCF6009_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.61,
+      "white_balance": [
+        0.9900000095367432,
+        1.0049999952316284,
+        1.0449999570846558
+      ]
+    },
+    "source_sha256": "af9bca9f3c501b2e53945a9beafcfa0871936135208417a7a3e1b5baa8cf99b5",
+    "output_sha256": "772f1e9743159bec6555c74d0f2fc33f3dd52ecbad710c6dcdf6ec44c67cd2f7",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 48.186012268066406,
+    "mean_brightness_after": 83.91649627685547
+  },
+  {
+    "source": "DSCF6011.JPG",
+    "output": "DSCF6011_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.65,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "321b82a03a7ed5964378efd6445950247037003ea2fe379b16b574d89f3a65a9",
+    "output_sha256": "8d7ce01fd21a5ad019cb4627ce78fa68bfc67ab01528ecee77011614757b7e06",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 113.96683502197266,
+    "mean_brightness_after": 136.72544860839844
+  },
+  {
+    "source": "DSCF6012.JPG",
+    "output": "DSCF6012_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.65,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "be30a043569ccc5c766ab2630fed39d490515ba018b077bb8978bf2fd326553a",
+    "output_sha256": "253ba5dacb76ef0c7cbcca97a810c7d9c96e18e2d455b18227589afab43eefff",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 111.47756958007812,
+    "mean_brightness_after": 134.3452606201172
+  },
+  {
+    "source": "DSCF6013.JPG",
+    "output": "DSCF6013_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.66,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "51a1d45aee230b879d7d78050cdba4cff2dc24540c81dfb7e3b2a9acff80d0d1",
+    "output_sha256": "c6cc99d81ffa18b7f38a79bb427c8a842f05ab39d992d74af4b2abdf36118c48",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 98.01526641845703,
+    "mean_brightness_after": 121.12706756591797
+  },
+  {
+    "source": "DSCF6019.JPG",
+    "output": "DSCF6019_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.66,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "52e7d05248c43d8c28418437d274409c51614e62ec464ee6cc69f93c4768bd5d",
+    "output_sha256": "b72f99f1bd47c41fc886f13e5a7e727b781798305394897b3ceb60dde582f02c",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 96.16424560546875,
+    "mean_brightness_after": 120.235107421875
+  },
+  {
+    "source": "DSCF6020.JPG",
+    "output": "DSCF6020_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.66,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "e125bc795e37baf56b1c839e3d7b809ffbe50714771a191803fe74f3e9765dba",
+    "output_sha256": "1c98c839236ab65166a84f19ef1dea00b8807ad92e6be4b89f3b16a02ff728a1",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 98.99639129638672,
+    "mean_brightness_after": 123.17980194091797
+  },
+  {
+    "source": "DSCF6021.JPG",
+    "output": "DSCF6021_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.66,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "285f8f95250110e42899709a39c62970b0ab7f6a03c26e85a5076678a4a482a5",
+    "output_sha256": "b8b900584b493ce0dfd68a32975e34672ce093fc95c71e850ea776cab0709385",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 105.46992492675781,
+    "mean_brightness_after": 129.62802124023438
+  },
+  {
+    "source": "DSCF6024.JPG",
+    "output": "DSCF6024_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.67,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "74d652f32ee22e4e816fa89aff859a74e7298b3876b6b31bf523120b348a79f0",
+    "output_sha256": "560b63dc3e3e0883b03c026b5eb54bf14b71c31d2bf0b41f2cb6c69cae8fa59b",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 118.46581268310547,
+    "mean_brightness_after": 140.18894958496094
+  },
+  {
+    "source": "DSCF6030.JPG",
+    "output": "DSCF6030_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.67,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "844bd2626f8349ee01f27f8e48c486af732ec1b706cbbbd26f4a3143d5995439",
+    "output_sha256": "1f4d62eb8dd3e4ca04525844fbb6ef59b22d82db9ca3f0bf90290ef2dbcdbe2e",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 107.31777954101562,
+    "mean_brightness_after": 130.31080627441406
+  },
+  {
+    "source": "DSCF6031.JPG",
+    "output": "DSCF6031_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.67,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "a6faffe9526dcdd5a0d31fc3e85af6d128be49f23b8d451cf0be2f30748dce57",
+    "output_sha256": "01261c797ee58e091a87076a713392b22064d5f67bd29772fb00809617090c72",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 112.34757995605469,
+    "mean_brightness_after": 135.44590759277344
+  },
+  {
+    "source": "DSCF6034.JPG",
+    "output": "DSCF6034_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.68,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "8b90edc8a539e70726f63709ea56e927f518b4cef6311201822b50414c7b8f12",
+    "output_sha256": "e851d11c855256053616c3f5fad2960fa5e086752a05c0ce1a499bce2fab6c2a",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 118.23503112792969,
+    "mean_brightness_after": 143.07188415527344
+  },
+  {
+    "source": "DSCF6035.JPG",
+    "output": "DSCF6035_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.68,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "8a167004ae50ec952bf0aa4e0895d2ce74824aee96d0006da645d8764a35e620",
+    "output_sha256": "6f4ef838a4a93cd7f9643c9ba2366660e8f903f76ad9085652af375e04300068",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 128.2060089111328,
+    "mean_brightness_after": 151.2019500732422
+  },
+  {
+    "source": "DSCF6037.JPG",
+    "output": "DSCF6037_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.68,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "559afd9837b84b4044bb2b422f6fa0b12da4ecf9de0ba81d1219b4c01e4cdde9",
+    "output_sha256": "ab167723f1406023304ce303f7f47d7b32d6b7e7188e3d8517fd040fbb43b0bd",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 74.63655853271484,
+    "mean_brightness_after": 106.20984649658203
+  },
+  {
+    "source": "DSCF6038.JPG",
+    "output": "DSCF6038_enhanced_v2.JPG",
+    "parameters": {
+      "gamma": 0.68,
+      "white_balance": [
+        0.9800000190734863,
+        1.0119999647140503,
+        1.1299999952316284
+      ]
+    },
+    "source_sha256": "ccc33204e8ce07c9d3c5052e1992173c56b07ab085d18f8579594653f4de568b",
+    "output_sha256": "e17692c44bf7d4a7eeb97409b10c73c6460ecbae9c0b8c482320aff7bbb2b11e",
+    "dimensions": [
+      6000,
+      4000
+    ],
+    "mean_brightness_before": 74.2846908569336,
+    "mean_brightness_after": 105.69911193847656
+  }
+]

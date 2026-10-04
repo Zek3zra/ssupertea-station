@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v23";
+const CACHE_VERSION = "v25";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -20,6 +20,10 @@ const APP_SHELL = [
   "/css/style.css",
   "/css/account.css",
   "/css/staff.css",
+  "/css/theme.css",
+  "/js/catalog.js",
+  "/js/sheet-dismiss.js",
+  "/assets/brand/ssupertea-logo.jpg",
   "/js/app.js",
   "/js/account.js",
   "/js/customer-profile.js",
@@ -35,7 +39,7 @@ const APP_SHELL = [
   "/js/staff-gate.js",
   "/js/supabase-config.js",
   "/js/openstreetmap-config.js",
-  "/assets/icons/icon-192.png",
+  "/assets/icons/brand-icon.svg",
   "/assets/icons/icon-512.png",
   "/assets/icons/maskable-icon-512.png",
   "/assets/icons/apple-touch-icon.png",
@@ -134,6 +138,9 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/js/staff-gate.js" ||
     requestUrl.pathname === "/css/style.css" ||
     requestUrl.pathname === "/css/account.css" ||
+    requestUrl.pathname === "/js/catalog.js" ||
+    requestUrl.pathname === "/js/sheet-dismiss.js" ||
+    requestUrl.pathname === "/css/theme.css" ||
     requestUrl.pathname === "/css/staff.css"
   ) {
     event.respondWith(networkFirstAsset(request));

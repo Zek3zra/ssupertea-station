@@ -25,6 +25,10 @@ const state = {
   refreshTimer: null,
   uiTimer: null,
   setupAvailable: true,
+  watchGeneration: 0,
+  riderSyncGeneration: 0,
+  gpsStatus: "idle",
+  retrying: false,
 };
 
 start().catch((error) => {
@@ -123,7 +127,8 @@ function scheduleRiderSync() {
   }, 220);
 }
 
-async function syncRiderDispatchedOrder() {
+async function syncRiderDispatchedOrder({ restart = false } = {}) {
+  const syncGeneration = ++state.riderSyncGeneration;
   const riderUserId = state.session?.user?.id;
   if (!riderUserId) return;
 
@@ -132,8 +137,13 @@ async function syncRiderDispatchedOrder() {
     .select("order_id")
     .eq("rider_user_id", riderUserId);
 
+  if (syncGeneration !== state.riderSyncGeneration) return;
+
   if (assignmentsResult.error) {
-    handleSetupError(assignmentsResult.error, "rider");
+    stopLocationWatch();
+    if (!handleSetupError(assignmentsResult.error, "rider")) {
+      setRiderGpsStatus("Unable to check your delivery. Tap Enable GPS to retry.", "error");
+    }
     return;
   }
 
@@ -151,8 +161,13 @@ async function syncRiderDispatchedOrder() {
     .in("status", ["preparing", "dispatched"])
     .order("created_at", { ascending: false });
 
+  if (syncGeneration !== state.riderSyncGeneration) return;
+
   if (ordersResult.error) {
-    handleSetupError(ordersResult.error, "rider");
+    stopLocationWatch();
+    if (!handleSetupError(ordersResult.error, "rider")) {
+      setRiderGpsStatus("Unable to check your delivery. Tap Enable GPS to retry.", "error");
+    }
     return;
   }
 
@@ -165,11 +180,31 @@ async function syncRiderDispatchedOrder() {
     return;
   }
 
-  startLocationWatch(dispatched.id);
+  startLocationWatch(dispatched.id, { restart });
 }
 
-function startLocationWatch(orderId) {
-  if (state.watchId !== null && state.riderOrderId === orderId) return;
+async function retryRiderGps() {
+  if (state.retrying || !state.setupAvailable) return;
+  state.retrying = true;
+  stopLocationWatch();
+  setRiderGpsStatus("Checking your active delivery…", "waiting");
+  try {
+    if (!(await getSession())) {
+      setRiderGpsStatus("Sign in again to enable GPS.", "error");
+      return;
+    }
+    await syncRiderDispatchedOrder({ restart: true });
+  } catch (error) {
+    console.warn("Unable to retry rider GPS:", error);
+    setRiderGpsStatus("Unable to enable GPS. Check your connection and try again.", "error");
+  } finally {
+    state.retrying = false;
+    updateRiderGpsButton();
+  }
+}
+
+function startLocationWatch(orderId, { restart = false } = {}) {
+  if (!restart && state.watchId !== null && state.riderOrderId === orderId) return;
 
   stopLocationWatch();
   state.riderOrderId = orderId;
@@ -185,26 +220,30 @@ function startLocationWatch(orderId) {
     "waiting"
   );
 
-  state.watchId = navigator.geolocation.watchPosition(
-    handleRiderPosition,
-    handleRiderPositionError,
-    {
-      enableHighAccuracy: true,
-      maximumAge: 4_000,
-      timeout: 20_000,
-    }
-  );
+  const generation = state.watchGeneration;
+  try {
+    state.watchId = navigator.geolocation.watchPosition(
+      (position) => handleRiderPosition(position, generation, orderId),
+      (error) => handleRiderPositionError(error, generation),
+      {
+        enableHighAccuracy: true,
+        maximumAge: 4_000,
+        timeout: 20_000,
+      }
+    );
+  } catch (error) {
+    handleRiderPositionError(error, generation);
+  }
 }
 
-async function handleRiderPosition(position) {
-  const orderId = state.riderOrderId;
-  if (!orderId) return;
+async function handleRiderPosition(position, generation = state.watchGeneration, orderId = state.riderOrderId) {
+  if (!orderId || generation !== state.watchGeneration || orderId !== state.riderOrderId) return;
 
   const latitude = Number(position.coords.latitude);
   const longitude = Number(position.coords.longitude);
   const accuracy = Number(position.coords.accuracy);
 
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return;
 
   const now = Date.now();
   const current = { latitude, longitude, accuracy, sentAt: now };
@@ -227,6 +266,8 @@ async function handleRiderPosition(position) {
         p_accuracy_m: Number.isFinite(accuracy) ? accuracy : null,
       }
     );
+
+    if (generation !== state.watchGeneration || orderId !== state.riderOrderId) return;
 
     if (error) {
       if (handleSetupError(error, "rider")) {
@@ -252,13 +293,14 @@ async function handleRiderPosition(position) {
       state.locations.set(orderId, data);
     }
   } catch (error) {
+    if (generation !== state.watchGeneration) return;
     console.warn("Unable to send rider GPS:", error);
     setRiderGpsStatus(
-      error?.message || "GPS was found, but the location could not be sent.",
+      "Location found, but it could not be shared. Check your connection and tap Enable GPS.",
       "error"
     );
   } finally {
-    state.writeInFlight = false;
+    if (generation === state.watchGeneration) state.writeInFlight = false;
   }
 }
 
@@ -278,6 +320,7 @@ function shouldSendPosition(current) {
 }
 
 function updateRiderLocalFix(current) {
+  if (state.gpsStatus === "error") return;
   const sentAge = state.lastSent
     ? formatAge(Date.now() - state.lastSent.sentAt)
     : "not sent yet";
@@ -288,18 +331,20 @@ function updateRiderLocalFix(current) {
   );
 }
 
-function handleRiderPositionError(error) {
+function handleRiderPositionError(error, generation = state.watchGeneration) {
+  if (generation !== state.watchGeneration) return;
   const message =
     error?.code === 1
-      ? "Location permission is blocked. Allow location access for Rider Mode."
+      ? "Allow location in your browser settings, turn on your phone’s location, then tap Enable GPS."
       : error?.code === 2
-        ? "Your device cannot determine its location right now."
-        : "GPS timed out. Keep Rider Mode open and try again.";
+        ? "Location unavailable. Turn on your phone’s location, then tap Enable GPS."
+        : "GPS timed out. Tap Enable GPS to try again.";
 
   setRiderGpsStatus(message, "error");
 }
 
 function stopLocationWatch(message = "") {
+  state.watchGeneration += 1;
   if (state.watchId !== null && "geolocation" in navigator) {
     navigator.geolocation.clearWatch(state.watchId);
   }
@@ -323,19 +368,32 @@ function ensureRiderPanel() {
   panel.className = "live-gps-indicator live-gps-rider";
   panel.dataset.liveGpsRider = "true";
   panel.innerHTML = `
-    <span class="live-gps-dot" data-gps-state="idle"></span>
-    <span data-live-gps-text>GPS sharing is off.</span>
+    <span class="live-gps-dot" data-gps-state="idle" aria-hidden="true"></span>
+    <span data-live-gps-text role="status" aria-live="polite">GPS sharing is off.</span>
+    <button type="button" class="rider-gps-button" data-enable-rider-gps hidden>Enable GPS</button>
   `;
+  panel.querySelector("[data-enable-rider-gps]").addEventListener("click", retryRiderGps);
   host.append(panel);
 }
 
 function setRiderGpsStatus(message, status) {
+  state.gpsStatus = status;
   ensureRiderPanel();
   const panel = document.querySelector("[data-live-gps-rider]");
   const text = panel?.querySelector("[data-live-gps-text]");
   const dot = panel?.querySelector(".live-gps-dot");
   if (text) text.textContent = message;
   if (dot) dot.dataset.gpsState = status;
+  updateRiderGpsButton();
+}
+
+function updateRiderGpsButton() {
+  const button = document.querySelector("[data-enable-rider-gps]");
+  if (!button) return;
+  button.hidden = !state.setupAvailable || !["error", "stale", "waiting"].includes(state.gpsStatus);
+  button.disabled = state.retrying;
+  button.textContent = state.retrying ? "Checking GPS…" : "Enable GPS";
+  button.setAttribute("aria-busy", String(state.retrying));
 }
 
 /* =========================================================
@@ -653,7 +711,7 @@ function handleSetupError(error, context) {
   state.setupAvailable = false;
 
   if (context === "rider") {
-    setRiderGpsStatus("Phase 8B GPS database setup is not applied yet.", "waiting");
+    setRiderGpsStatus("Live location is unavailable. Please contact the store.", "error");
   } else if (context === "customer") {
     setCustomerPanelHidden(true);
   }
@@ -662,10 +720,11 @@ function handleSetupError(error, context) {
 }
 
 function refreshVisibleAges() {
-  if (isRiderPage() && state.lastSent) {
+  if (isRiderPage() && state.lastSent && ["live", "stale"].includes(state.gpsStatus)) {
+    const stale = Date.now() - state.lastSent.sentAt > GPS_STALE_MS;
     setRiderGpsStatus(
-      `GPS sharing live${formatAccuracy(state.lastSent.accuracy)} • last sent ${formatAge(Date.now() - state.lastSent.sentAt)}`,
-      "live"
+      stale ? "Location updates paused. Tap Enable GPS to reconnect." : `GPS sharing live${formatAccuracy(state.lastSent.accuracy)} • last sent ${formatAge(Date.now() - state.lastSent.sentAt)}`,
+      stale ? "stale" : "live"
     );
   }
 
@@ -725,6 +784,7 @@ function injectStyles() {
 }
 
 function cleanup() {
+  state.riderSyncGeneration += 1;
   stopLocationWatch();
   stopCustomerChannel();
   if (state.orderChannel) customerSupabase.removeChannel(state.orderChannel);

@@ -3,6 +3,7 @@ import {
   getVerifiedAccountSession,
 } from "/js/supabase-config.js";
 import { createOrderContact } from "/js/order-contact.js";
+import { createOrderAlert } from "/js/order-alert.js";
 
 const ACTIVE_STATUSES = new Set([
   "pending",
@@ -62,6 +63,10 @@ const state = {
   relativeTimeTimer: null,
   busyOrders: new Set(),
   clearedFinishedIds: new Set(),
+  orderAlert: null,
+  orderPollTimer: null,
+  refreshSequence: 0,
+  dashboardSnapshot: "",
 };
 
 const el = {};
@@ -79,6 +84,15 @@ function initializeAdminModule() {
   if (document.body.dataset.staffReady === "true") {
     startAdminDashboard().catch(handleInitializationError);
   }
+
+  window.addEventListener("pagehide", stopOrderAlerts);
+  document.getElementById("staff-signout-button")?.addEventListener("click", stopOrderAlerts);
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted && state.permissions?.can_manage_orders) {
+      startOrderAlerts();
+      refreshDashboard({ silent: true });
+    }
+  });
 }
 
 function cacheElements() {
@@ -161,16 +175,36 @@ async function startAdminDashboard() {
   state.session = session;
   state.permissions = permissions;
   loadClearedFinishedOrders();
+  startOrderAlerts();
 
   await refreshDashboard({ silent: true });
   subscribeToRealtime();
   startRelativeTimeUpdates();
 }
 
+function startOrderAlerts() {
+  stopOrderAlerts();
+  state.orderAlert = createOrderAlert({
+    button: document.getElementById("admin-enable-order-sound"),
+    status: document.getElementById("admin-order-sound-status"),
+  });
+  state.orderAlert.setPending(state.orders);
+  // Reconcile confirmations made on another device even after a missed live event.
+  state.orderPollTimer = window.setInterval(() => refreshDashboard({ silent: true }), 10_000);
+}
+
+function stopOrderAlerts() {
+  state.orderAlert?.destroy();
+  state.orderAlert = null;
+  window.clearInterval(state.orderPollTimer);
+  state.orderPollTimer = null;
+}
+
 async function refreshDashboard({ silent = false } = {}) {
   if (!state.session) {
     return;
   }
+  const refreshSequence = ++state.refreshSequence;
 
   if (!silent) {
     setStatus("Refreshing orders…", "loading");
@@ -179,10 +213,16 @@ async function refreshDashboard({ silent = false } = {}) {
   el["admin-refresh-button"]?.setAttribute("aria-busy", "true");
 
   try {
-    const [ordersResult, assignmentsResult, ridersResult] = await Promise.all([
+    const [ordersResult, finishedResult, assignmentsResult, ridersResult] = await Promise.all([
       customerSupabase
         .from("orders")
         .select(ORDER_QUERY_COLUMNS)
+        .in("status", [...ACTIVE_STATUSES])
+        .order("created_at", { ascending: false }),
+      customerSupabase
+        .from("orders")
+        .select(ORDER_QUERY_COLUMNS)
+        .in("status", [...TERMINAL_STATUSES])
         .order("created_at", { ascending: false })
         .limit(MAX_ORDERS_TO_LOAD),
       customerSupabase
@@ -190,17 +230,16 @@ async function refreshDashboard({ silent = false } = {}) {
         .select("order_id,rider_user_id,assigned_by,assigned_at"),
       customerSupabase.rpc("admin_list_delivery_staff"),
     ]);
+    if (refreshSequence !== state.refreshSequence) return;
 
     const firstError =
-      ordersResult.error || assignmentsResult.error || ridersResult.error;
+      ordersResult.error || finishedResult.error || assignmentsResult.error || ridersResult.error;
 
     if (firstError) {
       throw firstError;
     }
 
-    state.orders = Array.isArray(ordersResult.data)
-      ? ordersResult.data
-      : [];
+    state.orders = [...(ordersResult.data || []), ...(finishedResult.data || [])];
 
     state.assignments = new Map(
       (assignmentsResult.data || []).map((assignment) => [
@@ -213,18 +252,25 @@ async function refreshDashboard({ silent = false } = {}) {
       ? ridersResult.data
       : [];
 
-    renderDashboard();
+    if (getDashboardSnapshot() !== state.dashboardSnapshot) renderDashboard();
+    else state.orderAlert?.setPending(state.orders);
     setStatus("Live order dashboard is up to date.", "success");
     updateLastUpdated();
   } catch (error) {
+    if (refreshSequence !== state.refreshSequence) return;
     console.error("Unable to load the admin dashboard:", error);
     setStatus(getSetupAwareErrorMessage(error), "error");
   } finally {
-    el["admin-refresh-button"]?.removeAttribute("aria-busy");
+    if (refreshSequence === state.refreshSequence) el["admin-refresh-button"]?.removeAttribute("aria-busy");
   }
 }
 
+function getDashboardSnapshot() {
+  return JSON.stringify([state.orders, [...state.assignments], state.riders]);
+}
+
 function renderDashboard() {
+  state.dashboardSnapshot = getDashboardSnapshot();
   const pending = [];
   const preparing = [];
   const dispatched = [];
@@ -252,6 +298,7 @@ function renderDashboard() {
   }
 
   const activeCount = pending.length + preparing.length + dispatched.length;
+  state.orderAlert?.setPending(pending);
 
   setText(el["admin-stat-pending"], String(pending.length));
   setText(el["admin-stat-preparing"], String(preparing.length));
@@ -771,6 +818,13 @@ async function runOrderRpc(functionName, orderId) {
 
   if (error) {
     throw new Error(error.message || "The order could not be updated.");
+  }
+
+  if (functionName === "admin_confirm_order") {
+    // The server accepted this order. Stop its alert even if the next refresh fails.
+    state.refreshSequence += 1;
+    state.orders = state.orders.map(order => order.id === orderId ? { ...order, status: "preparing" } : order);
+    renderDashboard();
   }
 }
 

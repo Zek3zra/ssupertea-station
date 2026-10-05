@@ -112,6 +112,8 @@ html, body, body.staff-page { background: #fff; }
 .admin-hero-copy, .admin-live-panel small { color: #666; }
 .admin-live-panel { background: #fafafa; border-color: var(--border); }
 .admin-refresh-button { border-color: var(--border); }
+#admin-enable-order-sound { min-height: 44px; font-size: .8rem; }
+#admin-order-sound-status { font-size: .75rem; line-height: 1.5; }
 .admin-live-dot, .admin-live-dot[data-state="live"], .admin-live-dot[data-state="offline"] { background: #555; box-shadow: 0 0 0 4px #eee; }
 .rider-hero .eyebrow { color: #666; }
 .rider-hero-copy, .rider-live-panel small { color: #666; }
@@ -120,7 +122,7 @@ html, body, body.staff-page { background: #fff; }
 .rider-section { background: #fff; }
 .rider-live-dot, .rider-live-dot[data-state="live"], .rider-live-dot[data-state="offline"] { background: #555; box-shadow: 0 0 0 4px #eee; }
 .rider-status-pill, .rider-status-pill.status-dispatched, .rider-status-pill.status-completed { color: #333; background: #f1f1f1; border: 1px solid #ddd; }
-.rider-order-card, .rider-order-card.status-dispatched, .rider-order-card.status-completed { border-top-color: #333; }
+
 .rider-toast.is-error, .rider-toast.is-success, .rider-status-message[data-type="error"] { background: #f5f5f5; color: #333; border-color: #ddd; }
 .reset-brand-mark { background: #fff; color: #171717; overflow: hidden; }
 .reset-brand-mark .brand-logo { width: 38px; height: 52px; }

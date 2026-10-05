@@ -8,9 +8,7 @@
   <title>Ssupertea Station | Rider Mode</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/staff.css">
-  <style>
-    .staff-content.rider-dashboard{width:min(calc(100% - 28px),1080px);margin-top:28px;margin-bottom:72px}.rider-hero{padding:clamp(24px,5vw,42px);display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-radius:28px;background:var(--green-800);color:var(--white);box-shadow:0 20px 48px rgba(50,50,50,.12)}.rider-hero .eyebrow{color:var(--lime-500)}.rider-hero h1{margin-top:7px;font-size:clamp(2rem,6vw,3.5rem);letter-spacing:-.05em}.rider-hero-copy{margin-top:10px;max-width:60ch;color:rgba(255,255,255,.76);line-height:1.6}.rider-live-panel{min-width:min(100%,240px);padding:15px;display:grid;gap:8px;border:1px solid rgba(255,255,255,.18);border-radius:18px;background:rgba(255,255,255,.08)}.rider-live-line{display:flex;align-items:center;gap:8px;font-size:.76rem}.rider-live-dot{width:9px;height:9px;border-radius:50%;background:#a6a6a6;box-shadow:0 0 0 4px rgba(166,166,166,.15)}.rider-live-dot[data-state="live"]{background:#acacac;box-shadow:0 0 0 4px rgba(172,172,172,.16)}.rider-live-dot[data-state="offline"]{background:#767676;box-shadow:0 0 0 4px rgba(118,118,118,.16)}.rider-live-panel small{color:rgba(255,255,255,.66);font-size:.68rem}.rider-refresh-button{min-height:40px;padding:0 13px;border:1px solid rgba(255,255,255,.2);border-radius:11px;background:var(--white);color:var(--green-800);font-size:.7rem;font-weight:850}.rider-refresh-button[aria-busy="true"]{opacity:.65;pointer-events:none}.rider-status-message{margin:14px 2px 0;padding:10px 13px;border-radius:12px;color:var(--ink-700);font-size:.72rem}.rider-status-message[data-type="success"]{background:var(--green-100);color:var(--green-800)}.rider-status-message[data-type="loading"]{background:rgba(255,255,255,.72)}.rider-status-message[data-type="error"]{border:1px solid rgba(80,80,80,.18);background:#f4f4f4;color:#434343}.rider-stats{margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rider-stat-card{padding:17px 18px;display:grid;gap:3px;border:1px solid var(--border);border-radius:18px;background:var(--white)}.rider-stat-card span{color:var(--ink-700);font-size:.7rem;font-weight:800}.rider-stat-card strong{color:var(--green-950);font-size:1.65rem;letter-spacing:-.04em}.rider-stat-card small{color:var(--ink-500);font-size:.64rem}.rider-section{margin-top:14px;padding:16px;border:1px solid var(--border);border-radius:22px;background:rgba(255,255,255,.68)}.rider-section-header h2{color:var(--green-950);font-size:1.08rem}.rider-section-header p{margin-top:5px;color:var(--ink-500);font-size:.68rem;line-height:1.5}.rider-order-list{margin-top:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rider-empty-state{grid-column:1/-1;padding:26px 16px;border:1px dashed rgba(72,72,72,.18);border-radius:16px;color:var(--ink-500);font-size:.72rem;text-align:center}.rider-order-card{padding:16px;border:1px solid var(--border);border-top:3px solid #737373;border-radius:18px;background:var(--white);box-shadow:0 8px 22px rgba(48,48,48,.055)}.rider-order-card.status-dispatched{border-top-color:#606060}.rider-order-card.status-completed{border-top-color:#858585}.rider-order-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.rider-order-number{display:block;color:var(--green-950);font-size:.86rem}.rider-order-customer{display:block;margin-top:3px;color:var(--ink-700);font-size:.72rem;font-weight:750}.rider-status-pill{padding:6px 8px;border-radius:999px;background:#f2f2f2;color:#5a5a5a;font-size:.59rem;font-weight:900;white-space:nowrap}.rider-status-pill.status-dispatched{background:#eeeeee;color:#4d4d4d}.rider-status-pill.status-completed{background:var(--green-100);color:var(--green-800)}.rider-order-meta{margin-top:10px;display:flex;flex-wrap:wrap;gap:5px}.rider-meta-chip{padding:5px 7px;border-radius:999px;background:var(--cream-100);color:var(--ink-700);font-size:.59rem;font-weight:750}.rider-order-items,.rider-address-block,.rider-order-actions{margin-top:12px;padding-top:11px;border-top:1px solid var(--border)}.rider-section-label{display:block;margin-bottom:5px;color:var(--ink-500);font-size:.58rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.rider-order-items ul{display:grid;gap:7px}.rider-order-items li{display:grid;gap:2px;color:var(--green-950);font-size:.69rem}.rider-order-items li small{color:var(--ink-500);font-size:.59rem;line-height:1.4}.rider-address-block p{color:var(--green-950);font-size:.69rem;font-weight:750;line-height:1.5}.rider-map-link{margin-top:9px;min-height:38px;padding:0 11px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:11px;background:var(--white);color:var(--green-800);font-size:.65rem;font-weight:850}.rider-total-row{margin-top:12px;padding:10px 11px;display:flex;align-items:center;justify-content:space-between;border-radius:12px;background:var(--green-100)}.rider-total-row span{color:var(--green-800);font-size:.62rem}.rider-total-row strong{color:var(--green-950);font-size:.86rem}.rider-order-actions p{color:var(--ink-500);font-size:.64rem;line-height:1.5}.rider-action-button{width:100%;min-height:44px;margin-top:10px;border:0;border-radius:12px;background:var(--green-800);color:var(--white);font:inherit;font-size:.72rem;font-weight:900}.rider-action-button:disabled{opacity:.55}.rider-toast-region{position:fixed;right:18px;bottom:18px;z-index:120;display:grid;gap:8px;width:min(calc(100% - 36px),380px)}.rider-toast{padding:12px 14px;border:1px solid var(--border);border-radius:13px;background:var(--white);box-shadow:0 18px 45px rgba(45,45,45,.18);color:var(--ink-700);font-size:.7rem;line-height:1.45}.rider-toast.is-success{border-color:rgba(72,72,72,.2);background:#f6f6f6;color:var(--green-800)}.rider-toast.is-error{border-color:rgba(80,80,80,.2);background:#f4f4f4;color:#434343}@media(max-width:760px){.rider-hero{align-items:stretch;flex-direction:column}.rider-live-panel{min-width:0}.rider-order-list{grid-template-columns:1fr}.rider-stats{grid-template-columns:1fr 1fr}.staff-content.rider-dashboard{width:min(calc(100% - 20px),1080px);margin-top:16px}.staff-actions{gap:5px}.staff-role-pill{display:none}}@media(max-width:480px){.rider-stats{grid-template-columns:1fr}.staff-topbar{align-items:flex-start}.staff-brand small{max-width:20ch}.staff-action-link,.staff-signout-button{padding:0 9px;font-size:.62rem}}
-  </style>
+  <link rel="stylesheet" href="/css/rider.css">
   <script type="module" src="/js/staff-gate.js"></script>
   <script type="module" src="/js/rider.js"></script>
   <link rel="stylesheet" href="/css/theme.css">
@@ -43,10 +41,10 @@
     <main class="staff-content rider-dashboard" id="rider-dashboard">
       <section class="rider-hero">
         <div>
-          <p class="eyebrow">Phase 8 Rider Mode</p>
+          <p class="eyebrow">Rider</p>
           <h1>My deliveries</h1>
           <p class="rider-hero-copy">
-            See only deliveries assigned to your rider account. Start a delivery when leaving the shop, then complete it after the customer receives the order.
+            Start when you leave the shop. Complete after handing the order to the customer.
           </p>
         </div>
 
@@ -82,7 +80,7 @@
       <section class="rider-section">
         <div class="rider-section-header">
           <h2>Assigned deliveries</h2>
-          <p>Only orders assigned to your authenticated rider account appear here.</p>
+          <p>Your current deliveries. Tap the customer’s number to call.</p>
         </div>
         <div class="rider-order-list" id="rider-assigned-list"></div>
       </section>
@@ -90,7 +88,7 @@
       <section class="rider-section">
         <div class="rider-section-header">
           <h2>Recently completed</h2>
-          <p>Your latest completed assigned deliveries are kept here for quick reference.</p>
+          <p>Your last 8 completed deliveries.</p>
         </div>
         <div class="rider-order-list" id="rider-recent-list"></div>
       </section>

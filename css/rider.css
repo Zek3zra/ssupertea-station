@@ -1,0 +1,69 @@
+.staff-content.rider-dashboard { width: min(calc(100% - 32px), 1080px); margin: 28px auto 64px; }
+.rider-hero { padding: 24px; display: grid; grid-template-columns: 1fr 300px; align-items: start; gap: 24px; border-radius: 16px; }
+.rider-hero h1 { margin-top: 6px; font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -.04em; }
+.rider-hero-copy { margin-top: 10px; max-width: 45ch; font-size: .9rem; line-height: 1.6; }
+.rider-live-panel { padding: 14px; display: grid; gap: 10px; border: 1px solid var(--border); border-radius: 12px; }
+.rider-live-line { display: flex; gap: 8px; align-items: center; font-size: .8rem; }
+.rider-live-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; }
+.rider-live-panel small { font-size: .75rem; }
+.rider-refresh-button, .rider-gps-button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: #171717; font: inherit; font-size: .85rem; font-weight: 750; cursor: pointer; }
+.rider-refresh-button[aria-busy="true"], .rider-gps-button:disabled { opacity: .6; cursor: wait; }
+.rider-gps-button { background: #171717; color: #fff; grid-column: 1 / -1; width: 100%; }
+.rider-gps-button[hidden] { display: none; }
+.rider-dashboard .live-gps-rider { display: grid; grid-template-columns: 9px 1fr; margin-top: 0; padding: 12px; border: 1px solid #ddd; background: #fff; color: #444; font-size: .8rem; font-weight: 500; }
+.rider-status-message { margin-top: 12px; padding: 10px 12px; border-radius: 8px; color: #555; font-size: .8rem; line-height: 1.5; }
+.rider-status-message[data-type="success"] { background: #f6f6f6; }
+.rider-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.rider-stat-card { padding: 16px; display: grid; gap: 4px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.rider-stat-card span { color: #444; font-size: .85rem; font-weight: 650; }
+.rider-stat-card strong { font-size: 1.8rem; line-height: 1.2; }
+.rider-stat-card small { color: #666; font-size: .75rem; line-height: 1.5; }
+.rider-section { margin-top: 26px; }
+.rider-section-header h2 { font-size: 1.2rem; }
+.rider-section-header p { margin-top: 5px; color: #666; font-size: .8rem; line-height: 1.5; }
+.rider-order-list { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.rider-empty-state { grid-column: 1 / -1; padding: 24px 16px; border: 1px dashed #ddd; border-radius: 12px; color: #666; font-size: .85rem; text-align: center; }
+.rider-order-card { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.rider-order-header { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+.rider-order-number { display: block; font-size: 1rem; }
+.rider-order-customer { display: block; margin-top: 4px; color: #555; font-size: .9rem; overflow-wrap: anywhere; }
+.rider-status-pill { padding: 6px 9px; border-radius: 6px; font-size: .7rem; font-weight: 650; flex-shrink: 0; }
+.rider-order-meta { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.rider-meta-chip { color: #666; font-size: .75rem; line-height: 1.5; }
+.rider-meta-chip + .rider-meta-chip::before { content: "· "; }
+.rider-order-items, .rider-address-block, .rider-order-actions { margin-top: 16px; padding-top: 14px; border-top: 1px solid #eee; }
+.rider-section-label { display: block; margin-bottom: 6px; color: #666; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.rider-order-items ul { display: grid; gap: 10px; list-style: none; }
+.rider-order-items li { display: grid; gap: 3px; font-size: .85rem; }
+.rider-order-items li small { color: #666; font-size: .75rem; line-height: 1.5; }
+.rider-address-block p { font-size: .9rem; font-weight: 600; line-height: 1.6; overflow-wrap: anywhere; }
+.rider-dashboard .staff-order-contact { font-size: .8rem; }
+.rider-dashboard .staff-order-contact a { min-height: 44px; display: inline-flex; align-items: center; font-size: .9rem; }
+.rider-map-link { margin-top: 10px; min-height: 44px; padding: 10px 14px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #ddd; border-radius: 8px; color: #171717; font-size: .85rem; font-weight: 650; }
+.rider-total-row { margin-top: 16px; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #f7f7f7; border-radius: 8px; }
+.rider-total-row span { color: #555; font-size: .8rem; }
+.rider-total-row strong { font-size: 1rem; }
+.rider-order-actions p { color: #666; font-size: .8rem; line-height: 1.5; }
+.rider-action-button { width: 100%; min-height: 48px; margin-top: 10px; padding: 12px; border: 0; border-radius: 8px; background: #171717; color: #fff; font: inherit; font-size: .9rem; font-weight: 750; cursor: pointer; }
+.rider-action-button:disabled { opacity: .55; cursor: wait; }
+.rider-toast-region { position: fixed; right: 16px; bottom: 16px; z-index: 120; display: grid; gap: 8px; width: min(calc(100% - 32px), 380px); }
+.rider-toast { padding: 14px; border: 1px solid #ddd; border-radius: 10px; background: #fff; box-shadow: 0 6px 20px #0001; font-size: .85rem; line-height: 1.5; }
+.rider-dashboard .rider-live-map-header span, .rider-dashboard .rider-live-map-summary span { font-size: .7rem; }
+.rider-dashboard .rider-live-map-header strong, .rider-dashboard .rider-live-map-summary strong { font-size: .9rem; }
+.rider-dashboard .rider-live-map-header button { min-height: 44px; font-size: .8rem; }
+.rider-dashboard .rider-live-map-status, .rider-dashboard .rider-live-map-note { font-size: .8rem; }
+.rider-dashboard [data-rider-map-canvas][hidden], .rider-dashboard [data-rider-map-recenter][hidden] { display: none; }
+.rider-dashboard button:focus-visible, .rider-dashboard a:focus-visible { outline: 2px solid #171717; outline-offset: 3px; }
+@media (max-width: 760px) {
+  .staff-content.rider-dashboard { width: calc(100% - 24px); margin-top: 16px; }
+  .rider-hero { grid-template-columns: 1fr; padding: 20px; gap: 16px; }
+  .rider-order-list { grid-template-columns: 1fr; }
+  .staff-role-pill { display: none; }
+  .rider-order-card { padding: 16px; }
+}
+@media (max-width: 480px) {
+  .staff-topbar { flex-wrap: wrap; gap: 12px; }
+  .staff-actions { width: 100%; gap: 6px; flex-wrap: wrap; }
+  .rider-stat-card { padding: 12px; }
+  .rider-stat-card small { display: none; }
+}

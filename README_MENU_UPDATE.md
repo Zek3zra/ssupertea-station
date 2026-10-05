@@ -69,8 +69,18 @@ node tests/customer-profiles.test.cjs
 node tests/menu-catalog.test.cjs
 node tests/sheet-dismiss.test.cjs
 node tests/admin-finished.test.cjs
+node --test tests/rider-gps.test.cjs tests/order-alert.test.cjs tests/admin-order-alert.test.cjs
 ```
 
-All 65 tests passed. `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back.
+All 88 tests passed. `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back.
 
 Browser checks covered desktop and mobile layouts, search/category selection, milk tea sizes and sugar, automatic food servings, silog extras, combo choices, cart totals, cart recovery, downward swipe dismissal, and outside-tap dismissal. No real order was placed. A real pickup/delivery order and staff fulfillment should be tested in a suitable preview environment before final deployment.
+
+
+## Rider and admin alerts
+
+Rider Mode now uses readable white cards with an even border, address/contact before item details, larger touch controls, and no empty map canvas while location is unavailable. **Enable GPS** appears when location is missing, denied, timed out, or stale. It rechecks the rider’s active assignment and restarts one high-accuracy browser watch. The rider must allow browser location and turn on the phone’s location; the website cannot switch on device settings itself. Location sharing still starts only for an assigned dispatched delivery and stops when no such delivery remains. Old callbacks and pending writes cannot overwrite a newer delivery’s GPS state.
+
+On Admin, tap **Enable order sound** once after opening the page. A short chime repeats every four seconds while one or more orders are Pending. Confirming the final pending order, or receiving a server update that it was handled/cancelled, stops the repeat. Prepared/dispatched orders do not trigger it. **Test order sound** plays a sample. Audio stops on sign-out or page exit. Browser suspension, muted tabs, or a sleeping/locked device can interrupt audio; keep the admin page open and sound enabled. Live updates plus a ten-second refresh reconcile changes on other devices. Unchanged refreshes preserve dropdowns. Successful confirmations stop their alerts even if the follow-up read fails; failed confirmations continue alerting.
+
+Verification used actual UI modules with isolated sample orders, mocked GPS, and a mocked database boundary, at desktop and 390px phone widths. No real order or real location was sent. Read-only Supabase checks confirmed RLS and Realtime on orders, delivery assignments, and locations, and authenticated-only access to the location RPC. Its existing database permission/assignment checks remain in place; no schema or credential changes were needed. A real signed-in rider should still test GPS permissions and accuracy on their phone before deployment.

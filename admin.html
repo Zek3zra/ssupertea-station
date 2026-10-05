@@ -47,7 +47,7 @@
           </p>
         </div>
 
-        <div class="admin-live-panel" aria-live="polite">
+        <div class="admin-live-panel">
           <span class="admin-live-line">
             <span class="admin-live-dot" id="admin-live-dot" data-state="connecting" aria-hidden="true"></span>
             <strong id="admin-live-label">Connecting live updates…</strong>
@@ -56,6 +56,8 @@
           <button class="admin-refresh-button" id="admin-refresh-button" type="button">
             Refresh now
           </button>
+          <button class="admin-refresh-button" id="admin-enable-order-sound" type="button">Enable order sound</button>
+          <small id="admin-order-sound-status" role="status">Tap Enable order sound to hear alerts.</small>
         </div>
       </section>
 
@@ -124,7 +126,7 @@
             <span class="admin-count-badge" id="admin-dispatched-count">0</span>
           </header>
           <p class="admin-column-copy">
-            Rider dispatch and live GPS controls will activate in Phase 8. This column is already ready for realtime status updates.
+            Follow active deliveries and ready pickups here. Riders can share their live location while delivering.
           </p>
           <div class="admin-order-list" id="admin-dispatched-list"></div>
         </article>

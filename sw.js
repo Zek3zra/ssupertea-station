@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v26";
+const CACHE_VERSION = "v27";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -20,6 +20,7 @@ const APP_SHELL = [
   "/css/style.css",
   "/css/account.css",
   "/css/staff.css",
+  "/css/rider.css",
   "/css/theme.css",
   "/js/catalog.js",
   "/js/sheet-dismiss.js",
@@ -29,6 +30,7 @@ const APP_SHELL = [
   "/js/customer-profile.js",
   "/js/order-contact.js",
   "/js/admin.js",
+  "/js/order-alert.js",
   "/js/rider.js",
   "/js/live-gps.js",
   "/js/live-map.js",
@@ -128,6 +130,8 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/js/app.js" ||
     requestUrl.pathname === "/js/account.js" ||
     requestUrl.pathname === "/js/admin.js" ||
+    requestUrl.pathname === "/js/order-alert.js" ||
+    requestUrl.pathname === "/css/rider.css" ||
     requestUrl.pathname === "/js/rider.js" ||
     requestUrl.pathname === "/js/live-gps.js" ||
     requestUrl.pathname === "/js/live-map.js" ||

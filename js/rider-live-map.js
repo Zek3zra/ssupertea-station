@@ -227,6 +227,11 @@ async function refreshLocation(orderId) {
 
   if (!location || !hasLocation(location)) {
     state.location = null;
+    const panel = getPanel();
+    if (panel) {
+      panel.querySelector("[data-rider-map-canvas]").hidden = true;
+      panel.querySelector("[data-rider-map-recenter]").hidden = true;
+    }
     setStatus("Waiting for your first GPS location…", "waiting");
     setRouteSummary(null);
     return;
@@ -261,9 +266,9 @@ function ensurePanel() {
         <span>Live delivery map</span>
         <strong>You → Customer</strong>
       </div>
-      <button type="button" data-rider-map-recenter>Recenter</button>
+      <button type="button" data-rider-map-recenter hidden>Recenter</button>
     </div>
-    <div class="rider-live-map-canvas" data-rider-map-canvas role="img" aria-label="Rider live delivery map"></div>
+    <div class="rider-live-map-canvas" data-rider-map-canvas role="img" aria-label="Rider live delivery map" hidden></div>
     <div class="rider-live-map-summary" aria-label="Remaining delivery estimate">
       <div>
         <span>Remaining</span>
@@ -277,7 +282,7 @@ function ensurePanel() {
     <div class="rider-live-map-status" data-rider-map-status data-state="waiting" role="status" aria-live="polite">
       Waiting for your GPS location…
     </div>
-    <p class="rider-live-map-note">Use Open in Google Maps above for turn-by-turn navigation.</p>
+    <p class="rider-live-map-note">Location missing? Tap Enable GPS at the top. Open Google Maps for directions.</p>
   `;
 
   const actions = card.querySelector(".rider-order-actions");
@@ -312,7 +317,9 @@ async function renderMap() {
 
   try {
     await ensureLeaflet();
+    panel.querySelector("[data-rider-map-canvas]").hidden = false;
     ensureMap(panel);
+    panel.querySelector("[data-rider-map-recenter]").hidden = false;
     updateMarkers(order, location);
     updateFreshness();
 
@@ -322,6 +329,8 @@ async function renderMap() {
       fitMapToDelivery();
     }
   } catch (error) {
+    panel.querySelector("[data-rider-map-canvas]").hidden = true;
+    panel.querySelector("[data-rider-map-recenter]").hidden = true;
     console.warn("Unable to render rider live map:", error);
     setStatus("The map could not be displayed right now.", "error");
   }

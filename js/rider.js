@@ -322,7 +322,7 @@ function createDeliveryCard(order) {
     <strong>${escapeHtml(formatMoney(order.total_price))}</strong>
   `;
 
-  card.append(header, meta, items, addressBlock, totals);
+  card.append(header, meta, addressBlock, items, totals);
 
   if (ACTIVE_DELIVERY_STATUSES.has(order.status)) {
     card.append(createActionArea(order));
@@ -355,7 +355,8 @@ function createItemsBlock(itemsValue) {
     main.textContent = `${normalizeQuantity(item?.quantity)}× ${getItemName(item)}`;
 
     const detail = document.createElement("small");
-    detail.textContent = getItemDetails(item) || "Customized order";
+    detail.textContent = getItemDetails(item);
+    detail.hidden = !detail.textContent;
 
     row.append(main, detail);
     list.append(row);
@@ -376,11 +377,11 @@ function createActionArea(order) {
   button.dataset.orderId = order.id;
 
   if (order.status === "preparing") {
-    copy.textContent = "Start only when you are leaving the shop with this delivery.";
+    copy.textContent = "Leaving the shop? Start this delivery.";
     button.dataset.riderAction = "start";
     button.textContent = "Start delivery";
   } else {
-    copy.textContent = "Complete the delivery only after the customer has received the order.";
+    copy.textContent = "Order handed to the customer? Mark it delivered.";
     button.dataset.riderAction = "complete";
     button.textContent = "Complete delivery";
   }

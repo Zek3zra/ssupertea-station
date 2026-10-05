@@ -136,8 +136,13 @@
             <span class="admin-column-kicker">Recent</span>
             <h2>Finished orders</h2>
           </div>
-          <span class="admin-count-badge" id="admin-recent-count">0</span>
+          <div class="admin-finished-actions">
+            <button class="admin-finished-button" id="admin-restore-finished-button" type="button" hidden>Show cleared</button>
+            <button class="admin-finished-button" id="admin-clear-finished-button" type="button" disabled>Clear finished</button>
+            <span class="admin-count-badge" id="admin-recent-count">0</span>
+          </div>
         </header>
+        <p class="admin-finished-note">Clearing hides finished orders on this device. Order history is kept.</p>
         <div class="admin-order-list admin-recent-list" id="admin-recent-list"></div>
       </section>
     </main>

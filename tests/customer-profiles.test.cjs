@@ -152,6 +152,7 @@ function checkoutHarness() {
       nodes[id].classList = { add() {}, remove() {}, toggle() {}, contains: () => false };
       nodes[id].querySelector = () => ({ value: orderType });
       nodes[id].close = () => { nodes[id].open = false; };
+      nodes[id].showModal = () => { nodes[id].open = true; };
       nodes[id].checkValidity = () => true;
       nodes[id].reportValidity = () => true;
       nodes[id].setCustomValidity = () => {};
@@ -182,6 +183,7 @@ function checkoutHarness() {
     console: { error() {}, warn() {} },
     fetch: async () => { throw new Error("Unexpected fetch"); },
   }, `state, elements, handleCheckoutRequest, clearCheckoutCustomer, useSavedDeliveryAddress, handleCheckoutSubmit, createOrderWithSessionRecovery,
+    closeCheckoutDialog, openTrackingDialog, closeTrackingDialog,
     configure(hooks) {
       renderCheckoutSummary = () => {};
       openCheckoutDialog = () => { elements['checkout-dialog'].open = true; };
@@ -192,11 +194,11 @@ function checkoutHarness() {
       createOrderViaServer = hooks.submit;
       showOrderConfirmation = hooks.confirm;
       startOrderTracking = () => {};
+      setTrackingConnectionStatus = () => {};
       renderCart = () => {};
-      closeCheckoutDialog = () => {};
       setCheckoutSubmitting = value => { state.checkout.isSubmitting = value; };
     }`);
-  for (const id of ["customer-name", "customer-phone", "address-line1", "address-landmark", "address-city", "address-province", "checkout-dialog", "checkout-form", "checkout-profile-status", "checkout-saved-address", "save-checkout-contact", "save-delivery-address", "use-saved-address", "checkout-submit-button"]) h.elements[id] = node(id);
+  for (const id of ["customer-name", "customer-phone", "address-line1", "address-landmark", "address-city", "address-province", "checkout-dialog", "order-confirmation-dialog", "tracking-dialog", "checkout-form", "checkout-profile-status", "checkout-saved-address", "save-checkout-contact", "save-delivery-address", "use-saved-address", "checkout-submit-button"]) h.elements[id] = node(id);
   h.state.cart = [{ productId: "classic-milk-tea", quantity: 1, unitPrice: 80, size: { id: "medium" }, sugar: { id: "50" }, ice: { id: "regular-ice" }, addons: [] }];
   const confirmations = [];
   let submit = async payload => ({ ...payload, total_price: 80, status: "pending" });
@@ -262,6 +264,50 @@ test("Checkout submits its edited phone without changing the saved profile", asy
   h.node("customer-phone").value = "09281234567";
   await h.handleCheckoutSubmit({ preventDefault() {} });
   assert.equal(h.submitted[0].customer_phone, "+639281234567");
+});
+test("Accepted orders close checkout before showing confirmation", async () => {
+  const h = checkoutHarness();
+  await h.handleCheckoutRequest();
+  assert.equal(h.node("checkout-dialog").open, true);
+  await h.handleCheckoutSubmit({ preventDefault() {} });
+  assert.equal(h.confirmations.length, 1);
+  assert.equal(h.node("checkout-dialog").open, false);
+  assert.equal(h.state.checkout.isSubmitting, false);
+  assert.equal(h.state.cart.length, 0);
+});
+test("Failed orders keep checkout and the cart available for retry", async () => {
+  const h = checkoutHarness();
+  await h.handleCheckoutRequest();
+  h.setSubmit(async () => { throw new Error("Server unavailable"); });
+  await h.handleCheckoutSubmit({ preventDefault() {} });
+  assert.equal(h.node("checkout-dialog").open, true);
+  assert.equal(h.state.cart.length, 1);
+  assert.equal(h.state.checkout.isSubmitting, false);
+  assert.equal(h.confirmations.length, 0);
+});
+test("Closing order tracking cannot reveal an old checkout or confirmation", async () => {
+  const h = checkoutHarness();
+  await h.handleCheckoutRequest();
+  h.node("order-confirmation-dialog").open = true;
+  await h.openTrackingDialog("test-order");
+  assert.equal(h.node("tracking-dialog").open, true);
+  assert.equal(h.node("checkout-dialog").open, false);
+  assert.equal(h.node("order-confirmation-dialog").open, false);
+  h.closeTrackingDialog();
+  assert.equal(h.node("tracking-dialog").open, false);
+  assert.equal(h.node("checkout-dialog").open, false);
+});
+test("Checkout cannot be dismissed while its order request is pending", async () => {
+  const h = checkoutHarness(), pending = deferred();
+  await h.handleCheckoutRequest();
+  h.setSubmit(() => pending.promise);
+  const sending = h.handleCheckoutSubmit({ preventDefault() {} });
+  await flush();
+  h.closeCheckoutDialog();
+  assert.equal(h.node("checkout-dialog").open, true);
+  pending.resolve({ id:"test-order", total_price:80, status:"pending" });
+  await sending;
+  assert.equal(h.node("checkout-dialog").open, false);
 });
 test("An order response cannot show the previous customer's details after sign-out", async () => {
   const h = checkoutHarness(), pending = deferred();

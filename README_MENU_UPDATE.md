@@ -46,6 +46,10 @@ Applied remote migrations: `official_menu_catalog`, `official_menu_catalog_nonan
 
 ## Future admin editing and photos
 
+Finished orders now have a **Clear finished** action. It hides loaded completed/cancelled orders for the current staff account on this browser/device and persists that preference across refreshes. **Show cleared** restores them. It never deletes database records, affects active orders, or changes customer history/tracking. Admin cards use an even border without a status stripe.
+
+Successful order submission clears the busy state and closes checkout before opening confirmation. Opening tracking also closes checkout and confirmation, so closing tracking returns to the store. Failed submissions keep the checkout and cart available for retry. Mobile menu descriptions display in full, and the price has spacing before “from.”
+
 The catalog is ready for an admin menu editor; the editor screen itself is the next feature. Until then, edit these tables through the Supabase dashboard:
 
 1. Change prices in `menu_catalog_variants.price`, matching the product and variant IDs. Refresh the customer menu to see changes. Checkout always verifies the current database price.
@@ -64,8 +68,9 @@ node tests/final-functionality.test.cjs
 node tests/customer-profiles.test.cjs
 node tests/menu-catalog.test.cjs
 node tests/sheet-dismiss.test.cjs
+node tests/admin-finished.test.cjs
 ```
 
-All 55 tests passed. `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back.
+All 65 tests passed. `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back.
 
 Browser checks covered desktop and mobile layouts, search/category selection, milk tea sizes and sugar, automatic food servings, silog extras, combo choices, cart totals, cart recovery, downward swipe dismissal, and outside-tap dismissal. No real order was placed. A real pickup/delivery order and staff fulfillment should be tested in a suitable preview environment before final deployment.

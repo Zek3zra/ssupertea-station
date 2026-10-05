@@ -388,30 +388,16 @@ body.staff-page {
   overflow: hidden;
   padding: 15px;
   border: 1px solid var(--border);
-  border-radius: 17px;
+  border-radius: 12px;
   background: var(--white);
-  box-shadow: 0 8px 22px rgba(48,48,48, 0.055);
+  box-shadow: none;
 }
 
-.admin-order-card.status-pending {
-  border-top: 3px solid #9f9f9f;
-}
-
-.admin-order-card.status-preparing {
-  border-top: 3px solid #737373;
-}
-
-.admin-order-card.status-dispatched {
-  border-top: 3px solid #606060;
-}
-
-.admin-order-card.status-completed {
-  border-top: 3px solid #858585;
-}
-
-.admin-order-card.status-cancelled {
-  border-top: 3px solid #717171;
-}
+.admin-finished-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.admin-finished-button { padding: 8px 12px; min-height: 36px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--ink-900); font: inherit; font-size: .72rem; font-weight: 650; cursor: pointer; }
+.admin-finished-button:hover { background: #f5f5f5; }
+.admin-finished-button:disabled { opacity: .45; cursor: default; }
+.admin-finished-note { margin-top: 9px; color: var(--ink-500); font-size: .7rem; line-height: 1.5; }
 
 .admin-order-header {
   display: flex;

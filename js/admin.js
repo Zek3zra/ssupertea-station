@@ -61,6 +61,7 @@ const state = {
   refreshTimer: null,
   relativeTimeTimer: null,
   busyOrders: new Set(),
+  clearedFinishedIds: new Set(),
 };
 
 const el = {};
@@ -99,6 +100,8 @@ function cacheElements() {
     "admin-preparing-list",
     "admin-dispatched-list",
     "admin-recent-list",
+    "admin-clear-finished-button",
+    "admin-restore-finished-button",
     "admin-toast-region",
   ];
 
@@ -108,6 +111,8 @@ function cacheElements() {
 }
 
 function bindEvents() {
+  el["admin-clear-finished-button"]?.addEventListener("click", clearFinishedOrders);
+  el["admin-restore-finished-button"]?.addEventListener("click", restoreFinishedOrders);
   el["admin-refresh-button"]?.addEventListener("click", () => {
     refreshDashboard();
   });
@@ -155,6 +160,7 @@ async function startAdminDashboard() {
 
   state.session = session;
   state.permissions = permissions;
+  loadClearedFinishedOrders();
 
   await refreshDashboard({ silent: true });
   subscribeToRealtime();
@@ -240,7 +246,7 @@ function renderDashboard() {
       continue;
     }
 
-    if (TERMINAL_STATUSES.has(order.status) && recent.length < 12) {
+    if (TERMINAL_STATUSES.has(order.status) && !state.clearedFinishedIds.has(order.id) && recent.length < 12) {
       recent.push(order);
     }
   }
@@ -255,6 +261,8 @@ function renderDashboard() {
   setText(el["admin-preparing-count"], String(preparing.length));
   setText(el["admin-dispatched-count"], String(dispatched.length));
   setText(el["admin-recent-count"], String(recent.length));
+  el["admin-clear-finished-button"].disabled = recent.length === 0;
+  el["admin-restore-finished-button"].hidden = state.clearedFinishedIds.size === 0;
 
   renderOrderList(
     el["admin-pending-list"],
@@ -277,8 +285,49 @@ function renderDashboard() {
   renderOrderList(
     el["admin-recent-list"],
     recent,
-    "Completed and cancelled orders will appear here."
+    state.clearedFinishedIds.size ? "Finished orders cleared. New completed and cancelled orders will appear here." : "Completed and cancelled orders will appear here."
   );
+}
+
+function finishedOrdersStorageKey() {
+  return state.session?.user?.id ? `ssupertea-cleared-finished-v1:${state.session.user.id}` : null;
+}
+
+function loadClearedFinishedOrders() {
+  state.clearedFinishedIds = new Set();
+  const key = finishedOrdersStorageKey();
+  if (!key) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || "[]");
+    if (Array.isArray(saved)) state.clearedFinishedIds = new Set(saved.filter(id => typeof id === "string" && id.length <= 100).slice(-1000));
+  } catch { /* A blocked or malformed store must not prevent loading orders. */ }
+}
+
+function persistClearedFinishedOrders() {
+  const key = finishedOrdersStorageKey();
+  if (!key) return false;
+  try {
+    localStorage.setItem(key, JSON.stringify([...state.clearedFinishedIds].slice(-1000)));
+    return true;
+  } catch { return false; }
+}
+
+function clearFinishedOrders() {
+  if (!state.session || state.permissions?.can_manage_orders !== true) return;
+  const finished = state.orders.filter(order => TERMINAL_STATUSES.has(order.status) && !state.clearedFinishedIds.has(order.id));
+  if (!finished.length) return;
+  for (const order of finished) state.clearedFinishedIds.add(order.id);
+  const saved = persistClearedFinishedOrders();
+  renderDashboard();
+  showToast(saved ? "Finished orders cleared from this view. Order history is kept." : "Finished orders cleared for this visit. Order history is kept.", "success");
+}
+
+function restoreFinishedOrders() {
+  if (!state.session || state.permissions?.can_manage_orders !== true) return;
+  state.clearedFinishedIds.clear();
+  const saved = persistClearedFinishedOrders();
+  renderDashboard();
+  showToast(saved ? "Cleared orders are visible again." : "Cleared orders are visible again for this visit.", "info");
 }
 
 function renderOrderList(container, orders, emptyMessage) {

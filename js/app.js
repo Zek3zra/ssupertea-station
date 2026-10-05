@@ -565,7 +565,7 @@ function createProductCard(product) {
         <h3>${escapeHtml(product.name)}</h3>
         <p class="product-description">${escapeHtml(product.description)}</p>
         <div class="product-card-footer">
-          <p class="product-price">${formatCurrency(product.basePrice)}${product.variants.some(option => option.price !== product.basePrice) ? '<small>from</small>' : ""}</p>
+          <p class="product-price">${formatCurrency(product.basePrice)}${product.variants.some(option => option.price !== product.basePrice) ? ' <small>from</small>' : ""}</p>
           <button class="customize-button" type="button" data-action="customize" data-product-id="${escapeHtml(product.id)}" aria-label="Add ${escapeHtml(product.name)} to cart">Add to cart</button>
         </div>
       </div>
@@ -3059,6 +3059,8 @@ async function handleCheckoutSubmit(event) {
 
     const serverTotal = Number(order.total_price);
 
+    // The request has succeeded; allow checkout to close before confirmation opens.
+    setCheckoutSubmitting(false);
     closeCheckoutDialog();
     showOrderConfirmation(order);
 
@@ -3431,10 +3433,12 @@ async function handleConfirmationTrackRequest() {
 }
 
 async function openTrackingDialog(orderId) {
-  if (!orderId) {
+  if (!orderId || state.checkout.isSubmitting) {
     return;
   }
 
+  closeCheckoutDialog();
+  closeOrderConfirmation();
   if (!elements["tracking-dialog"].open) {
     elements["tracking-dialog"].showModal();
   }

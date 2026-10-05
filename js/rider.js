@@ -3,6 +3,7 @@ import {
   getVerifiedAccountSession,
 } from "/js/supabase-config.js";
 import { createOrderContact } from "/js/order-contact.js";
+import { bindSheetDismiss } from "/js/sheet-dismiss.js";
 
 const ACTIVE_DELIVERY_STATUSES = new Set([
   "preparing",
@@ -34,6 +35,9 @@ const state = {
   channel: null,
   refreshTimer: null,
   busyOrders: new Set(),
+  clearedCompletedIds: new Set(),
+  completedMinimized: false,
+  detailOrderId: null,
 };
 
 const el = {};
@@ -65,6 +69,12 @@ function cacheElements() {
     "rider-assigned-list",
     "rider-recent-list",
     "rider-toast-region",
+    "rider-toggle-completed",
+    "rider-restore-completed",
+    "rider-clear-completed",
+    "rider-details-dialog",
+    "rider-details-content",
+    "rider-details-done",
   ];
 
   for (const id of ids) {
@@ -73,6 +83,27 @@ function cacheElements() {
 }
 
 function bindEvents() {
+  el["rider-clear-completed"]?.addEventListener("click", clearCompletedDeliveries);
+  el["rider-restore-completed"]?.addEventListener("click", restoreCompletedDeliveries);
+  el["rider-toggle-completed"]?.addEventListener("click", toggleCompletedDeliveries);
+  el["rider-details-done"]?.addEventListener("click", closeDeliveryDetails);
+  const dialog = el["rider-details-dialog"];
+  if (dialog) {
+    bindSheetDismiss(dialog, closeDeliveryDetails);
+    dialog.addEventListener("click", event => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right ||
+          event.clientY < rect.top || event.clientY > rect.bottom) closeDeliveryDetails();
+    });
+    dialog.addEventListener("close", () => {
+      if (dialog.open) return;
+      state.detailOrderId = null;
+      el["rider-details-content"].replaceChildren();
+    });
+  }
+  window.addEventListener("pagehide", closeDeliveryDetails);
+  document.getElementById("staff-signout-button")?.addEventListener("click", closeDeliveryDetails);
   el["rider-refresh-button"]?.addEventListener("click", () => {
     refreshDashboard();
   });
@@ -121,6 +152,7 @@ async function startRiderDashboard() {
 
   state.session = session;
   state.permissions = permissions;
+  loadClearedCompletedDeliveries();
 
   await refreshDashboard({ silent: true });
   subscribeToRealtime();
@@ -212,11 +244,17 @@ function renderDashboard() {
   const preparing = state.orders.filter((order) => order.status === "preparing");
   const dispatched = state.orders.filter((order) => order.status === "dispatched");
   const recent = state.orders
-    .filter((order) => order.status === "completed")
+    .filter((order) => order.status === "completed" && !state.clearedCompletedIds.has(order.id))
     .slice(0, MAX_RECENT_DELIVERIES);
 
   setText(el["rider-stat-ready"], String(preparing.length));
   setText(el["rider-stat-active"], String(dispatched.length));
+  el["rider-clear-completed"].disabled = recent.length === 0;
+  el["rider-restore-completed"].hidden = state.clearedCompletedIds.size === 0;
+  el["rider-recent-list"].hidden = state.completedMinimized;
+  el["rider-toggle-completed"].setAttribute("aria-expanded", String(!state.completedMinimized));
+  el["rider-toggle-completed"].textContent = state.completedMinimized ? "Show list" : "Minimize";
+  if (state.detailOrderId && !state.orders.some(order => order.id === state.detailOrderId && order.status === "completed")) closeDeliveryDetails();
 
   const assigned = [...dispatched, ...preparing];
 
@@ -229,8 +267,144 @@ function renderDashboard() {
   renderOrderList(
     el["rider-recent-list"],
     recent,
-    "Completed deliveries will appear here."
+    state.clearedCompletedIds.size ? "Completed deliveries cleared. New completed deliveries will appear here." : "Completed deliveries will appear here."
   );
+}
+
+function completedDeliveriesStorageKey() {
+  return state.session?.user?.id ? `ssupertea-rider-cleared-completed-v1:${state.session.user.id}` : null;
+}
+
+function loadClearedCompletedDeliveries() {
+  state.clearedCompletedIds = new Set();
+  const key = completedDeliveriesStorageKey();
+  if (!key) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || "[]");
+    if (Array.isArray(saved)) state.clearedCompletedIds = new Set(saved.filter(id => typeof id === "string").slice(-1000));
+  } catch { /* A blocked or invalid preference must not prevent delivery work. */ }
+}
+
+function saveClearedCompletedDeliveries() {
+  const key = completedDeliveriesStorageKey();
+  if (!key) return false;
+  try {
+    localStorage.setItem(key, JSON.stringify([...state.clearedCompletedIds].slice(-1000)));
+    return true;
+  } catch { return false; }
+}
+
+function removeCompletedDelivery(orderId) {
+  const order = state.orders.find(order => order.id === orderId && order.status === "completed");
+  if (!order || !state.session?.user?.id) return;
+  state.clearedCompletedIds.add(orderId);
+  if (state.detailOrderId === orderId) closeDeliveryDetails();
+  const saved = saveClearedCompletedDeliveries();
+  renderDashboard();
+  showToast(saved ? "Delivery removed from this list. Order history is kept." : "Delivery hidden for now. Your browser could not save this preference.", "success");
+}
+
+function clearCompletedDeliveries() {
+  if (!state.session?.user?.id) return;
+  const completed = state.orders.filter(order => order.status === "completed");
+  if (!completed.length) return;
+  completed.forEach(order => state.clearedCompletedIds.add(order.id));
+  closeDeliveryDetails();
+  const saved = saveClearedCompletedDeliveries();
+  renderDashboard();
+  showToast(saved ? "Completed deliveries cleared. Order history is kept." : "Completed deliveries hidden for now. Your browser could not save this preference.", "success");
+}
+
+function restoreCompletedDeliveries() {
+  state.clearedCompletedIds.clear();
+  saveClearedCompletedDeliveries();
+  state.completedMinimized = false;
+  renderDashboard();
+}
+
+function toggleCompletedDeliveries() {
+  state.completedMinimized = !state.completedMinimized;
+  el["rider-recent-list"].hidden = state.completedMinimized;
+  el["rider-toggle-completed"].setAttribute("aria-expanded", String(!state.completedMinimized));
+  el["rider-toggle-completed"].textContent = state.completedMinimized ? "Show list" : "Minimize";
+}
+
+function createCompletedDeliveryCard(order) {
+  const card = document.createElement("article");
+  card.className = "rider-order-card rider-completed-card status-completed";
+  card.dataset.orderId = order.id;
+  const header = document.createElement("div");
+  header.className = "rider-order-header";
+  const heading = document.createElement("div");
+  const number = document.createElement("strong");
+  number.className = "rider-order-number";
+  number.textContent = formatOrderNumber(order.id);
+  const customer = document.createElement("span");
+  customer.className = "rider-order-customer";
+  customer.textContent = order.customer_name || "Customer";
+  heading.append(number, customer);
+  const badge = document.createElement("span");
+  badge.className = "rider-status-pill status-completed";
+  badge.textContent = "Completed";
+  header.append(heading, badge);
+  const info = document.createElement("div");
+  info.className = "rider-completed-info";
+  const date = document.createElement("time");
+  date.textContent = `Ordered ${formatDateTime(order.created_at)}`;
+  if (!Number.isNaN(new Date(order.created_at).getTime())) date.dateTime = order.created_at;
+  const total = document.createElement("strong");
+  total.textContent = formatMoney(order.total_price);
+  info.append(date, total);
+  const buttons = document.createElement("div");
+  buttons.className = "rider-completed-buttons";
+  for (const [action, label] of [["details", "More details"], ["remove", "Remove"]]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "rider-secondary-button";
+    button.dataset.completedAction = action;
+    button.dataset.orderId = order.id;
+    button.textContent = label;
+    button.setAttribute("aria-label", `${label} for ${formatOrderNumber(order.id)}`);
+    if (action === "details") button.setAttribute("aria-haspopup", "dialog");
+    buttons.append(button);
+  }
+  card.append(header, info, buttons);
+  return card;
+}
+
+function openDeliveryDetails(orderId) {
+  const order = state.orders.find(order => order.id === orderId && order.status === "completed");
+  const dialog = el["rider-details-dialog"];
+  if (!order || !dialog || !state.session?.user?.id) return;
+  const card = createDeliveryCard(order, { details: true });
+  const info = document.createElement("dl");
+  info.className = "rider-details-meta";
+  const entries = [["Order type", "Delivery"], ["Ordered", formatDateTime(order.created_at)]];
+  if (order.confirmed_at) entries.push(["Confirmed", formatDateTime(order.confirmed_at)]);
+  for (const [label, value] of [["Items subtotal", order.items_subtotal], ["Delivery fee", order.delivery_fee]]) {
+    if (value !== null && value !== undefined && Number.isFinite(Number(value))) entries.push([label, formatMoney(value)]);
+  }
+  entries.push(["Order reference", order.id]);
+  for (const [label, value] of entries) {
+    const row = document.createElement("div");
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const detail = document.createElement("dd");
+    detail.textContent = value;
+    row.append(term, detail);
+    info.append(row);
+  }
+  card.append(info);
+  el["rider-details-content"].replaceChildren(card);
+  state.detailOrderId = orderId;
+  if (!dialog.open) dialog.showModal();
+}
+
+function closeDeliveryDetails() {
+  const dialog = el["rider-details-dialog"];
+  if (dialog?.open) dialog.close();
+  state.detailOrderId = null;
+  el["rider-details-content"]?.replaceChildren();
 }
 
 function renderOrderList(container, orders, emptyMessage) {
@@ -251,13 +425,13 @@ function renderOrderList(container, orders, emptyMessage) {
   const fragment = document.createDocumentFragment();
 
   for (const order of orders) {
-    fragment.append(createDeliveryCard(order));
+    fragment.append(order.status === "completed" ? createCompletedDeliveryCard(order) : createDeliveryCard(order));
   }
 
   container.append(fragment);
 }
 
-function createDeliveryCard(order) {
+function createDeliveryCard(order, { details = false } = {}) {
   const card = document.createElement("article");
   card.className = `rider-order-card status-${order.status}`;
   card.dataset.orderId = order.id;
@@ -289,7 +463,7 @@ function createDeliveryCard(order) {
     makeChip(getRouteSummary(order))
   );
 
-  const items = createItemsBlock(order.items);
+  const items = createItemsBlock(order.items, details);
 
   const addressBlock = document.createElement("div");
   addressBlock.className = "rider-address-block";
@@ -331,7 +505,7 @@ function createDeliveryCard(order) {
   return card;
 }
 
-function createItemsBlock(itemsValue) {
+function createItemsBlock(itemsValue, showPrices = false) {
   const wrapper = document.createElement("div");
   wrapper.className = "rider-order-items";
 
@@ -359,6 +533,13 @@ function createItemsBlock(itemsValue) {
     detail.hidden = !detail.textContent;
 
     row.append(main, detail);
+    if (showPrices && item?.unit_price != null && Number.isFinite(Number(item.unit_price))) {
+      const price = document.createElement("small");
+      const total = item.line_total != null && Number.isFinite(Number(item.line_total))
+        ? Number(item.line_total) : Number(item.unit_price) * normalizeQuantity(item.quantity);
+      price.textContent = `${formatMoney(item.unit_price)} each · ${formatMoney(total)} total`;
+      row.append(price);
+    }
     list.append(row);
   }
 
@@ -395,6 +576,12 @@ function createActionArea(order) {
 }
 
 async function handleDashboardClick(event) {
+  const completedButton = event.target.closest("[data-completed-action]");
+  if (completedButton) {
+    if (completedButton.dataset.completedAction === "details") openDeliveryDetails(completedButton.dataset.orderId);
+    else if (completedButton.dataset.completedAction === "remove") removeCompletedDelivery(completedButton.dataset.orderId);
+    return;
+  }
   const button = event.target.closest("[data-rider-action]");
 
   if (!button) {
@@ -627,7 +814,7 @@ function getRouteSummary(order) {
   const distance = Number(order.route_distance_m);
   const duration = Number(order.route_duration_s);
 
-  if (Number.isFinite(distance)) {
+  if (order.route_distance_m != null && Number.isFinite(distance)) {
     parts.push(
       distance >= 1000
         ? `${(distance / 1000).toFixed(1)} km`
@@ -635,7 +822,7 @@ function getRouteSummary(order) {
     );
   }
 
-  if (Number.isFinite(duration)) {
+  if (order.route_duration_s != null && Number.isFinite(duration)) {
     parts.push(`${Math.max(1, Math.round(duration / 60))} min estimate`);
   }
 
@@ -646,11 +833,12 @@ function getGoogleMapsUrl(order) {
   const latitude = Number(order.delivery_lat);
   const longitude = Number(order.delivery_lng);
 
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    return "";
-  }
-
-  const destination = encodeURIComponent(`${latitude},${longitude}`);
+  const hasPin = order.delivery_lat !== null && order.delivery_lat !== undefined && order.delivery_lat !== "" &&
+    order.delivery_lng !== null && order.delivery_lng !== undefined && order.delivery_lng !== "" &&
+    Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
+  const address = String(order.delivery_address || "").trim();
+  if (!hasPin && !address) return "";
+  const destination = encodeURIComponent(hasPin ? `${latitude},${longitude}` : address);
   return `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
 }
 

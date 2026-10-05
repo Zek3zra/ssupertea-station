@@ -69,10 +69,10 @@ node tests/customer-profiles.test.cjs
 node tests/menu-catalog.test.cjs
 node tests/sheet-dismiss.test.cjs
 node tests/admin-finished.test.cjs
-node --test tests/rider-gps.test.cjs tests/order-alert.test.cjs tests/admin-order-alert.test.cjs
+node --test tests/rider-gps.test.cjs tests/rider-completed.test.cjs tests/order-alert.test.cjs tests/admin-order-alert.test.cjs
 ```
 
-All 88 tests passed. `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back.
+All 101 tests passed. `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back.
 
 Browser checks covered desktop and mobile layouts, search/category selection, milk tea sizes and sugar, automatic food servings, silog extras, combo choices, cart totals, cart recovery, downward swipe dismissal, and outside-tap dismissal. No real order was placed. A real pickup/delivery order and staff fulfillment should be tested in a suitable preview environment before final deployment.
 
@@ -84,3 +84,7 @@ Rider Mode now uses readable white cards with an even border, address/contact be
 On Admin, tap **Enable order sound** once after opening the page. A short chime repeats every four seconds while one or more orders are Pending. Confirming the final pending order, or receiving a server update that it was handled/cancelled, stops the repeat. Prepared/dispatched orders do not trigger it. **Test order sound** plays a sample. Audio stops on sign-out or page exit. Browser suspension, muted tabs, or a sleeping/locked device can interrupt audio; keep the admin page open and sound enabled. Live updates plus a ten-second refresh reconcile changes on other devices. Unchanged refreshes preserve dropdowns. Successful confirmations stop their alerts even if the follow-up read fails; failed confirmations continue alerting.
 
 Verification used actual UI modules with isolated sample orders, mocked GPS, and a mocked database boundary, at desktop and 390px phone widths. No real order or real location was sent. Read-only Supabase checks confirmed RLS and Realtime on orders, delivery assignments, and locations, and authenticated-only access to the location RPC. Its existing database permission/assignment checks remain in place; no schema or credential changes were needed. A real signed-in rider should still test GPS permissions and accuracy on their phone before deployment.
+
+Rider Sign out stays at the upper right beside the logo on mobile and desktop. Recently completed deliveries show a compact summary; **More details** opens a modal with the customer contact, address, items and recorded prices, fees, order reference, and **Open in Google Maps**. A missing map pin falls back to the recorded address. The modal closes with Done, Escape, a downward header swipe, or an outside tap.
+
+**Minimize** collapses the completed list. **Remove** hides one completed delivery and **Clear completed** hides all loaded completed deliveries for the current rider on this browser/device. **Show cleared** restores them. These controls preserve active deliveries and database order history; saved preferences contain only order IDs. Browser checks with sample data covered removal across refresh, restoration, minimization, modal dismissal, and the header at 320px, 390px, and desktop widths. No Supabase changes were needed for this update.

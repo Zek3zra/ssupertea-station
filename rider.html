@@ -19,7 +19,7 @@
   </div>
 
   <div class="staff-shell" id="staff-shell" hidden>
-    <header class="staff-topbar">
+    <header class="staff-topbar rider-topbar">
       <a class="staff-brand" href="/">
         <span class="brand-mark" aria-hidden="true"><img class="brand-logo" src="/assets/brand/ssupertea-logo.jpg" alt="" width="38" height="52"></span>
         <span>
@@ -32,10 +32,8 @@
         <span class="staff-role-pill" id="staff-role-label">Rider</span>
         <a class="staff-action-link" id="admin-mode-link" href="/admin.html">Admin</a>
         <a class="staff-action-link" id="rider-mode-link" href="/rider.html">Rider Mode</a>
-        <button class="staff-signout-button" id="staff-signout-button" type="button">
-          Sign out
-        </button>
       </div>
+      <button class="staff-signout-button" id="staff-signout-button" type="button">Sign out</button>
     </header>
 
     <main class="staff-content rider-dashboard" id="rider-dashboard">
@@ -85,13 +83,32 @@
         <div class="rider-order-list" id="rider-assigned-list"></div>
       </section>
 
-      <section class="rider-section">
-        <div class="rider-section-header">
-          <h2>Recently completed</h2>
-          <p>Your last 8 completed deliveries.</p>
+      <section class="rider-section rider-completed-section">
+        <div class="rider-section-header rider-recent-header">
+          <div>
+            <h2>Recently completed</h2>
+            <p>Removing deliveries hides them on this device. Order history is kept.</p>
+          </div>
+          <div class="rider-recent-controls">
+            <button class="rider-secondary-button" id="rider-toggle-completed" type="button" aria-expanded="true" aria-controls="rider-recent-list">Minimize</button>
+            <button class="rider-secondary-button" id="rider-restore-completed" type="button" hidden>Show cleared</button>
+            <button class="rider-secondary-button" id="rider-clear-completed" type="button" disabled>Clear completed</button>
+          </div>
         </div>
         <div class="rider-order-list" id="rider-recent-list"></div>
       </section>
+
+      <dialog class="rider-details-dialog" id="rider-details-dialog" aria-labelledby="rider-details-title">
+        <header class="rider-details-header sheet-drag-region">
+          <span class="rider-details-handle" aria-hidden="true"></span>
+          <h2 id="rider-details-title">Delivery details</h2>
+          <p>Swipe down or tap outside to close.</p>
+        </header>
+        <div class="rider-details-content" id="rider-details-content"></div>
+        <footer class="rider-details-footer">
+          <button class="rider-secondary-button" id="rider-details-done" type="button">Done</button>
+        </footer>
+      </dialog>
     </main>
   </div>
 

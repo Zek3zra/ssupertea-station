@@ -1,4 +1,6 @@
 .staff-content.rider-dashboard { width: min(calc(100% - 32px), 1080px); margin: 28px auto 64px; }
+.rider-topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; }
+.rider-topbar > .staff-signout-button { justify-self: end; align-self: start; min-height: 44px; }
 .rider-hero { padding: 24px; display: grid; grid-template-columns: 1fr 300px; align-items: start; gap: 24px; border-radius: 16px; }
 .rider-hero h1 { margin-top: 6px; font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -.04em; }
 .rider-hero-copy { margin-top: 10px; max-width: 45ch; font-size: .9rem; line-height: 1.6; }
@@ -54,16 +56,48 @@
 .rider-dashboard .rider-live-map-status, .rider-dashboard .rider-live-map-note { font-size: .8rem; }
 .rider-dashboard [data-rider-map-canvas][hidden], .rider-dashboard [data-rider-map-recenter][hidden] { display: none; }
 .rider-dashboard button:focus-visible, .rider-dashboard a:focus-visible { outline: 2px solid #171717; outline-offset: 3px; }
+.rider-recent-header { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.rider-recent-controls { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; flex-shrink: 0; }
+.rider-secondary-button { min-height: 44px; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #171717; font: inherit; font-size: .8rem; font-weight: 650; cursor: pointer; }
+.rider-secondary-button:disabled { opacity: .5; cursor: default; }
+.rider-secondary-button[hidden], #rider-recent-list[hidden] { display: none; }
+.rider-completed-card { padding: 16px; display: grid; gap: 12px; }
+.rider-completed-info { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rider-completed-info time { color: #666; font-size: .75rem; }
+.rider-completed-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.rider-completed-buttons .rider-secondary-button:first-child { flex: 1; }
+.rider-details-dialog { width: min(calc(100% - 32px), 560px); max-height: min(88dvh, 900px); margin: auto; padding: 0; border: 1px solid #ddd; border-radius: 16px; color: #171717; background: #fff; overflow: hidden; }
+.rider-details-dialog[open] { display: flex; flex-direction: column; }
+.rider-details-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.rider-details-header { position: relative; flex-shrink: 0; padding: 28px 20px 16px; border-bottom: 1px solid #eee; touch-action: none; }
+.rider-details-header h2 { font-size: 1.2rem; }
+.rider-details-header p { margin-top: 6px; color: #666; font-size: .75rem; }
+.rider-details-handle { position: absolute; top: 10px; left: calc(50% - 20px); width: 40px; height: 4px; border-radius: 9px; background: #bbb; }
+.rider-details-content { min-height: 0; padding: 20px; overflow-y: auto; overscroll-behavior: contain; }
+.rider-details-content .rider-order-card { padding: 0; border: 0; border-radius: 0; }
+.rider-details-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; font-size: .8rem; line-height: 1.5; }
+.rider-details-meta div:last-child { grid-column: 1 / -1; overflow-wrap: anywhere; }
+.rider-details-meta dt { color: #666; font-size: .7rem; }
+.rider-details-meta dd { margin-top: 3px; }
+.rider-details-footer { flex-shrink: 0; padding: 12px 20px; border-top: 1px solid #eee; background: #fff; }
+.rider-details-footer button { width: 100%; }
 @media (max-width: 760px) {
   .staff-content.rider-dashboard { width: calc(100% - 24px); margin-top: 16px; }
   .rider-hero { grid-template-columns: 1fr; padding: 20px; gap: 16px; }
   .rider-order-list { grid-template-columns: 1fr; }
   .staff-role-pill { display: none; }
   .rider-order-card { padding: 16px; }
+  .rider-topbar { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; }
+  .rider-topbar .staff-brand { grid-row: 1; grid-column: 1; }
+  .rider-topbar > .staff-signout-button { grid-row: 1; grid-column: 2; }
+  .rider-topbar .staff-actions { grid-row: 2; grid-column: 1 / -1; width: auto; flex-wrap: wrap; }
+  .rider-recent-header { flex-direction: column; }
+  .rider-recent-controls { justify-content: start; flex-shrink: 1; }
 }
 @media (max-width: 480px) {
-  .staff-topbar { flex-wrap: wrap; gap: 12px; }
-  .staff-actions { width: 100%; gap: 6px; flex-wrap: wrap; }
+  .rider-topbar .staff-brand strong { font-size: clamp(.75rem, 3.5vw, .95rem); }
+  .rider-topbar > .staff-signout-button { padding-inline: 12px; font-size: .75rem; }
   .rider-stat-card { padding: 12px; }
   .rider-stat-card small { display: none; }
+  .rider-details-dialog { width: 100%; max-height: 90dvh; margin: auto 0 0; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom); }
 }

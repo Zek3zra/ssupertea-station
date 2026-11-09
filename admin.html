@@ -2,7 +2,7 @@
 <html lang="en-PH">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex, nofollow">
   <title>Ssupertea Station | Live orders</title>
@@ -11,6 +11,7 @@
   <script type="module" src="/js/staff-gate.js"></script>
   <script type="module" src="/js/admin.js"></script>
   <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/admin-mobile.css">
 </head>
 <body class="staff-page" data-staff-permission="manage">
   <div class="staff-gate" id="staff-gate">
@@ -18,7 +19,7 @@
   </div>
 
   <div class="staff-shell" id="staff-shell" hidden>
-    <header class="staff-topbar">
+    <header class="staff-topbar admin-topbar">
       <a class="staff-brand" href="/">
         <span class="brand-mark" aria-hidden="true"><img class="brand-logo" src="/assets/brand/ssupertea-logo.jpg" alt="" width="38" height="52"></span>
         <span>
@@ -27,45 +28,46 @@
         </span>
       </a>
 
-      <div class="staff-actions">
+      <nav class="staff-actions staff-mode-nav" aria-label="Staff mode">
         <span class="staff-role-pill" id="staff-role-label">Staff</span>
-        <a class="staff-action-link" id="admin-mode-link" href="/admin.html">Admin</a>
-        <a class="staff-action-link" id="rider-mode-link" href="/rider.html">Rider Mode</a>
-        <button class="staff-signout-button" id="staff-signout-button" type="button">
-          Sign out
-        </button>
-      </div>
+        <a class="staff-action-link" id="admin-mode-link" href="/admin.html" aria-current="page">Admin</a>
+        <a class="staff-action-link" id="rider-mode-link" href="/rider.html">Rider</a>
+      </nav>
+      <button class="staff-signout-button" id="staff-signout-button" type="button">
+        Sign out
+      </button>
     </header>
 
     <main class="staff-content admin-dashboard" id="admin-dashboard">
       <section class="admin-hero">
         <div>
-          <p class="eyebrow">Store Admin</p>
-          <h1>Live orders</h1>
-          <p class="admin-hero-copy">
-            Confirm new orders, watch preparation in real time, and assign delivery riders from one screen.
-          </p>
+          <p class="eyebrow">Order queue</p>
+          <h1>Orders</h1>
+          <p class="admin-hero-copy">One place for every stage of an order.</p>
         </div>
 
-        <div class="admin-live-panel">
-          <span class="admin-live-line">
-            <span class="admin-live-dot" id="admin-live-dot" data-state="connecting" aria-hidden="true"></span>
-            <strong id="admin-live-label">Connecting live updates…</strong>
-          </span>
-          <small id="admin-last-updated">Waiting for first refresh</small>
-          <button class="admin-refresh-button" id="admin-refresh-button" type="button">
-            Refresh now
-          </button>
-          <button class="admin-refresh-button" id="admin-enable-order-sound" type="button">Enable order sound</button>
-          <small id="admin-order-sound-status" role="status">Tap Enable order sound to hear alerts.</small>
-        </div>
+        <details class="admin-operations">
+          <summary aria-label="Operations: refresh orders and enable order sound">Operations <span aria-hidden="true">⌄</span></summary>
+          <div class="admin-live-panel">
+            <span class="admin-live-line">
+              <span class="admin-live-dot" id="admin-live-dot" data-state="connecting" aria-hidden="true"></span>
+              <strong id="admin-live-label">Connecting live updates…</strong>
+            </span>
+            <small id="admin-last-updated">Waiting for first refresh</small>
+            <button class="admin-refresh-button" id="admin-refresh-button" type="button">
+              Refresh now
+            </button>
+            <button class="admin-refresh-button" id="admin-enable-order-sound" type="button">Enable order sound</button>
+            <small id="admin-order-sound-status" role="status">Tap Enable order sound to hear alerts.</small>
+          </div>
+        </details>
       </section>
 
       <p class="admin-status-message" id="admin-status-message" data-type="loading" role="status">
         Loading live orders…
       </p>
 
-      <section class="admin-stats" aria-label="Active order counts">
+      <section class="admin-stats" aria-label="Active order counts" hidden>
         <article class="admin-stat-card">
           <span>Pending</span>
           <strong id="admin-stat-pending">0</strong>
@@ -88,12 +90,29 @@
         </article>
       </section>
 
-      <section class="admin-board" aria-label="Order workflow">
-        <article class="admin-board-column">
+      <div class="admin-queue-toolbar">
+        <div class="admin-search-row">
+          <label class="admin-search-field">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+            <input id="admin-order-search" type="search" aria-label="Search orders by name, mobile, or order number" placeholder="Search name, mobile or order #" autocomplete="off">
+          </label>
+          <select id="admin-order-sort" aria-label="Sort orders"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
+        </div>
+        <div class="admin-status-tabs" role="tablist" aria-label="Order status">
+          <button id="admin-tab-pending" role="tab" type="button" data-order-tab="pending" aria-controls="admin-panel-pending" aria-selected="true" tabindex="0">Pending <span data-order-count="pending">0</span></button>
+          <button id="admin-tab-preparing" role="tab" type="button" data-order-tab="preparing" aria-controls="admin-panel-preparing" aria-selected="false" tabindex="-1">Preparing <span data-order-count="preparing">0</span></button>
+          <button id="admin-tab-dispatched" role="tab" type="button" data-order-tab="dispatched" aria-controls="admin-panel-dispatched" aria-selected="false" tabindex="-1">On delivery <span data-order-count="dispatched">0</span></button>
+          <button id="admin-tab-completed" role="tab" type="button" data-order-tab="completed" aria-controls="admin-panel-completed" aria-selected="false" tabindex="-1">Finished <span data-order-count="completed">0</span></button>
+          <button id="admin-tab-cancelled" role="tab" type="button" data-order-tab="cancelled" aria-controls="admin-panel-cancelled" aria-selected="false" tabindex="-1">Cancelled <span data-order-count="cancelled">0</span></button>
+        </div>
+      </div>
+
+      <div class="admin-board" aria-label="Order workflow">
+        <section class="admin-board-column" id="admin-panel-pending" role="tabpanel" aria-labelledby="admin-tab-pending" tabindex="0" data-order-panel="pending">
           <header class="admin-column-header">
             <div>
               <span class="admin-column-kicker">Step 1</span>
-              <h2>New orders</h2>
+              <h2>Pending</h2>
             </div>
             <span class="admin-count-badge" id="admin-pending-count">0</span>
           </header>
@@ -101,9 +120,10 @@
             Confirm only after the store accepts the order. Confirmation changes the customer status to Preparing and locks customer cancellation.
           </p>
           <div class="admin-order-list" id="admin-pending-list"></div>
-        </article>
+          <p class="admin-results-note" id="admin-results-pending" aria-live="polite"></p>
+        </section>
 
-        <article class="admin-board-column">
+        <section class="admin-board-column" id="admin-panel-preparing" role="tabpanel" aria-labelledby="admin-tab-preparing" tabindex="0" data-order-panel="preparing" hidden>
           <header class="admin-column-header">
             <div>
               <span class="admin-column-kicker">Step 2</span>
@@ -115,13 +135,14 @@
             Delivery orders can be assigned to any active rider. Admin + Rider accounts can use Assign to me.
           </p>
           <div class="admin-order-list" id="admin-preparing-list"></div>
-        </article>
+          <p class="admin-results-note" id="admin-results-preparing" aria-live="polite"></p>
+        </section>
 
-        <article class="admin-board-column">
+        <section class="admin-board-column" id="admin-panel-dispatched" role="tabpanel" aria-labelledby="admin-tab-dispatched" tabindex="0" data-order-panel="dispatched" hidden>
           <header class="admin-column-header">
             <div>
               <span class="admin-column-kicker">Step 3</span>
-              <h2>On delivery</h2>
+              <h2>On delivery / Ready for pickup</h2>
             </div>
             <span class="admin-count-badge" id="admin-dispatched-count">0</span>
           </header>
@@ -129,10 +150,10 @@
             Follow active deliveries and ready pickups here. Riders can share their live location while delivering.
           </p>
           <div class="admin-order-list" id="admin-dispatched-list"></div>
-        </article>
-      </section>
+          <p class="admin-results-note" id="admin-results-dispatched" aria-live="polite"></p>
+        </section>
 
-      <section class="admin-recent-section">
+      <section class="admin-recent-section" id="admin-panel-completed" role="tabpanel" aria-labelledby="admin-tab-completed" tabindex="0" data-order-panel="completed" hidden>
         <header class="admin-column-header">
           <div>
             <span class="admin-column-kicker">Recent</span>
@@ -146,7 +167,32 @@
         </header>
         <p class="admin-finished-note">Clearing hides finished orders on this device. Order history is kept.</p>
         <div class="admin-order-list admin-recent-list" id="admin-recent-list"></div>
+        <div class="admin-history-footer"><p class="admin-results-note" id="admin-results-completed" aria-live="polite"></p><button class="admin-finished-button" id="admin-more-completed" type="button" hidden>Show more</button></div>
       </section>
+
+      <section class="admin-recent-section" id="admin-panel-cancelled" role="tabpanel" aria-labelledby="admin-tab-cancelled" tabindex="0" data-order-panel="cancelled" hidden>
+        <header class="admin-column-header">
+          <div><h2>Cancelled orders</h2></div>
+          <span class="admin-count-badge" id="admin-cancelled-count">0</span>
+        </header>
+        <div class="admin-finished-actions">
+          <button class="admin-finished-button" id="admin-restore-cancelled-button" type="button" hidden>Show cleared</button>
+          <button class="admin-finished-button" id="admin-clear-cancelled-button" type="button" disabled>Clear cancelled</button>
+        </div>
+        <p class="admin-finished-note">Clearing hides cancelled orders on this device. Order history is kept.</p>
+        <div class="admin-order-list admin-recent-list" id="admin-cancelled-list"></div>
+        <div class="admin-history-footer"><p class="admin-results-note" id="admin-results-cancelled" aria-live="polite"></p><button class="admin-finished-button" id="admin-more-cancelled" type="button" hidden>Show more</button></div>
+      </section>
+      </div>
+      <dialog class="admin-details-dialog" id="admin-details-dialog" aria-labelledby="admin-details-title">
+        <header class="admin-details-header sheet-drag-region">
+          <span class="admin-details-handle" aria-hidden="true"></span>
+          <h2 id="admin-details-title">Order details</h2>
+          <p>Swipe down or tap outside to close.</p>
+        </header>
+        <div class="admin-details-content" id="admin-details-content"></div>
+        <footer class="admin-details-footer"><button class="admin-finished-button" id="admin-details-done" type="button">Done</button></footer>
+      </dialog>
     </main>
   </div>
 

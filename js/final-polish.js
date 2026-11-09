@@ -357,26 +357,16 @@ function applyStaffModeSwitch() {
   const adminLink = document.getElementById("admin-mode-link");
   const riderLink = document.getElementById("rider-mode-link");
 
-  if (isAdminPage()) {
-    if (adminLink) adminLink.hidden = true;
-
-    if (riderLink) {
-      riderLink.hidden = !canDeliver;
-      riderLink.textContent = "Rider Mode →";
-      riderLink.classList.add("staff-mode-switch");
-      riderLink.setAttribute("aria-label", "Switch to Rider Mode");
-    }
-  }
-
-  if (isRiderPage()) {
-    if (riderLink) riderLink.hidden = true;
-
-    if (adminLink) {
-      adminLink.hidden = !canManage;
-      adminLink.textContent = "← Back to Admin";
-      adminLink.classList.add("staff-mode-switch");
-      adminLink.setAttribute("aria-label", "Return to Store Admin");
-    }
+  for (const [link, allowed, current, label] of [
+    [adminLink, canManage, isAdminPage(), "Admin"],
+    [riderLink, canDeliver, isRiderPage(), "Rider"],
+  ]) {
+    if (!link) continue;
+    link.hidden = !allowed;
+    link.textContent = label;
+    link.setAttribute("aria-label", current ? `${label} mode, current page` : `Switch to ${label} mode`);
+    if (current) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
   }
 }
 

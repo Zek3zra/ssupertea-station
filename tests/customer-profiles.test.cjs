@@ -327,7 +327,7 @@ function orderApiHarness() {
   const requests = [];
   let storedOrder = null;
   const context = {
-    module: { exports: {} }, URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
+    module: { exports: {} }, require: require("node:module").createRequire(path.join(__dirname, "../api/create-order.js")), URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
     process: { env: { SUPABASE_URL: "https://example.supabase.co", SUPABASE_SECRET_KEY: "fake-server-key", OPENROUTESERVICE_API_KEY: "fake-route-key" } },
     console: { error() {} },
     fetch: async (url, options = {}) => {

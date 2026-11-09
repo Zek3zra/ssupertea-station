@@ -1,0 +1,107 @@
+/* Order queues are designed for phones first, with the same separate views on desktop. */
+.admin-topbar { position: sticky; top: 0; z-index: 80; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; height: calc(68px + env(safe-area-inset-top)); min-height: 68px; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; }
+.admin-topbar .brand-mark { width: 26px; height: 36px; }
+.admin-topbar .staff-brand { gap: 7px; }
+.admin-topbar .staff-brand strong { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(.7rem, 3vw, .9rem); }
+.admin-topbar .staff-brand small, .admin-topbar .staff-role-pill { display: none; }
+.admin-topbar .staff-signout-button, .admin-topbar .staff-action-link { min-height: 44px; padding-inline: 9px; font-size: .69rem; border-radius: 9px; }
+.admin-topbar .staff-mode-switch { padding-inline: 8px !important; }
+.staff-content.admin-dashboard { width: calc(100% - 28px); max-width: 1120px; margin: 20px auto 60px; padding-bottom: env(safe-area-inset-bottom); }
+.admin-dashboard .admin-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 0; border: 0; border-radius: 0; background: #fff; color: #171717; box-shadow: none; }
+.admin-dashboard .admin-hero .eyebrow { font-size: .65rem; color: #737373; letter-spacing: .14em; }
+.admin-dashboard .admin-hero h1 { margin-top: 3px; font-size: 2rem; line-height: 1.1; letter-spacing: -.04em; }
+.admin-dashboard .admin-hero-copy { display: none; margin-top: 7px; color: #666; font-size: .8rem; line-height: 1.5; }
+.admin-operations { position: relative; z-index: 70; }
+.admin-operations summary { min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 999px; background: #fff; color: #333; font-size: .75rem; font-weight: 650; cursor: pointer; list-style: none; }
+.admin-operations summary::-webkit-details-marker { display: none; }
+.admin-operations summary:focus-visible { outline: 2px solid #171717; outline-offset: 3px; }
+.admin-dashboard .admin-live-panel { width: 100%; min-width: 0; margin-top: 16px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid #e8e8e8; border-radius: 12px; background: #fafafa; color: #171717; }
+.admin-live-panel .admin-live-line { grid-column: 1 / -1; font-size: .75rem; }
+.admin-live-panel #admin-last-updated { display: none; }
+.admin-live-panel .admin-refresh-button { min-height: 44px; margin: 0; padding: 9px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #171717; font-size: .75rem; }
+.admin-live-panel #admin-order-sound-status { grid-column: 1 / -1; color: #666; font-size: .73rem; line-height: 1.5; }
+.admin-operations .admin-live-panel { position: absolute; top: calc(100% + 8px); right: 0; width: min(360px, calc(100vw - 28px)); margin-top: 0; box-shadow: 0 12px 32px rgb(0 0 0 / 10%); }
+.admin-dashboard .admin-status-message { margin: 12px 0; font-size: .8rem; }
+.admin-dashboard .admin-status-message[data-type="success"] { display: none; }
+.admin-queue-toolbar { position: sticky; top: calc(var(--staff-header-height, 68px) + env(safe-area-inset-top)); z-index: 60; margin-top: 16px; padding: 12px 0; background: #fff; border-bottom: 1px solid #eee; }
+.admin-search-row { display: flex; align-items: stretch; gap: 8px; }
+.admin-search-field { min-width: 0; flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; border-radius: 10px; padding: 0 10px; background: #fafafa; }
+.admin-search-field svg { flex-shrink: 0; color: #777; }
+.admin-search-field input { width: 100%; min-width: 0; min-height: 46px; border: 0; outline-offset: 2px; background: transparent; color: #171717; font: inherit; font-size: 16px; }
+#admin-order-sort { max-width: 115px; min-height: 46px; padding: 8px; border: 1px solid #ddd; border-radius: 10px; color: #333; background: #fff; font: inherit; font-size: .75rem; }
+.admin-status-tabs { display: flex; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain; margin-top: 10px; padding: 1px 1px 5px; scrollbar-width: thin; }
+.admin-status-tabs button { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; gap: 7px; min-height: 44px; padding: 9px 13px; border: 1px solid #e0e0e0; border-radius: 999px; background: #fff; color: #555; font: inherit; font-size: .77rem; font-weight: 650; cursor: pointer; white-space: nowrap; }
+.admin-status-tabs button[aria-selected="true"] { color: #fff; border-color: #171717; background: #171717; }
+.admin-status-tabs button span { min-width: 20px; padding: 2px 5px; border-radius: 20px; background: #f1f1f1; color: #555; font-size: .67rem; }
+.admin-status-tabs button[aria-selected="true"] span { color: #fff; background: #444; }
+.admin-dashboard .admin-board { display: block; margin: 0; }
+.admin-dashboard [data-order-panel] { margin: 0; padding: 18px 0 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; outline-offset: 3px; }
+.admin-dashboard .admin-column-header { align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 0 8px; }
+.admin-dashboard .admin-column-header h2 { font-size: 1.04rem; letter-spacing: -.02em; }
+.admin-dashboard .admin-column-kicker { display: none; }
+.admin-dashboard .admin-column-copy { min-height: 0; margin: 8px 0 16px; color: #666; font-size: .8rem; line-height: 1.55; }
+.admin-dashboard .admin-order-list, .admin-dashboard .admin-recent-list, .admin-dashboard .admin-board-column:last-child .admin-order-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 14px; }
+.admin-dashboard .admin-order-card { min-width: 0; padding: 16px; border: 1px solid #e2e2e2; border-left-width: 1px !important; border-radius: 14px; background: #fff; box-shadow: none; overflow-wrap: anywhere; }
+.admin-dashboard .admin-order-number { font-size: .95rem; }
+.admin-dashboard .admin-order-customer { margin-top: 4px; font-size: .87rem; }
+.admin-dashboard .admin-order-summary { width: 100%; display: block; text-align: left; font: inherit; color: #171717; cursor: pointer; appearance: none; }
+.admin-dashboard .admin-order-summary:hover { background: #fafafa; }
+.admin-summary-meta { display: block; margin-top: 7px; color: #737373; font-size: .76rem; line-height: 1.5; }
+.admin-summary-meta .admin-meta-chip { padding: 0; border: 0; background: transparent; font: inherit; }
+.admin-summary-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.admin-summary-footer strong { font-size: 1rem; }
+.admin-summary-footer span { color: #666; font-size: .75rem; }
+.admin-dashboard .admin-order-header { gap: 10px; align-items: start; }
+.admin-dashboard .admin-status-pill { flex-shrink: 0; font-size: .65rem; padding: 6px 8px; }
+.admin-dashboard .admin-meta-chip { font-size: .69rem; padding: 6px 8px; }
+.admin-dashboard .admin-order-items li { font-size: .88rem; }
+.admin-dashboard .admin-order-items li small { font-size: .77rem; line-height: 1.5; }
+.admin-dashboard .admin-section-label { font-size: .67rem; }
+.admin-dashboard .admin-order-total-row span { font-size: .77rem; }
+.admin-dashboard .admin-order-total-row strong { font-size: 1rem; }
+.admin-dashboard .admin-order-actions > p, .admin-dashboard .admin-delivery-block p { font-size: .8rem; line-height: 1.5; }
+.admin-dashboard .admin-delivery-block small { font-size: .73rem; }
+.admin-dashboard .admin-action-button, .admin-dashboard .admin-map-link { min-height: 44px; font-size: .82rem; }
+.admin-dashboard .admin-rider-select { min-height: 46px; font-size: 16px; }
+.admin-dashboard .admin-rider-current strong { font-size: .83rem; }
+.admin-dashboard .admin-empty-state { padding: 32px 16px; font-size: .83rem; line-height: 1.6; border-radius: 12px; }
+.admin-finished-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.admin-dashboard .admin-finished-button { min-height: 44px; font-size: .76rem; }
+.admin-dashboard .admin-finished-note, .admin-results-note { margin-top: 10px; color: #737373; font-size: .74rem; line-height: 1.5; }
+.admin-history-footer { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.admin-results-note:empty { display: none; }
+.admin-details-dialog { width: min(calc(100% - 32px), 600px); max-height: 88dvh; margin: auto; padding: 0; border: 1px solid #ddd; border-radius: 16px; background: #fff; color: #171717; overflow: hidden; }
+.admin-details-dialog[open] { display: flex; flex-direction: column; }
+.admin-details-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.admin-details-header { position: relative; flex-shrink: 0; padding: 28px 20px 16px; border-bottom: 1px solid #eee; touch-action: none; }
+.admin-details-header h2 { font-size: 1.15rem; }
+.admin-details-header p { margin-top: 6px; color: #737373; font-size: .75rem; }
+.admin-details-handle { position: absolute; top: 10px; left: calc(50% - 20px); width: 40px; height: 4px; border-radius: 9px; background: #bbb; }
+.admin-details-content { min-height: 0; padding: 20px; overflow-y: auto; overscroll-behavior: contain; }
+.admin-dashboard .admin-details-content .admin-order-card { padding: 0; border: 0; border-radius: 0; }
+.admin-details-footer { flex-shrink: 0; padding: 12px 20px; border-top: 1px solid #eee; }
+.admin-details-footer button { width: 100%; }
+@media (max-width: 759px) {
+  .admin-details-dialog { width: 100%; max-height: 90dvh; margin: auto 0 0; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+}
+.admin-dashboard button:focus-visible, .admin-dashboard select:focus-visible, .admin-topbar a:focus-visible, .admin-topbar button:focus-visible { outline: 2px solid #171717; outline-offset: 3px; }
+@media (min-width: 760px) {
+  .admin-topbar { padding-inline: max(20px, calc((100vw - 1120px) / 2)); }
+  .admin-topbar .staff-brand small { display: block; }
+  .admin-topbar .brand-mark { width: 32px; height: 44px; }
+  .admin-dashboard .admin-hero { gap: 24px; }
+  .admin-dashboard .admin-hero-copy { display: block; }
+  .admin-dashboard .admin-live-panel { margin-top: 0; }
+  .admin-dashboard .admin-order-list, .admin-dashboard .admin-recent-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-status-tabs { gap: 10px; }
+  #admin-order-sort { max-width: 150px; font-size: .85rem; }
+}
+@media (max-width: 360px) {
+  .admin-topbar { padding-inline: 10px; gap: 5px; }
+  .admin-topbar .brand-mark { width: 22px; height: 32px; }
+  .admin-topbar .staff-brand { gap: 5px; }
+  .admin-topbar .staff-brand strong { max-width: 12ch; }
+  .admin-topbar .staff-signout-button, .admin-topbar .staff-action-link { font-size: .65rem; padding-inline: 7px; }
+  .admin-search-field { padding-inline: 7px; gap: 5px; }
+  #admin-order-sort { max-width: 100px; }
+}

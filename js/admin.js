@@ -4,6 +4,7 @@ import {
 } from "/js/supabase-config.js";
 import { createOrderContact } from "/js/order-contact.js";
 import { createOrderAlert } from "/js/order-alert.js";
+import { bindSheetDismiss } from "/js/sheet-dismiss.js";
 
 const ACTIVE_STATUSES = new Set([
   "pending",
@@ -67,6 +68,12 @@ const state = {
   orderPollTimer: null,
   refreshSequence: 0,
   dashboardSnapshot: "",
+  selectedStatus: "pending",
+  searchQuery: "",
+  sortOrder: "newest",
+  historyLimits: { completed: 12, cancelled: 12 },
+  detailOrderId: null,
+  detailSnapshot: "",
 };
 
 const el = {};
@@ -76,6 +83,7 @@ document.addEventListener("DOMContentLoaded", initializeAdminModule);
 function initializeAdminModule() {
   cacheElements();
   bindEvents();
+  initializeOrderDetails();
 
   window.addEventListener("ssupertea:staff-ready", () => {
     startAdminDashboard().catch(handleInitializationError);
@@ -114,19 +122,71 @@ function cacheElements() {
     "admin-preparing-list",
     "admin-dispatched-list",
     "admin-recent-list",
+    "admin-cancelled-list",
+    "admin-cancelled-count",
+    "admin-clear-cancelled-button",
+    "admin-restore-cancelled-button",
+    "admin-order-search",
+    "admin-order-sort",
+    "admin-more-completed",
+    "admin-more-cancelled",
+    "admin-results-pending",
+    "admin-results-preparing",
+    "admin-results-dispatched",
+    "admin-results-completed",
+    "admin-results-cancelled",
     "admin-clear-finished-button",
     "admin-restore-finished-button",
     "admin-toast-region",
+    "admin-details-dialog",
+    "admin-details-content",
+    "admin-details-done",
   ];
 
   for (const id of ids) {
     el[id] = document.getElementById(id);
   }
+  el.statusTabs = Array.from(document.querySelectorAll?.("[data-order-tab]") || []);
+  el.statusPanels = Array.from(document.querySelectorAll?.("[data-order-panel]") || []);
+  el.statusCounts = Array.from(document.querySelectorAll?.("[data-order-count]") || []);
 }
 
 function bindEvents() {
-  el["admin-clear-finished-button"]?.addEventListener("click", clearFinishedOrders);
-  el["admin-restore-finished-button"]?.addEventListener("click", restoreFinishedOrders);
+  el["admin-clear-finished-button"]?.addEventListener("click", () => clearFinishedOrders("completed"));
+  el["admin-restore-finished-button"]?.addEventListener("click", () => restoreFinishedOrders("completed"));
+  el["admin-clear-cancelled-button"]?.addEventListener("click", () => clearFinishedOrders("cancelled"));
+  el["admin-restore-cancelled-button"]?.addEventListener("click", () => restoreFinishedOrders("cancelled"));
+  el["admin-order-search"]?.addEventListener("input", event => {
+    state.searchQuery = event.target.value.trim().toLocaleLowerCase("en-PH");
+    state.historyLimits = { completed: 12, cancelled: 12 };
+    renderDashboard();
+  });
+  el["admin-order-sort"]?.addEventListener("change", event => {
+    state.sortOrder = event.target.value === "oldest" ? "oldest" : "newest";
+    state.historyLimits = { completed: 12, cancelled: 12 };
+    renderDashboard();
+  });
+  for (const status of ["completed", "cancelled"]) {
+    el[`admin-more-${status}`]?.addEventListener("click", () => {
+      state.historyLimits[status] += 12;
+      renderDashboard();
+    });
+  }
+  for (const tab of el.statusTabs) {
+    tab.addEventListener("click", () => selectOrderStatus(tab.dataset.orderTab));
+    tab.addEventListener("keydown", event => {
+      const current = el.statusTabs.indexOf(tab);
+      let next;
+      if (event.key === "ArrowRight") next = (current + 1) % el.statusTabs.length;
+      else if (event.key === "ArrowLeft") next = (current + el.statusTabs.length - 1) % el.statusTabs.length;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = el.statusTabs.length - 1;
+      else return;
+      event.preventDefault();
+      selectOrderStatus(el.statusTabs[next].dataset.orderTab);
+      el.statusTabs[next].focus();
+    });
+  }
   el["admin-refresh-button"]?.addEventListener("click", () => {
     refreshDashboard();
   });
@@ -213,7 +273,7 @@ async function refreshDashboard({ silent = false } = {}) {
   el["admin-refresh-button"]?.setAttribute("aria-busy", "true");
 
   try {
-    const [ordersResult, finishedResult, assignmentsResult, ridersResult] = await Promise.all([
+    const [ordersResult, finishedResult, cancelledResult, assignmentsResult, ridersResult] = await Promise.all([
       customerSupabase
         .from("orders")
         .select(ORDER_QUERY_COLUMNS)
@@ -222,7 +282,13 @@ async function refreshDashboard({ silent = false } = {}) {
       customerSupabase
         .from("orders")
         .select(ORDER_QUERY_COLUMNS)
-        .in("status", [...TERMINAL_STATUSES])
+        .in("status", ["completed"])
+        .order("created_at", { ascending: false })
+        .limit(MAX_ORDERS_TO_LOAD),
+      customerSupabase
+        .from("orders")
+        .select(ORDER_QUERY_COLUMNS)
+        .in("status", ["cancelled"])
         .order("created_at", { ascending: false })
         .limit(MAX_ORDERS_TO_LOAD),
       customerSupabase
@@ -233,13 +299,13 @@ async function refreshDashboard({ silent = false } = {}) {
     if (refreshSequence !== state.refreshSequence) return;
 
     const firstError =
-      ordersResult.error || finishedResult.error || assignmentsResult.error || ridersResult.error;
+      ordersResult.error || finishedResult.error || cancelledResult.error || assignmentsResult.error || ridersResult.error;
 
     if (firstError) {
       throw firstError;
     }
 
-    state.orders = [...(ordersResult.data || []), ...(finishedResult.data || [])];
+    state.orders = [...(ordersResult.data || []), ...(finishedResult.data || []), ...(cancelledResult.data || [])];
 
     state.assignments = new Map(
       (assignmentsResult.data || []).map((assignment) => [
@@ -271,69 +337,70 @@ function getDashboardSnapshot() {
 
 function renderDashboard() {
   state.dashboardSnapshot = getDashboardSnapshot();
-  const pending = [];
-  const preparing = [];
-  const dispatched = [];
-  const recent = [];
-
-  for (const order of state.orders) {
-    if (order.status === "pending") {
-      pending.push(order);
-      continue;
-    }
-
-    if (order.status === "preparing") {
-      preparing.push(order);
-      continue;
-    }
-
-    if (order.status === "dispatched") {
-      dispatched.push(order);
-      continue;
-    }
-
-    if (TERMINAL_STATUSES.has(order.status) && !state.clearedFinishedIds.has(order.id) && recent.length < 12) {
-      recent.push(order);
-    }
-  }
-
-  const activeCount = pending.length + preparing.length + dispatched.length;
-  state.orderAlert?.setPending(pending);
-
-  setText(el["admin-stat-pending"], String(pending.length));
-  setText(el["admin-stat-preparing"], String(preparing.length));
-  setText(el["admin-stat-dispatched"], String(dispatched.length));
+  const groups = getOrderGroups();
+  const activeCount = groups.pending.length + groups.preparing.length + groups.dispatched.length;
+  // Search, sorting and inactive tabs never silence unseen pending orders.
+  state.orderAlert?.setPending(state.orders);
+  setText(el["admin-stat-pending"], String(groups.pending.length));
+  setText(el["admin-stat-preparing"], String(groups.preparing.length));
+  setText(el["admin-stat-dispatched"], String(groups.dispatched.length));
   setText(el["admin-stat-active"], String(activeCount));
-  setText(el["admin-pending-count"], String(pending.length));
-  setText(el["admin-preparing-count"], String(preparing.length));
-  setText(el["admin-dispatched-count"], String(dispatched.length));
-  setText(el["admin-recent-count"], String(recent.length));
-  el["admin-clear-finished-button"].disabled = recent.length === 0;
-  el["admin-restore-finished-button"].hidden = state.clearedFinishedIds.size === 0;
+  const lists = { pending: "pending", preparing: "preparing", dispatched: "dispatched", completed: "recent", cancelled: "cancelled" };
+  const emptyMessages = {
+    pending: "No orders waiting for confirmation.", preparing: "No orders are being prepared.",
+    dispatched: "No delivery or ready pickup is active.", completed: "No completed orders to show.", cancelled: "No cancelled orders to show.",
+  };
+  for (const [status, list] of Object.entries(lists)) {
+    const matches = filterAndSortOrders(groups[status]);
+    const visible = matches.slice(0, state.historyLimits[status] || matches.length);
+    setText(el[`admin-${list}-count`], String(groups[status].length));
+    renderOrderList(el[`admin-${list}-list`], visible,
+      state.searchQuery ? "No matching orders in this section." : emptyMessages[status]);
+    setText(el[`admin-results-${status}`], `${visible.length} of ${matches.length} ${state.searchQuery ? "matching " : ""}orders${TERMINAL_STATUSES.has(status) ? ` · latest ${MAX_ORDERS_TO_LOAD} loaded` : ""}`);
+    if (el[`admin-more-${status}`]) el[`admin-more-${status}`].hidden = visible.length >= matches.length;
+  }
+  for (const counter of el.statusCounts) counter.textContent = String(groups[counter.dataset.orderCount]?.length || 0);
+  for (const [status, suffix] of [["completed", "finished"], ["cancelled", "cancelled"]]) {
+    if (el[`admin-clear-${suffix}-button`]) el[`admin-clear-${suffix}-button`].disabled = groups[status].length === 0;
+    if (el[`admin-restore-${suffix}-button`]) el[`admin-restore-${suffix}-button`].hidden =
+      !state.orders.some(order => order.status === status && state.clearedFinishedIds.has(order.id));
+  }
+  selectOrderStatus(state.selectedStatus);
+  if (state.detailOrderId) renderOrderDetails();
+}
 
-  renderOrderList(
-    el["admin-pending-list"],
-    pending,
-    "No new orders are waiting for confirmation."
-  );
+function getOrderGroups() {
+  const groups = { pending: [], preparing: [], dispatched: [], completed: [], cancelled: [] };
+  for (const order of state.orders) {
+    if (!Object.hasOwn(groups, order.status)) continue;
+    if (TERMINAL_STATUSES.has(order.status) && state.clearedFinishedIds.has(order.id)) continue;
+    groups[order.status].push(order);
+  }
+  return groups;
+}
 
-  renderOrderList(
-    el["admin-preparing-list"],
-    preparing,
-    "No orders are being prepared right now."
-  );
+function filterAndSortOrders(orders) {
+  const query = state.searchQuery;
+  const digits = query.replace(/\D/g, "").replace(/^0(?=9)/, "63");
+  return orders.filter(order => !query ||
+    [order.customer_name, order.customer_phone, order.id, formatOrderNumber(order.id)]
+      .some(value => String(value || "").toLocaleLowerCase("en-PH").includes(query)) ||
+    (digits.length > 0 && /^[+\d\s()-]+$/.test(query) && String(order.customer_phone || "").replace(/\D/g, "").includes(digits)))
+    .sort((a, b) => {
+      const delta = (Date.parse(a.created_at) || 0) - (Date.parse(b.created_at) || 0);
+      return (state.sortOrder === "oldest" ? delta : -delta) || String(a.id).localeCompare(String(b.id));
+    });
+}
 
-  renderOrderList(
-    el["admin-dispatched-list"],
-    dispatched,
-    "No delivery or ready pickup is currently active."
-  );
-
-  renderOrderList(
-    el["admin-recent-list"],
-    recent,
-    state.clearedFinishedIds.size ? "Finished orders cleared. New completed and cancelled orders will appear here." : "Completed and cancelled orders will appear here."
-  );
+function selectOrderStatus(status) {
+  if (!["pending", "preparing", "dispatched", "completed", "cancelled"].includes(status)) return;
+  state.selectedStatus = status;
+  for (const tab of el.statusTabs) {
+    const selected = tab.dataset.orderTab === status;
+    tab.setAttribute("aria-selected", String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  }
+  for (const panel of el.statusPanels) panel.hidden = panel.dataset.orderPanel !== status;
 }
 
 function finishedOrdersStorageKey() {
@@ -359,19 +426,22 @@ function persistClearedFinishedOrders() {
   } catch { return false; }
 }
 
-function clearFinishedOrders() {
+function clearFinishedOrders(status = "completed") {
   if (!state.session || state.permissions?.can_manage_orders !== true) return;
-  const finished = state.orders.filter(order => TERMINAL_STATUSES.has(order.status) && !state.clearedFinishedIds.has(order.id));
+  if (!TERMINAL_STATUSES.has(status)) return;
+  const finished = state.orders.filter(order => order.status === status && !state.clearedFinishedIds.has(order.id));
   if (!finished.length) return;
   for (const order of finished) state.clearedFinishedIds.add(order.id);
   const saved = persistClearedFinishedOrders();
   renderDashboard();
-  showToast(saved ? "Finished orders cleared from this view. Order history is kept." : "Finished orders cleared for this visit. Order history is kept.", "success");
+  const label = status === "cancelled" ? "Cancelled" : "Finished";
+  showToast(saved ? `${label} orders cleared from this view. Order history is kept.` : `${label} orders cleared for this visit. Order history is kept.`, "success");
 }
 
-function restoreFinishedOrders() {
+function restoreFinishedOrders(status = "completed") {
   if (!state.session || state.permissions?.can_manage_orders !== true) return;
-  state.clearedFinishedIds.clear();
+  if (!TERMINAL_STATUSES.has(status)) return;
+  for (const order of state.orders) if (order.status === status) state.clearedFinishedIds.delete(order.id);
   const saved = persistClearedFinishedOrders();
   renderDashboard();
   showToast(saved ? "Cleared orders are visible again." : "Cleared orders are visible again for this visit.", "info");
@@ -401,7 +471,90 @@ function renderOrderList(container, orders, emptyMessage) {
   container.append(fragment);
 }
 
-function createOrderCard(order) {
+function createOrderSummary(order) {
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = `admin-order-card admin-order-summary status-${order.status}`;
+  card.dataset.adminDetails = order.id;
+  card.setAttribute("aria-haspopup", "dialog");
+  card.setAttribute("aria-controls", "admin-details-dialog");
+  const header = document.createElement("span");
+  header.className = "admin-order-header";
+  const reference = document.createElement("strong");
+  reference.className = "admin-order-number";
+  reference.textContent = formatOrderNumber(order.id);
+  const status = document.createElement("span");
+  status.className = `admin-status-pill status-${order.status}`;
+  status.textContent = getStatusLabel(order.status, order.order_type);
+  header.append(reference, status);
+  const customer = document.createElement("span");
+  customer.className = "admin-order-customer";
+  customer.textContent = order.customer_name || "Customer";
+  const meta = document.createElement("span");
+  meta.className = "admin-summary-meta";
+  const count = (Array.isArray(order.items) ? order.items : []).reduce((sum, item) => sum + normalizeQuantity(item?.quantity), 0);
+  meta.textContent = `${order.order_type === "delivery" ? "Delivery" : "Pickup"} · ${count} ${count === 1 ? "item" : "items"} · `;
+  meta.append(makeChip(formatRelativeTime(order.created_at), "relative-time", order.created_at));
+  const footer = document.createElement("span");
+  footer.className = "admin-summary-footer";
+  const total = document.createElement("strong");
+  total.textContent = formatMoney(order.total_price);
+  const hint = document.createElement("span");
+  hint.textContent = "View details →";
+  footer.append(total, hint);
+  card.append(header, customer, meta, footer);
+  return card;
+}
+
+function initializeOrderDetails() {
+  const dialog = el["admin-details-dialog"];
+  if (!dialog) return;
+  bindSheetDismiss(dialog, closeOrderDetails);
+  el["admin-details-done"]?.addEventListener("click", closeOrderDetails);
+  dialog.addEventListener("click", event => {
+    if (event.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeOrderDetails();
+  });
+  dialog.addEventListener("close", () => {
+    if (dialog.open) return;
+    state.detailOrderId = null;
+    state.detailSnapshot = "";
+    el["admin-details-content"]?.replaceChildren();
+  });
+  window.addEventListener("pagehide", closeOrderDetails);
+  document.getElementById("staff-signout-button")?.addEventListener("click", closeOrderDetails);
+}
+
+function openOrderDetails(orderId) {
+  if (!state.session?.user?.id || !state.permissions?.can_manage_orders || !state.orders.some(order => order.id === orderId)) return;
+  const dialog = el["admin-details-dialog"];
+  if (!dialog) return;
+  state.detailOrderId = orderId;
+  state.detailSnapshot = "";
+  renderOrderDetails();
+  if (!dialog.open) dialog.showModal();
+}
+
+function renderOrderDetails() {
+  const order = state.orders.find(order => order.id === state.detailOrderId);
+  if (!order) { closeOrderDetails(); return; }
+  const snapshot = JSON.stringify([order, state.assignments.get(order.id), state.riders]);
+  if (snapshot === state.detailSnapshot) return;
+  state.detailSnapshot = snapshot;
+  el["admin-details-content"]?.replaceChildren(createOrderCard(order, { details: true }));
+}
+
+function closeOrderDetails() {
+  const dialog = el["admin-details-dialog"];
+  if (dialog?.open) dialog.close();
+  state.detailOrderId = null;
+  state.detailSnapshot = "";
+  el["admin-details-content"]?.replaceChildren();
+}
+
+function createOrderCard(order, { details = false } = {}) {
+  if (!details) return createOrderSummary(order);
   const card = document.createElement("article");
   card.className = `admin-order-card status-${order.status}`;
   card.dataset.orderId = order.id;
@@ -729,6 +882,11 @@ function createActionButton({ label, action, orderId, primary }) {
 }
 
 async function handleDashboardClick(event) {
+  const summary = event.target.closest("[data-admin-details]");
+  if (summary) {
+    openOrderDetails(summary.dataset.adminDetails);
+    return;
+  }
   const button = event.target.closest("[data-admin-action]");
 
   if (!button) {

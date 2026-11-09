@@ -49,12 +49,12 @@ test("A late refresh cannot restart an alert after server confirmation", async (
 });
 test("Only the newest successful queue refresh can update notifications", async () => {
   const h = harness(); const old = h.refreshDashboard(); await flush(); const current = h.refreshDashboard(); await flush();
-  resolveRefresh(h.requests.slice(3), []); await current;
-  resolveRefresh(h.requests.slice(0, 3), [{ id: "old-pending", status: "pending" }]); await old;
+  resolveRefresh(h.requests.slice(4), []); await current;
+  resolveRefresh(h.requests.slice(0, 4), [{ id: "old-pending", status: "pending" }]); await old;
   assert.deepEqual(h.state.orders, []); assert.deepEqual(h.snapshots.at(-1), []);
 });
 test("Unchanged periodic refreshes keep rider dropdowns intact while reconciling alerts", async () => {
   const h = harness(); const first = h.refreshDashboard(); await flush(); resolveRefresh(h.requests, [{ id: "a", status: "pending" }]); await first;
-  const previousRenders = h.renderCount(); const next = h.refreshDashboard(); await flush(); resolveRefresh(h.requests.slice(3), [{ id: "a", status: "pending" }]); await next;
+  const previousRenders = h.renderCount(); const next = h.refreshDashboard(); await flush(); resolveRefresh(h.requests.slice(4), [{ id: "a", status: "pending" }]); await next;
   assert.equal(h.renderCount(), previousRenders); assert.deepEqual(h.snapshots.at(-1), ["a"]);
 });

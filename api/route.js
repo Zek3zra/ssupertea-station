@@ -1,4 +1,5 @@
 "use strict";
+const { getDeliveryLimitKm, isValidRouteSummary, calculateDeliveryFee } = require("../lib/delivery-policy.cjs");
 
 const ORS_DIRECTIONS_URL =
   "https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson";
@@ -16,7 +17,7 @@ const PHILIPPINES_BOUNDS = Object.freeze({
   maximumLongitude: 127.5,
 });
 
-const DEFAULT_MAX_ROUTE_KM = 50;
+const MAX_TRACKING_ROUTE_KM = 50;
 const ORS_TIMEOUT_MS = 15000;
 const DELIVERY_FEE_BLOCK_METERS = 300;
 const DELIVERY_FEE_PER_BLOCK = 10;
@@ -68,10 +69,8 @@ module.exports = async function routeHandler(request, response) {
             longitude: shop.longitude,
           };
 
-    const maximumRouteKm = parsePositiveNumber(
-      process.env.SSUPERTEA_MAX_ROUTE_KM,
-      DEFAULT_MAX_ROUTE_KM
-    );
+    const maximumRouteKm = purpose === ROUTE_PURPOSE_TRACKING
+      ? MAX_TRACKING_ROUTE_KM : getDeliveryLimitKm(process.env.SSUPERTEA_MAX_ROUTE_KM);
 
     const straightLineDistanceKm = haversineDistanceKm(
       origin.latitude,
@@ -84,7 +83,9 @@ module.exports = async function routeHandler(request, response) {
       return response.status(422).json({
         code: "DESTINATION_TOO_FAR",
         message:
-          `The selected route is outside the ${maximumRouteKm} km delivery area.`,
+          purpose === ROUTE_PURPOSE_TRACKING
+            ? "The selected tracking route is too far away."
+            : `Delivery is available within ${maximumRouteKm} km of the store by driving route. Choose a closer location or select pickup.`,
       });
     }
 
@@ -164,8 +165,7 @@ module.exports = async function routeHandler(request, response) {
     if (
       !routeFeature ||
       routeFeature.type !== "Feature" ||
-      !Number.isFinite(Number(summary?.distance)) ||
-      !Number.isFinite(Number(summary?.duration))
+      !isValidRouteSummary(summary)
     ) {
       return response.status(502).json({
         code: "ORS_INVALID_RESPONSE",
@@ -176,6 +176,12 @@ module.exports = async function routeHandler(request, response) {
 
     const distanceMeters = Number(summary.distance);
     const durationSeconds = Number(summary.duration);
+    if (purpose === ROUTE_PURPOSE_CHECKOUT && distanceMeters > maximumRouteKm * 1000) {
+      return response.status(422).json({
+        code: "DESTINATION_TOO_FAR",
+        message: `Delivery is available within ${maximumRouteKm} km of the store by driving route. Choose a closer location or select pickup.`,
+      });
+    }
     const deliveryFee =
       purpose === ROUTE_PURPOSE_TRACKING
         ? null
@@ -374,14 +380,6 @@ function isPhilippineCoordinate(latitude, longitude) {
   );
 }
 
-function parsePositiveNumber(value, fallback) {
-  const numericValue = Number(value);
-
-  return Number.isFinite(numericValue) && numericValue > 0
-    ? numericValue
-    : fallback;
-}
-
 function haversineDistanceKm(
   startLatitude,
   startLongitude,
@@ -416,18 +414,5 @@ function haversineDistanceKm(
     2 *
     earthRadiusKm *
     Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  );
-}
-
-function calculateDeliveryFee(distanceMeters) {
-  const safeDistance = Number(distanceMeters);
-
-  if (!Number.isFinite(safeDistance) || safeDistance <= 0) {
-    return 0;
-  }
-
-  return (
-    Math.ceil(safeDistance / DELIVERY_FEE_BLOCK_METERS) *
-    DELIVERY_FEE_PER_BLOCK
   );
 }

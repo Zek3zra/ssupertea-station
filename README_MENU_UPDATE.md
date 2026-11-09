@@ -46,7 +46,7 @@ Applied remote migrations: `official_menu_catalog`, `official_menu_catalog_nonan
 
 ## Future admin editing and photos
 
-Finished orders now have a **Clear finished** action. It hides loaded completed/cancelled orders for the current staff account on this browser/device and persists that preference across refreshes. **Show cleared** restores them. It never deletes database records, affects active orders, or changes customer history/tracking. Admin cards use an even border without a status stripe.
+Finished orders have a **Clear finished** action for completed orders only. The separate Cancelled section has **Clear cancelled**. Each section has its own **Show cleared** action. These controls hide loaded records for the current staff account on this browser/device and persist that preference across refreshes. They never delete database records, affect active orders, or change customer history/tracking. Admin cards use an even border without a status stripe.
 
 Successful order submission clears the busy state and closes checkout before opening confirmation. Opening tracking also closes checkout and confirmation, so closing tracking returns to the store. Failed submissions keep the checkout and cart available for retry. Mobile menu descriptions display in full, and the price has spacing before “from.”
 
@@ -64,17 +64,30 @@ The new UI uses a separate cart storage key so the deployed demo cart is preserv
 ## Verification
 
 ```powershell
-node tests/final-functionality.test.cjs
-node tests/customer-profiles.test.cjs
-node tests/menu-catalog.test.cjs
-node tests/sheet-dismiss.test.cjs
-node tests/admin-finished.test.cjs
-node --test tests/rider-gps.test.cjs tests/rider-completed.test.cjs tests/order-alert.test.cjs tests/admin-order-alert.test.cjs
+node --test tests/*.test.cjs
 ```
 
-All 101 tests passed. `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back.
+All 132 checks passed on 9 November 2026, including 31 new tests in `delivery-policy.test.cjs`, `delivery-route-ui.test.cjs`, and `admin-queue.test.cjs`. The Node runner reports 72 test entries: five older files are counted as one entry each and run another 65 test cases internally, giving 132 checks overall. The new tests execute the actual handlers and UI functions with isolated route-provider, authentication, and database boundaries; they do not place live delivery orders.
 
-Browser checks covered desktop and mobile layouts, search/category selection, milk tea sizes and sugar, automatic food servings, silog extras, combo choices, cart totals, cart recovery, downward swipe dismissal, and outside-tap dismissal. No real order was placed. A real pickup/delivery order and staff fulfillment should be tested in a suitable preview environment before final deployment.
+Earlier, `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back. No database changes or new live SQL tests were performed for the mobile queue and delivery-limit update.
+
+Earlier browser checks covered desktop and mobile layouts, search/category selection, milk tea sizes and sugar, automatic food servings, silog extras, combo choices, cart totals, cart recovery, downward swipe dismissal, and outside-tap dismissal. A separately approved live pickup test was subsequently submitted, and the owner confirmed it completed; Completed was also visible in Admin. A real delivery and signed-in phone GPS test remain before final deployment.
+
+## Mobile order queues and 3 km delivery limit (local update, 9 November 2026)
+
+Admin now has five independent sections: **Pending**, **Preparing**, **On delivery**, **Finished**, and **Cancelled**. The phone layout uses a compact Orders heading, an **Operations** menu for refresh and sound, search by customer name/mobile/order reference, newest/oldest sorting, and horizontally scrollable status tabs with counts. Only the selected section is shown. Existing ready-for-pickup orders stay in the dispatched section with their correct Ready for pickup label. Desktop uses the same sections with two card columns.
+
+Changing tabs, searching, or sorting does not silence pending-order alerts. Live refresh preserves the selected tab. Finished and Cancelled each load their latest 100 records independently and show 12 cards initially, with **Show more** for the remaining loaded matches. Active orders keep their existing unrestricted query. Clearing and restoring either history affects only that section.
+
+Deliveries are limited to **3 km by driving route from the configured store location**, including exactly 3,000 metres. Both `/api/route` checkout quotes and `/api/create-order` enforce the limit before rounding. A nearby pin whose road route exceeds 3 km is rejected too; changing the pin immediately invalidates the previous quote and blocks submission until a new valid route arrives. The customer can choose a closer location or pickup. Quote and final-order fees now use the same unrounded distance, so a fraction of a metre above a 300 m fee block cannot produce different prices.
+
+The server caps `SSUPERTEA_MAX_ROUTE_KM` at 3 even if an existing deployment variable still says 50; a smaller positive configured limit is respected. Pickup orders and rider tracking are unaffected. The service-worker cache version was updated to v29 for the new Admin stylesheet.
+
+The subsequent staff UI refinement gives Admin and Rider matching headers: Sign out stays at the upper right, and a segmented Admin/Rider switch shows the current mode. Permission checks still determine which modes are available. On phones, the switch spans its own row; on desktop, it sits beside the brand. Admin cards now show only the reference, customer, status, order type, item count, age, and total. Tapping a card opens full contact, item choices, fees, address/map, and the existing confirmation/assignment/pickup controls in a modal. Done, Escape, outside tap, or a downward header swipe dismisses it. Unchanged refreshes preserve modal controls; changed orders update the open details. Targeted staff UI regressions passed, including six new tests in `admin-details.test.cjs`. The service-worker version is now v30. No additional live services were accessed for this refinement.
+
+The new 390px sample preview was visually checked for the header, search/sort row, tab strip, and Pending/Preparing separation. Browser control then stopped because it could not reliably verify the current URL during a reload. Final visual verification of the Operations refinement and the 320px layout remains incomplete; no further browser actions were attempted after that stop.
+
+These changes are local only. No commit, push, deployment, credentials, database schema, or live environment settings were changed. The 3 km limit will take effect on the live site only after these files are deployed. The earlier order-retry/idempotency finding remains outside this update.
 
 
 ## Rider and admin alerts

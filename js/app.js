@@ -2390,6 +2390,12 @@ async function requestDeliveryRoute(latitude, longitude) {
   state.checkout.routeAbortController?.abort();
   state.checkout.routeAbortController = new AbortController();
 
+  // A new pin must not reuse the previous location's valid route or fee.
+  state.checkout.routeReady = false;
+  state.checkout.deliveryFee = 0;
+  removeRouteLayers();
+  renderCheckoutSummary();
+
   setRouteSummary({
     state: "loading",
     status: "Calculating the route from Ssupertea Station…",
@@ -2429,8 +2435,6 @@ async function requestDeliveryRoute(latitude, longitude) {
       return;
     }
 
-    drawDeliveryRoute(payload);
-
     state.checkout.routeOrigin = {
       latitude: Number(payload.shop?.latitude),
       longitude: Number(payload.shop?.longitude),
@@ -2445,13 +2449,18 @@ async function requestDeliveryRoute(latitude, longitude) {
     state.checkout.deliveryFee =
       Number(payload.summary?.delivery_fee) || 0;
 
-    state.checkout.routeReady =
-      Number.isFinite(
-        state.checkout.routeDistanceMeters
-      ) &&
-      Number.isFinite(
-        state.checkout.routeDurationSeconds
-      );
+    if (state.checkout.routeDistanceMeters > 3000) {
+      const error = new Error("Delivery is available within 3 km of the store by driving route. Choose a closer location or select pickup.");
+      error.code = "DESTINATION_TOO_FAR";
+      throw error;
+    }
+    if (payload.summary?.distance == null || payload.summary?.duration == null ||
+        !Number.isFinite(state.checkout.routeDistanceMeters) || state.checkout.routeDistanceMeters < 0 ||
+        !Number.isFinite(state.checkout.routeDurationSeconds) || state.checkout.routeDurationSeconds < 0) {
+      throw new Error("The route service returned an invalid route.");
+    }
+    drawDeliveryRoute(payload);
+    state.checkout.routeReady = true;
 
     elements["open-google-maps-link"].href =
       createGoogleMapsDirectionsLink(
@@ -2683,7 +2692,7 @@ function getRouteErrorMessage(error) {
     return "Reconnect to calculate distance and estimated travel time.";
   }
 
-  return "The route could not be calculated, but you can still submit the selected delivery pin.";
+  return "The route could not be calculated. Select a location within 3 km of the store by driving route, try again, or choose pickup.";
 }
 
 function formatRouteDistance(distanceMeters) {

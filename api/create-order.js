@@ -1,4 +1,5 @@
 "use strict";
+const { getDeliveryLimitKm, isValidRouteSummary, calculateDeliveryFee } = require("../lib/delivery-policy.cjs");
 
 const ORS_DIRECTIONS_URL =
   "https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson";
@@ -96,7 +97,7 @@ module.exports = async function createOrderHandler(request, response) {
       routeDistanceMeters = Math.round(route.distance);
       routeDurationSeconds = Math.round(route.duration);
       deliveryFee = calculateDeliveryFee(
-        routeDistanceMeters
+        route.distance
       );
     }
 
@@ -447,10 +448,7 @@ async function calculateRoute(
   destinationLongitude
 ) {
   const shop = getShopLocation();
-  const maximumRouteKm = parsePositiveNumber(
-    process.env.SSUPERTEA_MAX_ROUTE_KM,
-    50
-  );
+  const maximumRouteKm = getDeliveryLimitKm(process.env.SSUPERTEA_MAX_ROUTE_KM);
 
   const straightLineDistanceKm = haversineDistanceKm(
     shop.latitude,
@@ -463,7 +461,7 @@ async function calculateRoute(
     throw publicError(
       "DESTINATION_TOO_FAR",
       422,
-      `The selected point is outside the ${maximumRouteKm} km delivery area.`
+      `Delivery is available within ${maximumRouteKm} km of the store by driving route. Choose a closer location or select pickup.`
     );
   }
 
@@ -504,8 +502,7 @@ async function calculateRoute(
 
   if (
     !response.ok ||
-    !Number.isFinite(Number(summary?.distance)) ||
-    !Number.isFinite(Number(summary?.duration))
+    !isValidRouteSummary(summary)
   ) {
     throw publicError(
       response.status === 429
@@ -516,6 +513,11 @@ async function calculateRoute(
         ? "The delivery route service is busy. Try again shortly."
         : "The delivery route could not be calculated."
     );
+  }
+
+  if (Number(summary.distance) > maximumRouteKm * 1000) {
+    throw publicError("DESTINATION_TOO_FAR", 422,
+      `Delivery is available within ${maximumRouteKm} km of the store by driving route. Choose a closer location or select pickup.`);
   }
 
   return {
@@ -717,21 +719,6 @@ function getShopLocation() {
   };
 }
 
-function calculateDeliveryFee(distanceMeters) {
-  if (
-    !Number.isFinite(distanceMeters) ||
-    distanceMeters <= 0
-  ) {
-    return 0;
-  }
-
-  return (
-    Math.ceil(
-      distanceMeters / DELIVERY_FEE_BLOCK_METERS
-    ) * DELIVERY_FEE_PER_BLOCK
-  );
-}
-
 function roundCurrency(value) {
   return Math.round(
     (Number(value) + Number.EPSILON) * 100
@@ -777,15 +764,6 @@ function isPhilippineCoordinate(latitude, longitude) {
     longitude >= PHILIPPINES_BOUNDS.minimumLongitude &&
     longitude <= PHILIPPINES_BOUNDS.maximumLongitude
   );
-}
-
-function parsePositiveNumber(value, fallback) {
-  const numericValue = Number(value);
-
-  return Number.isFinite(numericValue) &&
-    numericValue > 0
-    ? numericValue
-    : fallback;
 }
 
 function haversineDistanceKm(

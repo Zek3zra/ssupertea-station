@@ -49,6 +49,19 @@ export function createMenuAvailabilityDraft(product) {
   return { active: product.active === true, ...Object.fromEntries(Object.entries(TABLES).map(([kind, table]) =>
     [kind, Object.fromEntries((product[table] || []).map(option => [option.id, option.active === true]))])) };
 }
+export function setMenuAvailabilityDraft(draft, active, kind = null, id = null) {
+  if (!kind) {
+    draft.active = active;
+    for (const choices of [draft.variants, draft.addons]) for (const key of Object.keys(choices)) choices[key] = active;
+  } else {
+    draft[kind][id] = active;
+    if (kind === "variants") {
+      draft.active = Object.values(draft.variants).some(Boolean);
+      if (!draft.active) for (const key of Object.keys(draft.addons)) draft.addons[key] = false;
+    }
+  }
+  return draft;
+}
 export function menuAvailabilityChanges(product, draft) {
   const changes = [];
   for (const [kind, table] of Object.entries(TABLES)) for (const option of product[table] || []) {

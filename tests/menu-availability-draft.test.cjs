@@ -1,7 +1,7 @@
 "use strict";
 const { test } = require("node:test"), assert = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path");
 const dataSource = fs.readFileSync(path.join(__dirname, "../js/menu-editor-data.js"), "utf8").replace(/^export /gm, "");
-const { createMenuEditorRepository, createMenuAvailabilityDraft, menuAvailabilityChanges } = new Function(dataSource + ";return {createMenuEditorRepository,createMenuAvailabilityDraft,menuAvailabilityChanges};")();
+const { createMenuEditorRepository, createMenuAvailabilityDraft, setMenuAvailabilityDraft, menuAvailabilityChanges } = new Function(dataSource + ";return {createMenuEditorRepository,createMenuAvailabilityDraft,setMenuAvailabilityDraft,menuAvailabilityChanges};")();
 const product = () => ({ id: "test-tea", name: "Test tea", active: true, updated_at: "v1", menu_catalog_variants: [
   { id: "small", active: true, price: 39, updated_at: "s1" }, { id: "large", active: true, price: 65, updated_at: "l1" }
 ], menu_catalog_addons: [{ id: "egg", active: true, price: 20, updated_at: "e1" }] });
@@ -15,12 +15,31 @@ function harness({ permission = true, anonymous = false, failure = false, switch
   } };
   return { calls, repo: createMenuEditorRepository(client, async () => ({ user: { id: userId, is_anonymous: anonymous } })) };
 }
-test("Overall availability preserves every individual size and extra choice without mutating saved data", () => {
+test("Overall availability checks or clears every size and extra without changing saved data before Done", () => {
   const p = product(), original = structuredClone(p), draft = createMenuAvailabilityDraft(p);
-  draft.active = false;
-  assert.deepEqual(menuAvailabilityChanges(p, draft), { active: false, changes: [], pending: true });
-  assert.deepEqual(p, original); assert.equal(draft.variants.small, true); assert.equal(draft.addons.egg, true);
-  draft.active = true; assert.equal(menuAvailabilityChanges(p, draft).pending, false);
+  setMenuAvailabilityDraft(draft, false);
+  assert.equal(draft.active, false); assert.equal(menuAvailabilityChanges(p, draft).changes.length, 3);
+  assert.deepEqual(p, original); assert.ok(Object.values(draft.variants).every(value => value === false)); assert.equal(draft.addons.egg, false);
+  setMenuAvailabilityDraft(draft, true); assert.equal(menuAvailabilityChanges(p, draft).pending, false);
+});
+test("One unavailable variant keeps the overall checkbox checked while another remains available", () => {
+  const draft = createMenuAvailabilityDraft(product());
+  setMenuAvailabilityDraft(draft, false, "variants", "small");
+  assert.equal(draft.active, true); assert.equal(draft.variants.small, false); assert.equal(draft.variants.large, true);
+});
+test("Unchecking the last variant clears the overall checkbox and extras; checking one restores only that variant", () => {
+  const draft = createMenuAvailabilityDraft(product());
+  setMenuAvailabilityDraft(draft, false, "variants", "small");
+  setMenuAvailabilityDraft(draft, false, "variants", "large");
+  assert.equal(draft.active, false); assert.equal(draft.addons.egg, false);
+  setMenuAvailabilityDraft(draft, true, "variants", "small");
+  assert.equal(draft.active, true); assert.equal(draft.variants.small, true); assert.equal(draft.variants.large, false);
+  assert.equal(draft.addons.egg, false);
+});
+test("Optional extras do not determine whether an item with available sizes is available", () => {
+  const draft = createMenuAvailabilityDraft(product());
+  setMenuAvailabilityDraft(draft, false, "addons", "egg");
+  assert.equal(draft.active, true); assert.equal(draft.variants.small, true); assert.equal(draft.variants.large, true);
 });
 test("Size and extra drafts are isolated and retain their individual concurrency versions", () => {
   const p = product(), draft = createMenuAvailabilityDraft(p);

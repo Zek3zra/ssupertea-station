@@ -1,7 +1,7 @@
 import { customerSupabase, getVerifiedAccountSession } from "/js/supabase-config.js";
 import { catalogIcon, safeImageUrl } from "/js/catalog.js";
 import { bindSheetDismiss } from "/js/sheet-dismiss.js";
-import { createMenuEditorRepository, menuItemAvailable, createMenuAvailabilityDraft, menuAvailabilityChanges } from "/js/menu-editor-data.js";
+import { createMenuEditorRepository, menuItemAvailable, createMenuAvailabilityDraft, setMenuAvailabilityDraft, menuAvailabilityChanges } from "/js/menu-editor-data.js";
 
 const repository = createMenuEditorRepository(customerSupabase, getVerifiedAccountSession);
 const money = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
@@ -164,11 +164,14 @@ function availabilityPending() {
   return Boolean(product && state.availability && menuAvailabilityChanges(product, state.availability).pending);
 }
 function refreshAvailability() {
-  const active = $("menu-item-available").checked;
+  const active = state.availability.active;
+  $("menu-item-available").checked = active;
   $("menu-item-availability-label").textContent = active ? "Item available" : "Item unavailable";
-  $("menu-item-availability-hint").textContent = active ? "Turn off to pause all sizes and extras at once." : "The whole item is paused. Your individual size and extra choices are kept.";
+  $("menu-item-availability-hint").textContent = "Checking this selects all sizes and extras. Unchecking clears them. At least one size keeps the item available.";
   for (const form of el.options.querySelectorAll(".menu-option-form")) {
-    const checked = form.elements.namedItem("active").checked;
+    const checkbox = form.elements.namedItem("active");
+    if (form.dataset.newOption === "false") checkbox.checked = state.availability[form.dataset.kind][form.dataset.optionId];
+    const checked = checkbox.checked;
     form.querySelector(".menu-option-availability-text").textContent = checked ? "Available" : "Unavailable";
     form.dataset.available = String(checked);
   }
@@ -236,7 +239,7 @@ async function saveForm(form) {
       const existing = options.find(option => option.id === form.dataset.optionId), input = optionValues(form);
       const saved = existing ? await repository.saveOption(kind, product.id, existing, { ...input, active: existing.active }) : await repository.addOption(kind, product.id, form.dataset.optionId, input);
       if (revision !== state.revision) return;
-      if (existing) Object.assign(existing, saved); else { options.push(saved); state.availability[kind][saved.id] = saved.active; }
+      if (existing) Object.assign(existing, saved); else { options.push(saved); setMenuAvailabilityDraft(state.availability, saved.active, kind, saved.id); }
       product[optionKey(kind)] = options; form.dataset.newOption = "false";
       form.querySelector("button[type=submit]").textContent = "Save";
       form.querySelector(".menu-text-button")?.remove();
@@ -309,16 +312,14 @@ function initialize() {
   for (const name of ["input", "change"]) el.dialog.addEventListener(name, event => {
     const target = event.target, form = target.closest("form");
     if (target.id === "menu-item-available") {
-      state.availability.active = target.checked;
+      setMenuAvailabilityDraft(state.availability, target.checked);
+      for (const option of el.options.querySelectorAll('input[name="active"]')) option.checked = target.checked;
       if (!selectedProduct()) state.dirtyForms.add(el.productForm);
       refreshAvailability(); return;
     }
     if (target.name === "active" && form?.dataset.kind) {
       if (form.dataset.newOption === "false") {
-        state.availability[form.dataset.kind][form.dataset.optionId] = target.checked;
-        if (form.dataset.kind === "variants" && !Object.values(state.availability.variants).some(Boolean)) {
-          state.availability.active = false; $("menu-item-available").checked = false;
-        }
+        setMenuAvailabilityDraft(state.availability, target.checked, form.dataset.kind, form.dataset.optionId);
       } else state.dirtyForms.add(form);
       refreshAvailability(); return;
     }

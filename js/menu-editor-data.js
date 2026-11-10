@@ -1,6 +1,6 @@
 // Staff catalog access uses the signed-in client and the existing Supabase RLS policies.
 export const MENU_ICONS = ["cup", "coffee", "soda", "shake", "sandwich", "burger", "fries", "meal", "noodles", "snack", "pitcher", "combo"];
-const ITEM_COLUMNS = "id,name,category,description,icon,image_url,featured,customizable,variant_label,active,sort_order,updated_at";
+const ITEM_COLUMNS = "id,name,category,description,icon,image_url,featured,customizable,variant_label,active,published,deleted_at,sort_order,updated_at";
 const OPTION_COLUMNS = "product_id,id,label,price,active,sort_order,updated_at";
 const TABLES = { variants: "menu_catalog_variants", addons: "menu_catalog_addons" };
 export const MENU_COLUMNS = `${ITEM_COLUMNS},menu_catalog_variants(${OPTION_COLUMNS}),menu_catalog_addons(${OPTION_COLUMNS})`;
@@ -32,7 +32,7 @@ export function validateMenuProduct(input) {
     name: text(input.name, "Item name", 120), category: text(input.category, "Category", 60),
     description: text(input.description, "Description", 500, false), icon: input.icon, image_url: image || null,
     variant_label: text(input.variant_label || "Serving", "Option heading", 60),
-    active: input.active === true, featured: input.featured === true, customizable: input.customizable === true,
+    active: input.active === true, published: input.published !== false, featured: input.featured === true, customizable: input.customizable === true,
     sort_order: position(input.sort_order),
   };
 }
@@ -42,7 +42,18 @@ export function validateMenuOption(input) {
   return { label: text(input.label, "Option name", 100), price: Number(raw), active: input.active === true, sort_order: position(input.sort_order) };
 }
 export function menuItemAvailable(product) {
-  return product.active === true && Boolean(product.menu_catalog_variants?.some(option => option.active === true));
+  return !product.deleted_at && product.active === true && product.published !== false && Boolean(product.menu_catalog_variants?.some(option => option.active === true));
+}
+export const MENU_PHOTO_BUCKET = "menu-photos";
+export const MENU_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+export async function validateMenuPhoto(file) {
+  const extensions = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+  if (!file || !extensions[file.type] || !Number.isFinite(file.size) || file.size <= 0 || file.size > MENU_PHOTO_MAX_BYTES) throw new Error("Choose a JPG, PNG or WebP photo up to 5 MB.");
+  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const valid = file.type === "image/jpeg" ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255 : file.type === "image/png" ? [137, 80, 78, 71, 13, 10, 26, 10].every((v, i) => bytes[i] === v) :
+    String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+  if (!valid) throw new Error("This file is not a valid JPG, PNG or WebP photo.");
+  return { extension: extensions[file.type], contentType: file.type };
 }
 export function createMenuEditorRepository(client, getSession) {
   async function sameAccount(userId) {
@@ -80,6 +91,18 @@ export function createMenuEditorRepository(client, getSession) {
     return result(client.from(TABLES.variants).insert({ ...option, product_id: productId, id: "regular" }).select(OPTION_COLUMNS).single());
   }
   return {
+    async uploadPhoto(file) {
+      const { extension, contentType } = await validateMenuPhoto(file), userId = await manager();
+      const path = `menu/${userId}/${crypto.randomUUID()}.${extension}`;
+      await sameAccount(userId);
+      const bucket = client.storage.from(MENU_PHOTO_BUCKET);
+      const { error } = await bucket.upload(path, file, { contentType, cacheControl: "3600", upsert: false });
+      if (error) throw new Error(error.message || "Photo upload failed. Please try again.");
+      await sameAccount(userId);
+      const publicUrl = bucket.getPublicUrl(path).data?.publicUrl;
+      if (!publicUrl) throw new Error("The photo uploaded, but its URL could not be loaded.");
+      return publicUrl;
+    },
     async load() {
       const userId = await manager();
       // Fetch all pages so the editor does not silently lose entries above the API row cap.
@@ -94,6 +117,7 @@ export function createMenuEditorRepository(client, getSession) {
       return { products, userId };
     },
     async saveProduct(product, input) {
+      if (product.deleted_at) throw new Error("Restore this deleted item before editing it.");
       const values = validateMenuProduct(input), userId = await manager();
       identifier(product.id);
       if (values.active) {
@@ -121,20 +145,31 @@ export function createMenuEditorRepository(client, getSession) {
       await sameAccount(userId);
       return saved;
     },
+    async deleteProduct(product) {
+      identifier(product.id);
+      const userId = await manager();
+      return update("menu_catalog", { deleted_at: new Date().toISOString(), active: false, published: false }, { id: product.id }, product.updated_at, userId);
+    },
+    async restoreProduct(product) {
+      identifier(product.id);
+      const userId = await manager();
+      // Restoring never silently enables ordering. Staff can make it available later.
+      return update("menu_catalog", { deleted_at: null, active: false, published: Boolean(product.menu_catalog_variants?.length) }, { id: product.id }, product.updated_at, userId);
+    },
     async createProduct(id, input, initialOption) {
       identifier(id);
       const values = validateMenuProduct(input), option = validateMenuOption({ ...initialOption, active: true, sort_order: 0 });
       const userId = await manager();
       // New products stay unavailable until their initial price has saved successfully.
       let product = await result(client.from("menu_catalog").select(ITEM_COLUMNS).eq("id", id).maybeSingle());
-      if (product?.active) throw new Error("This item was already created. Refresh the menu to edit it.");
-      if (product) product = await update("menu_catalog", { ...values, active: false }, { id }, product.updated_at, userId);
+      if (product?.active || product?.published || product?.deleted_at) throw new Error("This item was already created. Refresh the menu to edit it.");
+      if (product) product = await update("menu_catalog", { ...values, active: false, published: false }, { id }, product.updated_at, userId);
       else {
         await sameAccount(userId);
-        product = await result(client.from("menu_catalog").insert({ ...values, id, active: false }).select(ITEM_COLUMNS).single());
+        product = await result(client.from("menu_catalog").insert({ ...values, id, active: false, published: false }).select(ITEM_COLUMNS).single());
       }
       const variant = await ensureVariant(id, option, userId);
-      const saved = await update("menu_catalog", { active: values.active }, { id }, product.updated_at, userId);
+      const saved = await update("menu_catalog", { active: values.active, published: values.published }, { id }, product.updated_at, userId);
       return { ...saved, menu_catalog_variants: [variant], menu_catalog_addons: [] };
     },
   };

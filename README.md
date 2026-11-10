@@ -43,7 +43,8 @@ The storefront loads its official menu and prices from the connected Supabase ca
 ### Admin dashboard
 
 - Switch between **Orders** and **Menu**; order notifications keep running while editing the catalog.
-- Edit menu prices, sizes, extras, availability, item details, and optional photo URLs, or create a new item with its first price.
+- Edit menu prices, sizes, extras, availability, item details, and photos (upload or URL), or create a new item with its first price.
+- Keep unavailable items visible without allowing orders; hide drafts separately, and delete/restore menu entries while preserving order history.
 - View and manage active orders.
 - Confirm pending orders.
 - Assign delivery orders to riders.

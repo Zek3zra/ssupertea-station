@@ -52,13 +52,14 @@ export function normalizeCatalogProduct(row) {
     .filter(option => option.active !== false)
     .sort((a,b) => (a.sort_order || 0) - (b.sort_order || 0))
     .map(option => ({ id: option.id, label: option.label, price: money(option.price) }));
-  if (!row.id || !row.name || !row.category || !variants.length) throw new Error("Incomplete catalog item");
+  if (!row.id || !row.name || !row.category) throw new Error("Incomplete catalog item");
   return {
     id: row.id, name: row.name, category: row.category,
+    available: row.active !== false && row.published !== false && !row.deleted_at && variants.length > 0,
     description: row.description || "", featured: Boolean(row.featured),
     icon: row.icon || "cup", imageUrl: safeImageUrl(row.image_url),
     customizable: Boolean(row.customizable), variantLabel: row.variant_label || "Size",
-    basePrice: Math.min(...variants.map(option => option.price)), variants,
+    basePrice: variants.length ? Math.min(...variants.map(option => option.price)) : null, variants,
     addons: (row.menu_catalog_addons || row.addons || []).filter(option => option.active !== false)
       .sort((a,b) => (a.sort_order || 0) - (b.sort_order || 0))
       .map(option => ({ id: option.id, label: option.label, price: money(option.price) })),
@@ -69,6 +70,7 @@ export function getSizeOptions(product) { return product?.variants || []; }
 export function getAddonOptions(product) { return product?.addons || []; }
 
 export function calculateCatalogPrice(product, selection) {
+  if (product?.available === false) throw new Error("This item is currently unavailable");
   const variant = getSizeOptions(product).find(option => option.id === selection.sizeId);
   if (!variant) throw new Error("Unavailable size or serving");
   const ids = [...new Set(selection.addonIds || [])];

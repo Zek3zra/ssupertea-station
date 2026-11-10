@@ -463,12 +463,11 @@ async function loadMenuCatalog() {
   renderMenu();
   try {
     const { data, error } = await customerSupabase.from("menu_catalog")
-      .select("id,name,category,description,icon,image_url,featured,customizable,variant_label,sort_order,menu_catalog_variants(id,label,price,active,sort_order),menu_catalog_addons(id,label,price,active,sort_order)")
-      .eq("active", true).order("sort_order")
+      .select("id,name,category,description,icon,image_url,featured,customizable,variant_label,active,published,deleted_at,sort_order,menu_catalog_variants(id,label,price,active,sort_order),menu_catalog_addons(id,label,price,active,sort_order)")
+      .eq("published", true).is("deleted_at", null).order("sort_order").order("id")
       .abortSignal(AbortSignal.timeout(15000));
     if (error) throw error;
-    MENU_ITEMS = (data || []).filter(row => row.menu_catalog_variants?.some(option => option.active))
-      .map(normalizeCatalogProduct);
+    MENU_ITEMS = (data || []).map(normalizeCatalogProduct);
     state.catalogStatus = "ready";
     state.cart = loadCart();
     renderCategories();
@@ -546,7 +545,8 @@ function renderMenu() {
   elements["menu-grid"].innerHTML = filteredItems.map(createProductCard).join("");
 
   const countLabel = filteredItems.length === 1 ? "item" : "items";
-  elements["menu-status"].textContent = `${filteredItems.length} ${countLabel} available`;
+  const availableCount = filteredItems.filter(item => item.available !== false).length;
+  elements["menu-status"].textContent = `${filteredItems.length} ${countLabel} · ${availableCount} available`;
 
   const hasResults = filteredItems.length > 0;
   elements["menu-grid"].hidden = !hasResults;
@@ -554,19 +554,21 @@ function renderMenu() {
 }
 
 function createProductCard(product) {
+  const unavailable = product.available === false;
+  const price = product.basePrice == null ? '<small>Currently unavailable</small>' : `${product.variants.some(option => option.price !== product.basePrice) ? '<small>From</small> ' : ""}${formatCurrency(product.basePrice)}`;
   return `
-    <article class="product-card" data-product-id="${escapeHtml(product.id)}">
+    <article class="product-card${unavailable ? " is-unavailable" : ""}" data-product-id="${escapeHtml(product.id)}">
       <div class="product-visual catalog-visual" aria-hidden="true">
         ${createCatalogVisual(product)}
-        ${product.featured ? '<span class="product-badge">Customer favorite</span>' : ""}
+        ${unavailable ? '<span class="product-badge unavailable-badge">Unavailable</span>' : product.featured ? '<span class="product-badge">Customer favorite</span>' : ""}
       </div>
       <div class="product-card-content">
         <p class="product-category">${escapeHtml(product.category)}</p>
         <h3>${escapeHtml(product.name)}</h3>
         <p class="product-description">${escapeHtml(product.description)}</p>
         <div class="product-card-footer">
-          <p class="product-price">${product.variants.some(option => option.price !== product.basePrice) ? '<small>From</small> ' : ""}${formatCurrency(product.basePrice)}</p>
-          <button class="customize-button" type="button" data-action="customize" data-product-id="${escapeHtml(product.id)}" aria-label="Add ${escapeHtml(product.name)} to cart">Add to cart</button>
+          <p class="product-price">${price}</p>
+          <button class="customize-button" type="button" data-action="customize" data-product-id="${escapeHtml(product.id)}" ${unavailable ? 'disabled aria-disabled="true"' : ""} aria-label="${unavailable ? "Unavailable:" : "Add to cart:"} ${escapeHtml(product.name)}">${unavailable ? "Unavailable" : "Add to cart"}</button>
         </div>
       </div>
     </article>
@@ -619,11 +621,11 @@ function resetMenuFilters() {
 function openCustomizeDialog(productId) {
   const product = getProductById(productId);
 
-  if (!product) {
+  if (!product || product.available === false) {
     showToast({
       type: "error",
       title: "Item unavailable",
-      message: "This menu item could not be loaded.",
+      message: "This item is currently unavailable and cannot be added to your order.",
     });
 
     return;
@@ -737,11 +739,11 @@ function handleCustomizeSubmit(event) {
 
   const product = getProductById(state.selectedProductId);
 
-  if (!product) {
+  if (!product || product.available === false) {
     showToast({
       type: "error",
       title: "Unable to add item",
-      message: "The selected item no longer exists.",
+      message: "The selected item is currently unavailable.",
     });
 
     return;
@@ -4527,7 +4529,7 @@ function normalizeStoredCartItem(item) {
   const sugar = product?.customizable ? getSugarOption(item.sugar?.id) : STANDARD_SUGAR;
   const ice = product?.customizable ? ICE_OPTIONS.find((option) => option.id === item.ice?.id) : STANDARD_ICE;
 
-  if (!product || !size || !sugar || !ice) {
+  if (!product || product.available === false || !size || !sugar || !ice) {
     return null;
   }
 

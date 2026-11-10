@@ -3,7 +3,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs"), path = require("node:path");
 const source = fs.readFileSync(path.join(__dirname, "../js/menu-editor-data.js"), "utf8").replace(/^export /gm, "");
-const { createMenuEditorRepository, validateMenuProduct, validateMenuOption, menuItemAvailable } = new Function(source + ";return {createMenuEditorRepository,validateMenuProduct,validateMenuOption,menuItemAvailable};")();
+const { createMenuEditorRepository, validateMenuProduct, validateMenuOption, menuItemAvailable, validateMenuPhoto } = new Function(source + ";return {createMenuEditorRepository,validateMenuProduct,validateMenuOption,menuItemAvailable,validateMenuPhoto};")();
 const product = { id: "sample-tea", name: "Sample Tea", category: "Milk Tea", description: "Sample", icon: "cup", image_url: null, variant_label: "Size", active: true, customizable: true, featured: false, sort_order: 0, updated_at: "v1" };
 const option = { id: "small", product_id: product.id, label: "Small", price: 39, active: true, sort_order: 0, updated_at: "v1" };
 test("All 78 existing official products remain editable with their existing icons and fields", () => {
@@ -13,9 +13,12 @@ test("All 78 existing official products remain editable with their existing icon
 });
 function harness({ permission = true, anonymous = false } = {}) {
   const tables = { menu_catalog: [structuredClone(product)], menu_catalog_variants: [structuredClone(option)], menu_catalog_addons: [], orders: [{ total_price: 39 }] };
-  const calls = [], writes = [];
-  let userId = "manager-a", version = 1, failTable = null, switchDuringPermission = false, switchAfterInsert = false;
-  const client = { async rpc() { if (switchDuringPermission) userId = "manager-b"; return { data: { active: true, can_manage_orders: permission } }; }, from(table) {
+  const calls = [], writes = [], uploads = [];
+  let userId = "manager-a", version = 1, failTable = null, switchDuringPermission = false, switchAfterInsert = false, switchAfterUpload = false, uploadError = false;
+  const client = { storage: { from(bucket) { return {
+    async upload(path, file, options) { uploads.push({ bucket, path, file, options }); if (switchAfterUpload) userId = "manager-b"; return { error: uploadError ? { message: "Upload quota reached" } : null }; },
+    getPublicUrl(path) { return { data: { publicUrl: "https://photos.test/" + path } }; }
+  }; } }, async rpc() { if (switchDuringPermission) userId = "manager-b"; return { data: { active: true, can_manage_orders: permission } }; }, from(table) {
     let action = "read", payload, filters = [], single = false, limit = Infinity, start = 0, end = Infinity, columns = "";
     const q = { select(value) { columns = value; return q; }, eq(k, v) { filters.push(row => row[k] === v); return q; }, order() { return q; }, range(a, b) { start = a; end = b; return q; }, limit(value) { limit = value; return q; }, abortSignal() { return q; }, maybeSingle() { single = true; return q; }, single() { single = true; return q; }, insert(value) { action = "insert"; payload = value; return q; }, update(value) { action = "update"; payload = value; return q; }, then(resolve, reject) {
       return Promise.resolve().then(() => {
@@ -34,8 +37,8 @@ function harness({ permission = true, anonymous = false } = {}) {
     } }; return q;
   } };
   const getSession = async () => ({ user: { id: userId, is_anonymous: anonymous } });
-  return { repo: createMenuEditorRepository(client, getSession), tables, calls, writes,
-    fail(table) { failTable = table; }, switchDuringPermission() { switchDuringPermission = true; }, switchAfterInsert() { switchAfterInsert = true; } };
+  return { repo: createMenuEditorRepository(client, getSession), tables, calls, writes, uploads,
+    fail(table) { failTable = table; }, switchDuringPermission() { switchDuringPermission = true; }, switchAfterInsert() { switchAfterInsert = true; }, switchAfterUpload() { switchAfterUpload = true; }, failUpload() { uploadError = true; } };
 }
 test("Validation rejects invalid prices and unsafe image URLs; editable fields are allowlisted", () => {
   for (const price of ["", -1, "NaN", "1e3", "3.999", 100000.01]) assert.throws(() => validateMenuOption({ label: "Small", price, active: true }));
@@ -89,6 +92,7 @@ test("A failed initial price leaves an unavailable draft; retry does not duplica
   const h = harness(); h.fail("menu_catalog_variants");
   await assert.rejects(h.repo.createProduct("new-item", product, { label: "Regular", price: 75 }));
   assert.equal(h.tables.menu_catalog.find(p => p.id === "new-item").active, false);
+  assert.equal(h.tables.menu_catalog.find(p => p.id === "new-item").published, false);
   h.fail(null); await h.repo.createProduct("new-item", product, { label: "Regular", price: 75 });
   assert.equal(h.tables.menu_catalog.filter(p => p.id === "new-item").length, 1); assert.equal(h.tables.menu_catalog_variants.filter(v => v.product_id === "new-item").length, 1);
 });
@@ -108,4 +112,46 @@ test("Extra prices and availability save independently; repeated new-option requ
   const saved = await h.repo.addOption("addons", product.id, "new-extra", { ...draft, price: 25, active: false });
   assert.equal(h.tables.menu_catalog_addons.length, 1); assert.equal(saved.price, 25); assert.equal(saved.active, false);
   assert.equal(h.tables.menu_catalog_variants[0].price, 39);
+});
+
+const photo = () => new Blob([new Uint8Array([255, 216, 255, 224, 0, 0, 0, 0, 0, 0, 0, 0])], { type: "image/jpeg" });
+test("Photo upload rejects empty, oversized, SVG and disguised non-image files", async () => {
+  for (const file of [new Blob([], { type: "image/jpeg" }), { type: "image/png", size: 5242881 }, new Blob(["<svg/>"], { type: "image/svg+xml" }), new Blob(["<script>bad</script>"], { type: "image/jpeg" })]) {
+    const h = harness(); await assert.rejects(h.repo.uploadPhoto(file)); assert.equal(h.uploads.length, 0);
+  }
+  assert.equal((await validateMenuPhoto(photo())).extension, "jpg");
+});
+test("Only a non-anonymous manager can upload a menu photo", async () => {
+  for (const settings of [{ anonymous: true }, { permission: false }]) { const h = harness(settings); await assert.rejects(h.repo.uploadPhoto(photo())); assert.equal(h.uploads.length, 0); }
+});
+test("Photos use a fresh owned path with no overwrite; the product changes only when saved", async () => {
+  const h = harness(), url = await h.repo.uploadPhoto(photo());
+  const upload = h.uploads[0];
+  assert.equal(upload.bucket, "menu-photos"); assert.match(upload.path, /^menu\/manager-a\/[0-9a-f-]{36}\.jpg$/);
+  assert.equal(upload.options.upsert, false); assert.equal(upload.options.contentType, "image/jpeg"); assert.equal(url, "https://photos.test/" + upload.path);
+  assert.equal(h.writes.length, 0); assert.equal(h.tables.menu_catalog[0].image_url, null);
+});
+test("Upload errors and account changes cannot apply a photo URL to a product", async () => {
+  const h = harness(); h.failUpload(); await assert.rejects(h.repo.uploadPhoto(photo()), /quota/); assert.equal(h.writes.length, 0);
+  const switched = harness(); switched.switchAfterUpload(); await assert.rejects(switched.repo.uploadPhoto(photo()), /account changed/); assert.equal(switched.writes.length, 0);
+});
+test("Publishing and availability are independent: unavailable items can stay visible", async () => {
+  const h = harness();
+  const saved = await h.repo.saveProduct(product, { ...product, published: true, active: false });
+  assert.equal(saved.published, true); assert.equal(saved.active, false); assert.equal(menuItemAvailable({ ...saved, menu_catalog_variants: [option] }), false);
+});
+test("Delete hides an item without deleting its prices, extras or order history; Restore leaves ordering disabled", async () => {
+  const h = harness();
+  const deleted = await h.repo.deleteProduct(product);
+  assert.ok(deleted.deleted_at); assert.equal(deleted.active, false); assert.equal(deleted.published, false);
+  assert.equal(h.tables.menu_catalog.length, 1); assert.equal(h.tables.menu_catalog_variants.length, 1); assert.equal(h.tables.orders[0].total_price, 39);
+  await assert.rejects(h.repo.saveProduct(deleted, deleted), /Restore/);
+  const restored = await h.repo.restoreProduct({ ...deleted, menu_catalog_variants: [option] });
+  assert.equal(restored.deleted_at, null); assert.equal(restored.published, true); assert.equal(restored.active, false);
+  assert.ok(h.calls.every(call => call.table !== "orders"));
+});
+test("Delete requires manager permission and a current version", async () => {
+  const denied = harness({ permission: false }); await assert.rejects(denied.repo.deleteProduct(product)); assert.equal(denied.writes.length, 0);
+  const changed = harness(); changed.tables.menu_catalog[0].updated_at = "changed";
+  await assert.rejects(changed.repo.deleteProduct(product), /changed on another device/); assert.equal(changed.writes.length, 0);
 });

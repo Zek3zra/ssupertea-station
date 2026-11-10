@@ -164,6 +164,9 @@ html, body, body.staff-page { background: #fff; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .product-card:hover { transform: none; } }
 
 /* Matching staff navigation, with a compact two-button mode switch. */
+.product-card.is-unavailable .product-visual { filter: grayscale(1); opacity: .75; }
+.product-card.is-unavailable .unavailable-badge { display: inline-flex; background: #333; color: #fff; }
+.product-card.is-unavailable .customize-button { border-color: #ddd; background: #eee; color: #777; cursor: not-allowed; }
 body.staff-page { --staff-header-height: 110px; }
 .staff-page .staff-topbar { position: sticky; top: 0; z-index: 80; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 44px 38px; align-items: center; gap: 8px 12px; height: calc(var(--staff-header-height) + env(safe-area-inset-top)); min-height: 0; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; }
 .staff-page .staff-topbar .staff-brand { grid-row: 1; grid-column: 1; min-width: 0; gap: 9px; }

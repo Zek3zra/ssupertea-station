@@ -1,11 +1,11 @@
 import { customerSupabase, getVerifiedAccountSession } from "/js/supabase-config.js";
-import { catalogIcon } from "/js/catalog.js";
+import { catalogIcon, safeImageUrl } from "/js/catalog.js";
 import { bindSheetDismiss } from "/js/sheet-dismiss.js";
 import { createMenuEditorRepository, menuItemAvailable } from "/js/menu-editor-data.js";
 
 const repository = createMenuEditorRepository(customerSupabase, getVerifiedAccountSession);
 const money = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
-const state = { products: [], loaded: false, loading: false, busy: false, userId: null, revision: 0, loadSequence: 0, selectedId: null, newId: null, dirtyForms: new Set() };
+const state = { products: [], loaded: false, loading: false, busy: false, userId: null, revision: 0, loadSequence: 0, selectedId: null, newId: null, deleteId: null, dirtyForms: new Set() };
 const el = {};
 const $ = id => document.getElementById(id);
 const optionKey = kind => kind === "variants" ? "menu_catalog_variants" : "menu_catalog_addons";
@@ -28,11 +28,12 @@ function setBusy(value) {
   el.add.disabled = value || state.loading || !state.loaded;
   el.refresh.disabled = value || state.loading;
   for (const control of el.list.querySelectorAll("button")) control.disabled = value;
+  $("menu-delete-confirm").disabled = value; $("menu-delete-cancel").disabled = value;
 }
 function productValues(form) {
   const values = {};
   for (const name of ["name", "category", "description", "icon", "image_url", "variant_label", "sort_order"]) values[name] = form.elements.namedItem(name).value;
-  for (const name of ["active", "featured", "customizable"]) values[name] = form.elements.namedItem(name).checked;
+  for (const name of ["active", "published", "featured", "customizable"]) values[name] = form.elements.namedItem(name).checked;
   return values;
 }
 function optionValues(form) {
@@ -65,17 +66,22 @@ async function loadMenu() {
 function renderList() {
   const query = el.search.value.trim().toLocaleLowerCase("en-PH"), filter = el.filter.value;
   const products = state.products.filter(product =>
+    (filter === "deleted" ? Boolean(product.deleted_at) : !product.deleted_at) &&
     (!query || `${product.name} ${product.category}`.toLocaleLowerCase("en-PH").includes(query)) &&
-    (filter === "all" || menuItemAvailable(product) === (filter === "available")));
-  el.count.textContent = `${products.length} of ${state.products.length} items`;
+    (filter === "all" || filter === "deleted" || (filter === "hidden" ? product.published === false : menuItemAvailable(product) === (filter === "available")))).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || String(a.id).localeCompare(String(b.id)));
+  el.count.textContent = `${products.length} of ${state.products.filter(product => filter === "deleted" ? product.deleted_at : !product.deleted_at).length} items`;
   el.list.replaceChildren();
   for (const product of products) {
     const card = element("article", "menu-manager-card"), available = menuItemAvailable(product);
     const icon = element("span", "menu-manager-icon");
     icon.setAttribute("aria-hidden", "true"); icon.innerHTML = catalogIcon(product.icon);
+    if (safeImageUrl(product.image_url)) {
+      const photo = element("img"); photo.src = safeImageUrl(product.image_url); photo.alt = ""; photo.loading = "lazy";
+      photo.addEventListener("error", () => photo.remove()); icon.append(photo);
+    }
     const heading = element("div", "menu-manager-card-heading");
     heading.append(element("span", "menu-manager-category", product.category), element("h2", "", product.name));
-    const badge = element("span", "menu-availability", available ? "Available" : "Unavailable");
+    const badge = element("span", "menu-availability", product.deleted_at ? "Deleted" : product.published === false ? "Hidden draft" : available ? "Available" : "Unavailable");
     badge.dataset.available = String(available);
     const top = element("div", "menu-manager-card-top"); top.append(icon, heading, badge);
     const variants = (product.menu_catalog_variants || []).filter(option => option.active);
@@ -87,21 +93,28 @@ function renderList() {
     const toggle = element("button", "menu-availability-toggle", product.active ? "Mark unavailable" : "Make available");
     toggle.type = "button"; toggle.dataset.toggleMenuItem = product.id;
     toggle.setAttribute("aria-label", `${product.active ? "Mark unavailable" : "Make available"}: ${product.name}`);
-    actions.append(edit, toggle); card.append(top, copy, actions); el.list.append(card);
+    const remove = element("button", "menu-text-button menu-delete-button", "Delete"); remove.type = "button"; remove.dataset.deleteMenuItem = product.id; remove.setAttribute("aria-label", `Delete ${product.name}`);
+    if (product.deleted_at) {
+      const restore = element("button", "menu-secondary-button", "Restore item"); restore.type = "button"; restore.dataset.restoreMenuItem = product.id; actions.append(restore);
+    } else actions.append(edit, toggle, remove);
+    card.append(top, copy, actions); el.list.append(card);
   }
   if (!products.length) el.list.append(element("p", "menu-manager-empty", "No menu items match these filters."));
   const categories = [...new Set(state.products.map(product => product.category))].sort();
   el.categories.replaceChildren(...categories.map(category => { const option = element("option"); option.value = category; return option; }));
 }
 function openEditor(product = null) {
-  if (state.busy || !state.userId) return;
+  if (state.busy || !state.userId || product?.deleted_at) return;
   state.selectedId = product?.id || null;
   state.newId = product ? null : `item-${crypto.randomUUID()}`;
   state.dirtyForms.clear();
   el.productForm.reset();
-  const values = product || { name: "", category: "", description: "", icon: "cup", image_url: "", variant_label: "Serving", active: true, featured: false, customizable: false, sort_order: state.products.length ? Math.min(2147483647, Math.max(...state.products.map(row => row.sort_order || 0)) + 1) : 0 };
+  const values = product || { name: "", category: "", description: "", icon: "cup", image_url: "", variant_label: "Serving", active: true, published: true, featured: false, customizable: false, sort_order: state.products.length ? Math.min(2147483647, Math.max(...state.products.map(row => row.sort_order || 0)) + 1) : 0 };
   for (const name of ["name", "category", "description", "icon", "image_url", "variant_label", "sort_order"]) el.productForm.elements.namedItem(name).value = values[name] ?? "";
   for (const name of ["active", "featured", "customizable"]) el.productForm.elements.namedItem(name).checked = values[name] === true;
+  el.productForm.elements.namedItem("published").checked = values.published !== false;
+  showPhotoPreview(values.image_url);
+  $("menu-photo-status").textContent = "";
   el.title.textContent = product ? product.name : "Add menu item";
   el.initial.hidden = Boolean(product); el.options.hidden = !product;
   $("menu-item-details").open = !product;
@@ -148,6 +161,29 @@ function closeEditor(force = false) {
   if (el.dialog.open) el.dialog.close();
   state.selectedId = null; state.newId = null;
 }
+function showPhotoPreview(value) {
+  const preview = $("menu-photo-preview"), url = safeImageUrl(value);
+  $("menu-photo-placeholder").textContent = "No photo · the menu uses its icon";
+  preview.hidden = !url; $("menu-photo-placeholder").hidden = Boolean(url);
+  if (url) preview.src = url; else preview.removeAttribute("src");
+  $("menu-photo-remove").hidden = !url;
+}
+async function uploadPhoto(file) {
+  if (!file || state.busy || !state.userId) return;
+  const revision = state.revision;
+  setBusy(true); $("menu-photo-status").textContent = "Uploading photo…";
+  try {
+    const url = await repository.uploadPhoto(file);
+    if (revision !== state.revision) return;
+    el.productForm.elements.namedItem("image_url").value = url;
+    state.dirtyForms.add(el.productForm); showPhotoPreview(url);
+    $("menu-photo-status").textContent = "Photo uploaded. Save item details to use it on the menu.";
+  } catch (error) {
+    if (revision === state.revision) $("menu-photo-status").textContent = error.message || "Photo upload failed. Try again.";
+  } finally {
+    if (revision === state.revision) { $("menu-photo-file").value = ""; setBusy(false); }
+  }
+}
 async function saveForm(form) {
   if (state.busy || !state.userId) return;
   const revision = state.revision;
@@ -189,6 +225,20 @@ async function toggleAvailability(id) {
   } catch (error) { if (revision === state.revision) status(error.message, true); }
   finally { if (revision === state.revision) setBusy(false); }
 }
+async function deleteOrRestore(restore = false) {
+  const product = state.products.find(row => row.id === state.deleteId);
+  if (!product || state.busy) return;
+  const revision = state.revision;
+  setBusy(true);
+  try {
+    const saved = restore ? await repository.restoreProduct(product) : await repository.deleteProduct(product);
+    if (revision !== state.revision) return;
+    Object.assign(product, saved); $("menu-delete-dialog").close(); state.deleteId = null;
+    renderList(); status(restore ? `${product.name} restored. It remains unavailable until you enable ordering.` : `${product.name} deleted from the menu. Existing orders are kept.`);
+  } catch (error) {
+    if (revision === state.revision) { $("menu-delete-dialog").close(); state.deleteId = null; status(error.message, true); }
+  } finally { if (revision === state.revision) setBusy(false); }
+}
 function initialize() {
   Object.assign(el, { orders: $("admin-orders-view"), manager: $("menu-manager"), menuButton: $("admin-show-menu"), ordersButton: $("admin-show-orders"), add: $("menu-add-item"), refresh: $("menu-editor-refresh"), search: $("menu-editor-search"), filter: $("menu-editor-filter"), status: $("menu-editor-status"), count: $("menu-editor-count"), list: $("menu-editor-list"), dialog: $("menu-editor-dialog"), title: $("menu-editor-title"), message: $("menu-editor-message"), productForm: $("menu-product-form"), initial: $("menu-initial-price"), options: $("menu-existing-options"), variants: $("menu-variant-rows"), addons: $("menu-addon-rows"), categories: $("menu-category-suggestions"), save: $("menu-save-item") });
   if (!el.manager) return;
@@ -196,13 +246,32 @@ function initialize() {
   el.ordersButton.addEventListener("click", () => showWorkspace(false));
   el.add.addEventListener("click", () => openEditor()); el.refresh.addEventListener("click", loadMenu);
   el.search.addEventListener("input", renderList); el.filter.addEventListener("change", renderList);
+  $("menu-photo-file").addEventListener("change", event => uploadPhoto(event.target.files[0]));
+  $("menu-photo-remove").addEventListener("click", () => {
+    el.productForm.elements.namedItem("image_url").value = ""; state.dirtyForms.add(el.productForm); showPhotoPreview("");
+    $("menu-photo-status").textContent = "Save item details to remove the photo from this item.";
+  });
+  el.productForm.elements.namedItem("image_url").addEventListener("change", event => showPhotoPreview(event.target.value));
+  $("menu-photo-preview").addEventListener("error", () => {
+    $("menu-photo-preview").hidden = true; $("menu-photo-placeholder").hidden = false;
+    $("menu-photo-placeholder").textContent = "Photo preview unavailable · check the file or URL";
+  });
   el.list.addEventListener("click", event => {
-    const edit = event.target.closest("[data-edit-menu-item]"), toggle = event.target.closest("[data-toggle-menu-item]");
+    const edit = event.target.closest("[data-edit-menu-item]"), toggle = event.target.closest("[data-toggle-menu-item]"), remove = event.target.closest("[data-delete-menu-item]"), restore = event.target.closest("[data-restore-menu-item]");
     if (edit) openEditor(state.products.find(product => product.id === edit.dataset.editMenuItem));
     else if (toggle) toggleAvailability(toggle.dataset.toggleMenuItem);
+    else if (remove && !state.busy) {
+      state.deleteId = remove.dataset.deleteMenuItem;
+      const product = state.products.find(row => row.id === state.deleteId);
+      $("menu-delete-copy").textContent = `Remove ${product.name} from the customer menu?`;
+      $("menu-delete-dialog").showModal(); $("menu-delete-cancel").focus();
+    } else if (restore && !state.busy) { state.deleteId = restore.dataset.restoreMenuItem; deleteOrRestore(true); }
   });
+  $("menu-delete-cancel").addEventListener("click", () => { $("menu-delete-dialog").close(); state.deleteId = null; });
+  $("menu-delete-confirm").addEventListener("click", () => deleteOrRestore(false));
+  $("menu-delete-dialog").addEventListener("cancel", event => { if (state.busy) event.preventDefault(); });
   el.dialog.addEventListener("submit", event => { event.preventDefault(); saveForm(event.target); });
-  for (const name of ["input", "change"]) el.dialog.addEventListener(name, event => { const form = event.target.closest("form"); if (form) state.dirtyForms.add(form); });
+  for (const name of ["input", "change"]) el.dialog.addEventListener(name, event => { const form = event.target.closest("form"); if (form && event.target.id !== "menu-photo-file") state.dirtyForms.add(form); });
   el.dialog.addEventListener("click", event => {
     const add = event.target.closest("[data-add-menu-option]");
     if (add && !state.busy) appendOptionForm(add.dataset.addMenuOption);
@@ -214,10 +283,10 @@ function initialize() {
   $("menu-editor-done").addEventListener("click", () => closeEditor());
   bindSheetDismiss(el.dialog, () => closeEditor());
   function clear() {
-    state.revision++; state.loadSequence++; closeEditor(true);
+    state.revision++; state.loadSequence++; closeEditor(true); $("menu-delete-dialog").close(); state.deleteId = null;
     state.products = []; state.userId = null; state.loaded = false; state.loading = false; state.busy = false;
     el.list.replaceChildren(); el.count.textContent = ""; el.productForm.reset(); el.variants.replaceChildren(); el.addons.replaceChildren();
-    el.message.textContent = ""; el.add.disabled = true; el.refresh.disabled = false;
+    el.message.textContent = ""; showPhotoPreview(""); $("menu-photo-status").textContent = ""; el.add.disabled = true; el.refresh.disabled = false;
     status("Sign in with an authorized staff account to edit the menu.");
   }
   customerSupabase.auth?.onAuthStateChange((_event, session) => { if (state.userId && session?.user?.id !== state.userId) clear(); });

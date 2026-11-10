@@ -58,6 +58,10 @@
 .menu-checkboxes { display: grid; gap: 12px; padding: 8px 0; }
 .menu-editor-dialog .menu-checkboxes label, .menu-editor-dialog .menu-option-available { display: flex; align-items: center; gap: 9px; }
 .menu-editor-dialog input[type=checkbox] { width: 19px; height: 19px; accent-color: #171717; }
+.menu-item-availability { margin-top: 18px; padding: 16px; border: 1px solid #ddd; border-radius: 10px; background: #fafafa; }
+.menu-editor-dialog .menu-item-availability-toggle { display: flex; align-items: center; gap: 10px; min-height: 32px; font-weight: 700; color: #171717; }
+.menu-item-availability p { margin-top: 8px; font-size: .73rem; line-height: 1.5; color: #666; }
+.menu-option-form[data-available="false"] .menu-option-availability-text { color: #737373; }
 .menu-initial-price { display: grid; gap: 12px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; }
 .menu-initial-price legend { padding-inline: 4px; font-size: .8rem; font-weight: 650; }
 .menu-options-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee; }

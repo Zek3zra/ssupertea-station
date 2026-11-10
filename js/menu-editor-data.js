@@ -44,6 +44,20 @@ export function validateMenuOption(input) {
 export function menuItemAvailable(product) {
   return !product.deleted_at && product.active === true && product.published !== false && Boolean(product.menu_catalog_variants?.some(option => option.active === true));
 }
+// Availability is a separate draft: saving a price must not commit a checkbox.
+export function createMenuAvailabilityDraft(product) {
+  return { active: product.active === true, ...Object.fromEntries(Object.entries(TABLES).map(([kind, table]) =>
+    [kind, Object.fromEntries((product[table] || []).map(option => [option.id, option.active === true]))])) };
+}
+export function menuAvailabilityChanges(product, draft) {
+  const changes = [];
+  for (const [kind, table] of Object.entries(TABLES)) for (const option of product[table] || []) {
+    const active = draft[kind][option.id];
+    if (typeof active !== "boolean") throw new Error("Reopen the item before changing availability.");
+    if (active !== option.active) changes.push({ kind, id: option.id, active, expected_updated_at: option.updated_at });
+  }
+  return { active: draft.active, changes, pending: draft.active !== product.active || changes.length > 0 };
+}
 export const MENU_PHOTO_BUCKET = "menu-photos";
 export const MENU_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 export async function validateMenuPhoto(file) {
@@ -69,7 +83,7 @@ export function createMenuEditorRepository(client, getSession) {
     return session.user.id;
   }
   async function result(query) {
-    const { data, error } = await query.abortSignal(AbortSignal.timeout(15000));
+    const { data, error } = await (query.abortSignal ? query.abortSignal(AbortSignal.timeout(15000)) : query);
     if (error) throw Object.assign(new Error(error.message || "The menu could not be saved."), { code: error.code });
     return data;
   }
@@ -91,6 +105,22 @@ export function createMenuEditorRepository(client, getSession) {
     return result(client.from(TABLES.variants).insert({ ...option, product_id: productId, id: "regular" }).select(OPTION_COLUMNS).single());
   }
   return {
+    async saveAvailability(product, draft) {
+      identifier(product.id);
+      if (product.deleted_at) throw new Error("Restore this deleted item before editing it.");
+      if (!product.updated_at) throw new Error("Refresh the menu before saving this record.");
+      const { active, changes, pending } = menuAvailabilityChanges(product, draft);
+      if (typeof active !== "boolean") throw new Error("Choose the item's availability.");
+      if (active && !(product.menu_catalog_variants || []).some(option => draft.variants[option.id] === true)) throw new Error("Select an available size or serving before making this item available.");
+      for (const change of changes) { identifier(change.id, 80); if (!change.expected_updated_at) throw new Error("Refresh the menu before saving this record."); }
+      const userId = await manager();
+      if (!pending) return product;
+      await sameAccount(userId);
+      const saved = await result(client.rpc("save_menu_availability", { p_product_id: product.id, p_expected_updated_at: product.updated_at, p_active: active, p_changes: changes }));
+      await sameAccount(userId);
+      if (!saved?.id) throw new Error("Availability could not be confirmed. Refresh the menu to check it.");
+      return saved;
+    },
     async uploadPhoto(file) {
       const { extension, contentType } = await validateMenuPhoto(file), userId = await manager();
       const path = `menu/${userId}/${crypto.randomUUID()}.${extension}`;

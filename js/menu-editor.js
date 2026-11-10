@@ -1,11 +1,11 @@
 import { customerSupabase, getVerifiedAccountSession } from "/js/supabase-config.js";
 import { catalogIcon, safeImageUrl } from "/js/catalog.js";
 import { bindSheetDismiss } from "/js/sheet-dismiss.js";
-import { createMenuEditorRepository, menuItemAvailable } from "/js/menu-editor-data.js";
+import { createMenuEditorRepository, menuItemAvailable, createMenuAvailabilityDraft, menuAvailabilityChanges } from "/js/menu-editor-data.js";
 
 const repository = createMenuEditorRepository(customerSupabase, getVerifiedAccountSession);
 const money = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
-const state = { products: [], loaded: false, loading: false, busy: false, userId: null, revision: 0, loadSequence: 0, selectedId: null, newId: null, deleteId: null, dirtyForms: new Set() };
+const state = { products: [], loaded: false, loading: false, busy: false, userId: null, revision: 0, loadSequence: 0, selectedId: null, newId: null, deleteId: null, availability: null, dirtyForms: new Set() };
 const el = {};
 const $ = id => document.getElementById(id);
 const optionKey = kind => kind === "variants" ? "menu_catalog_variants" : "menu_catalog_addons";
@@ -33,7 +33,8 @@ function setBusy(value) {
 function productValues(form) {
   const values = {};
   for (const name of ["name", "category", "description", "icon", "image_url", "variant_label", "sort_order"]) values[name] = form.elements.namedItem(name).value;
-  for (const name of ["active", "published", "featured", "customizable"]) values[name] = form.elements.namedItem(name).checked;
+  for (const name of ["published", "featured", "customizable"]) values[name] = form.elements.namedItem(name).checked;
+  values.active = $("menu-item-available").checked;
   return values;
 }
 function optionValues(form) {
@@ -111,7 +112,9 @@ function openEditor(product = null) {
   el.productForm.reset();
   const values = product || { name: "", category: "", description: "", icon: "cup", image_url: "", variant_label: "Serving", active: true, published: true, featured: false, customizable: false, sort_order: state.products.length ? Math.min(2147483647, Math.max(...state.products.map(row => row.sort_order || 0)) + 1) : 0 };
   for (const name of ["name", "category", "description", "icon", "image_url", "variant_label", "sort_order"]) el.productForm.elements.namedItem(name).value = values[name] ?? "";
-  for (const name of ["active", "featured", "customizable"]) el.productForm.elements.namedItem(name).checked = values[name] === true;
+  for (const name of ["featured", "customizable"]) el.productForm.elements.namedItem(name).checked = values[name] === true;
+  state.availability = createMenuAvailabilityDraft(values);
+  $("menu-item-available").checked = state.availability.active;
   el.productForm.elements.namedItem("published").checked = values.published !== false;
   showPhotoPreview(values.image_url);
   $("menu-photo-status").textContent = "";
@@ -127,6 +130,7 @@ function openEditor(product = null) {
   if (product) for (const kind of ["variants", "addons"]) {
     for (const option of [...(product[optionKey(kind)] || [])].sort((a, b) => a.sort_order - b.sort_order)) appendOptionForm(kind, option);
   }
+  refreshAvailability();
   if (!el.dialog.open) el.dialog.showModal();
 }
 function appendOptionForm(kind, option = null) {
@@ -144,7 +148,7 @@ function appendOptionForm(kind, option = null) {
   }
   const toggleLabel = element("label", "menu-option-available"), checkbox = element("input");
   checkbox.type = "checkbox"; checkbox.name = "active"; checkbox.checked = option ? option.active : true;
-  toggleLabel.append(checkbox, document.createTextNode("Available"));
+  toggleLabel.append(checkbox, element("span", "menu-option-availability-text", checkbox.checked ? "Available" : "Unavailable"));
   const button = element("button", "menu-secondary-button", option ? "Save" : kind === "variants" ? "Add option" : "Add extra"); button.type = "submit";
   const controls = element("div", "menu-option-controls"); controls.append(toggleLabel, button);
   if (!option) {
@@ -153,13 +157,44 @@ function appendOptionForm(kind, option = null) {
   }
   form.append(input(kind === "variants" ? "Size / serving / choice" : "Extra name", "label", "text", option?.label || ""), input("Price (₱)", "price", "number", option?.price ?? ""), controls);
   el[kind].append(form);
-  if (!option) form.elements.namedItem("label").focus();
+  if (!option) { state.dirtyForms.add(form); form.elements.namedItem("label").focus(); }
+}
+function availabilityPending() {
+  const product = selectedProduct();
+  return Boolean(product && state.availability && menuAvailabilityChanges(product, state.availability).pending);
+}
+function refreshAvailability() {
+  const active = $("menu-item-available").checked;
+  $("menu-item-availability-label").textContent = active ? "Item available" : "Item unavailable";
+  $("menu-item-availability-hint").textContent = active ? "Turn off to pause all sizes and extras at once." : "The whole item is paused. Your individual size and extra choices are kept.";
+  for (const form of el.options.querySelectorAll(".menu-option-form")) {
+    const checked = form.elements.namedItem("active").checked;
+    form.querySelector(".menu-option-availability-text").textContent = checked ? "Available" : "Unavailable";
+    form.dataset.available = String(checked);
+  }
+  $("menu-availability-pending").textContent = availabilityPending() ? "Availability changed · tap Done to save." : "Availability changes are saved when you tap Done.";
 }
 function closeEditor(force = false) {
-  if (!force && (state.busy || (state.dirtyForms.size && !window.confirm("Discard unsaved menu changes?")))) return;
+  if (!force && (state.busy || ((state.dirtyForms.size || availabilityPending()) && !window.confirm("Discard unsaved menu changes?")))) return;
   state.dirtyForms.clear();
   if (el.dialog.open) el.dialog.close();
-  state.selectedId = null; state.newId = null;
+  state.selectedId = null; state.newId = null; state.availability = null;
+}
+async function finishEditor() {
+  if (state.busy || !state.userId) return;
+  const pending = availabilityPending();
+  if (state.dirtyForms.size && !window.confirm(pending ? "Save availability changes and discard unsaved price or item-detail edits? Use Save first if you want to keep those edits." : "Discard unsaved price or item-detail edits and close? Use Save first if you want to keep them.")) return;
+  if (!pending) { closeEditor(true); return; }
+  const product = selectedProduct(), revision = state.revision;
+  setBusy(true); status("Saving availability…", false, true);
+  try {
+    const saved = await repository.saveAvailability(product, state.availability);
+    if (revision !== state.revision) return;
+    Object.assign(product, saved); renderList(); closeEditor(true);
+    status(`${product.name}: availability saved.`);
+  } catch (error) {
+    if (revision === state.revision) status(error.message || "Availability could not be saved. Your choices are still here; try Done again.", true, true);
+  } finally { if (revision === state.revision) setBusy(false); }
 }
 function showPhotoPreview(value) {
   const preview = $("menu-photo-preview"), url = safeImageUrl(value);
@@ -191,21 +226,21 @@ async function saveForm(form) {
   try {
     if (form === el.productForm) {
       const product = selectedProduct(), values = productValues(form);
-      const saved = product ? await repository.saveProduct(product, values) : await repository.createProduct(state.newId, values, { label: form.elements.namedItem("initial_label").value, price: form.elements.namedItem("initial_price").value });
+      const saved = product ? await repository.saveProduct(product, { ...values, active: product.active }) : await repository.createProduct(state.newId, values, { label: form.elements.namedItem("initial_label").value, price: form.elements.namedItem("initial_price").value });
       if (revision !== state.revision) return;
       if (product) { Object.assign(product, saved); state.dirtyForms.delete(form); el.title.textContent = saved.name; }
       else { state.products.push(saved); setBusy(false); openEditor(saved); }
-      renderList(); status("Item details saved.", false, true);
+      renderList(); refreshAvailability(); status("Item details saved.", false, true);
     } else {
       const product = selectedProduct(), kind = form.dataset.kind, options = product[optionKey(kind)] || [];
       const existing = options.find(option => option.id === form.dataset.optionId), input = optionValues(form);
-      const saved = existing ? await repository.saveOption(kind, product.id, existing, input) : await repository.addOption(kind, product.id, form.dataset.optionId, input);
+      const saved = existing ? await repository.saveOption(kind, product.id, existing, { ...input, active: existing.active }) : await repository.addOption(kind, product.id, form.dataset.optionId, input);
       if (revision !== state.revision) return;
-      if (existing) Object.assign(existing, saved); else options.push(saved);
+      if (existing) Object.assign(existing, saved); else { options.push(saved); state.availability[kind][saved.id] = saved.active; }
       product[optionKey(kind)] = options; form.dataset.newOption = "false";
       form.querySelector("button[type=submit]").textContent = "Save";
       form.querySelector(".menu-text-button")?.remove();
-      state.dirtyForms.delete(form); renderList(); status("Price option saved.", false, true);
+      state.dirtyForms.delete(form); renderList(); refreshAvailability(); status("Price option saved.", false, true);
     }
   } catch (error) {
     if (revision === state.revision) status(`${error.message || "Save failed."}${state.newId ? " If a draft was saved, it stays unavailable until its price is ready. Refresh the menu to check it." : ""}`, true, true);
@@ -271,7 +306,24 @@ function initialize() {
   $("menu-delete-confirm").addEventListener("click", () => deleteOrRestore(false));
   $("menu-delete-dialog").addEventListener("cancel", event => { if (state.busy) event.preventDefault(); });
   el.dialog.addEventListener("submit", event => { event.preventDefault(); saveForm(event.target); });
-  for (const name of ["input", "change"]) el.dialog.addEventListener(name, event => { const form = event.target.closest("form"); if (form && event.target.id !== "menu-photo-file") state.dirtyForms.add(form); });
+  for (const name of ["input", "change"]) el.dialog.addEventListener(name, event => {
+    const target = event.target, form = target.closest("form");
+    if (target.id === "menu-item-available") {
+      state.availability.active = target.checked;
+      if (!selectedProduct()) state.dirtyForms.add(el.productForm);
+      refreshAvailability(); return;
+    }
+    if (target.name === "active" && form?.dataset.kind) {
+      if (form.dataset.newOption === "false") {
+        state.availability[form.dataset.kind][form.dataset.optionId] = target.checked;
+        if (form.dataset.kind === "variants" && !Object.values(state.availability.variants).some(Boolean)) {
+          state.availability.active = false; $("menu-item-available").checked = false;
+        }
+      } else state.dirtyForms.add(form);
+      refreshAvailability(); return;
+    }
+    if (form && target.id !== "menu-photo-file") state.dirtyForms.add(form);
+  });
   el.dialog.addEventListener("click", event => {
     const add = event.target.closest("[data-add-menu-option]");
     if (add && !state.busy) appendOptionForm(add.dataset.addMenuOption);
@@ -280,7 +332,7 @@ function initialize() {
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeEditor();
   });
   el.dialog.addEventListener("cancel", event => { event.preventDefault(); closeEditor(); });
-  $("menu-editor-done").addEventListener("click", () => closeEditor());
+  $("menu-editor-done").addEventListener("click", finishEditor);
   bindSheetDismiss(el.dialog, () => closeEditor());
   function clear() {
     state.revision++; state.loadSequence++; closeEditor(true); $("menu-delete-dialog").close(); state.deleteId = null;

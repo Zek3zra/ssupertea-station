@@ -222,10 +222,15 @@
         <header class="menu-editor-dialog-header sheet-drag-region">
           <span class="menu-editor-handle" aria-hidden="true"></span>
           <h2 id="menu-editor-title">Edit item</h2>
-          <p>Save changes using the button in each section.</p>
+          <p>Tap Done to save availability. Use Save for price and item details.</p>
         </header>
         <div class="menu-editor-dialog-body">
           <p id="menu-editor-message" class="menu-editor-status" role="status" aria-live="polite"></p>
+          <div class="menu-item-availability">
+            <label class="menu-item-availability-toggle"><input id="menu-item-available" type="checkbox" aria-describedby="menu-item-availability-hint"><span id="menu-item-availability-label">Item available</span></label>
+            <p id="menu-item-availability-hint">Turn off to pause all sizes and extras at once.</p>
+            <p id="menu-availability-pending" role="status" aria-live="polite">Availability changes are saved when you tap Done.</p>
+          </div>
           <div id="menu-existing-options">
             <section class="menu-options-section"><header><div><h3>Sizes &amp; price options</h3><p>A single price uses its serving automatically.</p></div><button class="menu-secondary-button" type="button" data-add-menu-option="variants">Add option</button></header><div id="menu-variant-rows"></div></section>
             <section class="menu-options-section"><header><div><h3>Extras</h3><p>Optional add-ons, such as extra egg or rice.</p></div><button class="menu-secondary-button" type="button" data-add-menu-option="addons">Add extra</button></header><div id="menu-addon-rows"></div></section>
@@ -247,7 +252,6 @@
             </div>
             <label>Display order <span class="menu-field-hint">Lower numbers appear first: 1, 2, 3…</span><input name="sort_order" type="number" min="0" max="2147483647" step="1" required></label>
             <div class="menu-wide-field menu-checkboxes">
-              <label><input name="active" type="checkbox"> Available to order</label>
               <label><input name="published" type="checkbox"> Show on customer menu</label>
               <p class="menu-field-hint">Unavailable items stay visible but cannot be ordered. Uncheck Show on customer menu to hide a draft.</p>
               <label><input name="featured" type="checkbox"> Featured item</label>

@@ -46,44 +46,50 @@
           </p>
         </div>
 
-        <div class="rider-live-panel">
-          <div class="rider-live-line">
-            <span class="rider-live-dot" id="rider-live-dot" data-state="connecting" aria-hidden="true"></span>
-            <strong id="rider-live-label">Connecting live updates…</strong>
+        <details class="rider-operations">
+          <summary aria-label="Operations: refresh deliveries and manage GPS">Operations <span aria-hidden="true">⌄</span></summary>
+          <div class="rider-live-panel">
+            <div class="rider-live-line">
+              <span class="rider-live-dot" id="rider-live-dot" data-state="connecting" aria-hidden="true"></span>
+              <strong id="rider-live-label">Connecting live updates…</strong>
+            </div>
+            <small id="rider-last-updated">Waiting for first refresh</small>
+            <button class="rider-refresh-button" id="rider-refresh-button" type="button">
+              Refresh deliveries
+            </button>
           </div>
-          <small id="rider-last-updated">Waiting for first refresh</small>
-          <button class="rider-refresh-button" id="rider-refresh-button" type="button">
-            Refresh deliveries
-          </button>
-        </div>
+        </details>
       </section>
 
       <div class="rider-status-message" id="rider-status-message" data-type="loading" role="status" aria-live="polite">
         Loading assigned deliveries…
       </div>
 
-      <section class="rider-stats" aria-label="Delivery summary">
-        <article class="rider-stat-card">
-          <span>Ready to start</span>
-          <strong id="rider-stat-ready">0</strong>
-          <small>Assigned deliveries still at the shop</small>
-        </article>
-        <article class="rider-stat-card">
-          <span>Out for delivery</span>
-          <strong id="rider-stat-active">0</strong>
-          <small>Deliveries currently in progress</small>
-        </article>
+      <div class="rider-queue-toolbar">
+        <div class="rider-status-tabs" role="tablist" aria-label="Delivery status">
+          <button id="rider-tab-ready" type="button" role="tab" data-delivery-tab="ready" aria-selected="true" aria-controls="rider-panel-ready" tabindex="0">Ready to start <span id="rider-stat-ready">0</span></button>
+          <button id="rider-tab-dispatched" type="button" role="tab" data-delivery-tab="dispatched" aria-selected="false" aria-controls="rider-panel-dispatched" tabindex="-1">Out for delivery <span id="rider-stat-active">0</span></button>
+          <button id="rider-tab-completed" type="button" role="tab" data-delivery-tab="completed" aria-selected="false" aria-controls="rider-panel-completed" tabindex="-1">Completed <span id="rider-stat-completed">0</span></button>
+        </div>
+      </div>
+
+      <section class="rider-section" id="rider-panel-ready" role="tabpanel" data-delivery-panel="ready" aria-labelledby="rider-tab-ready" tabindex="0">
+        <div class="rider-section-header">
+          <h2>Ready to start</h2>
+          <p>Assigned orders at the shop. Start delivery when you leave.</p>
+        </div>
+        <div class="rider-order-list" id="rider-ready-list"></div>
       </section>
 
-      <section class="rider-section">
+      <section class="rider-section" id="rider-panel-dispatched" role="tabpanel" data-delivery-panel="dispatched" aria-labelledby="rider-tab-dispatched" tabindex="0" hidden>
         <div class="rider-section-header">
-          <h2>Assigned deliveries</h2>
-          <p>Your current deliveries. Tap the customer’s number to call.</p>
+          <h2>Out for delivery</h2>
+          <p>Orders on the way. Complete after handing them to the customer.</p>
         </div>
         <div class="rider-order-list" id="rider-assigned-list"></div>
       </section>
 
-      <section class="rider-section rider-completed-section">
+      <section class="rider-section rider-completed-section" id="rider-panel-completed" role="tabpanel" data-delivery-panel="completed" aria-labelledby="rider-tab-completed" tabindex="0" hidden>
         <div class="rider-section-header rider-recent-header">
           <div>
             <h2>Recently completed</h2>

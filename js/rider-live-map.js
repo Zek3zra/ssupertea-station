@@ -282,7 +282,7 @@ function ensurePanel() {
     <div class="rider-live-map-status" data-rider-map-status data-state="waiting" role="status" aria-live="polite">
       Waiting for your GPS location…
     </div>
-    <p class="rider-live-map-note">Location missing? Tap Enable GPS at the top. Open Google Maps for directions.</p>
+    <p class="rider-live-map-note">Location missing? Open Operations, then tap Enable GPS. Open Google Maps for directions.</p>
   `;
 
   const actions = card.querySelector(".rider-order-actions");

@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v30";
+const CACHE_VERSION = "v32";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -21,6 +21,7 @@ const APP_SHELL = [
   "/css/account.css",
   "/css/staff.css",
   "/css/admin-mobile.css",
+  "/css/menu-editor.css",
   "/css/rider.css",
   "/css/theme.css",
   "/js/catalog.js",
@@ -31,6 +32,8 @@ const APP_SHELL = [
   "/js/customer-profile.js",
   "/js/order-contact.js",
   "/js/admin.js",
+  "/js/menu-editor.js",
+  "/js/menu-editor-data.js",
   "/js/order-alert.js",
   "/js/rider.js",
   "/js/live-gps.js",
@@ -147,7 +150,11 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/js/sheet-dismiss.js" ||
     requestUrl.pathname === "/css/theme.css" ||
     requestUrl.pathname === "/css/staff.css" ||
-    requestUrl.pathname === "/css/admin-mobile.css"
+    requestUrl.pathname === "/css/admin-mobile.css" ||
+    requestUrl.pathname === "/css/rider.css" ||
+    requestUrl.pathname === "/css/menu-editor.css" ||
+    requestUrl.pathname === "/js/menu-editor.js" ||
+    requestUrl.pathname === "/js/menu-editor-data.js"
   ) {
     event.respondWith(networkFirstAsset(request));
     return;

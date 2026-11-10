@@ -12,6 +12,7 @@ class Element {
   append(...children) { this.children.push(...children.flatMap(child => child.tag === "fragment" ? child.children : [child])); }
   replaceChildren(...children) { this.children = []; this.text = ""; this.append(...children); }
   setAttribute(name, value) { this.attrs[name] = value; }
+  focus() { this.focused = true; }
   addEventListener(name, handler) { (this.listeners[name] ||= []).push(handler); }
   emit(name, event = {}) { this.listeners[name]?.forEach(handler => handler({ target: this, ...event })); }
   showModal() { this.open = true; }
@@ -21,7 +22,10 @@ class Element {
 }
 function harness(storage = new Map()) {
   const elements = new Map();
+  const deliveryTabs = ["ready", "dispatched", "completed"].map(status => { const tab = new Element("button"); tab.dataset.deliveryTab = status; return tab; });
+  const deliveryPanels = ["ready", "dispatched", "completed"].map(status => { const panel = new Element(); panel.dataset.deliveryPanel = status; return panel; });
   const document = { addEventListener() {}, createElement: tag => new Element(tag), createDocumentFragment: () => new Element("fragment"),
+    querySelectorAll: selector => selector === "[data-delivery-tab]" ? deliveryTabs : deliveryPanels,
     getElementById(id) { if (!elements.has(id)) elements.set(id, new Element(id === "rider-details-dialog" ? "dialog" : "div")); return elements.get(id); } };
   const createOrderContact = new Function("document", read("order-contact.js").replace(/^export /gm, "") + "\nreturn createOrderContact;")(document);
   const bindSheetDismiss = new Function(read("sheet-dismiss.js").replace(/^export /gm, "") + "\nreturn bindSheetDismiss;")();
@@ -33,7 +37,7 @@ function harness(storage = new Map()) {
     { from() { throw new Error("Clearing must not read or delete orders"); }, rpc() { throw new Error("History controls must not write orders"); } }, createOrderContact, bindSheetDismiss
   );
   app.cacheElements(); app.prepare(); app.bindEvents(); app.state.session = { user: { id: "rider-a" } };
-  return { ...app, elements, storage, node: id => document.getElementById(id) };
+  return { ...app, elements, storage, deliveryTabs, deliveryPanels, node: id => document.getElementById(id) };
 }
 const completed = {
   id: "completed-a", status: "completed", customer_name: "Sample customer", customer_phone: "+639171234567", order_type: "delivery",
@@ -42,6 +46,31 @@ const completed = {
   items: [{ name: "Milk Tea", quantity: 2, size_label: "Medium", sugar_label: "Less sugar", addons: [{ label: "Crushed cookies" }], unit_price: 45, line_total: 90 }]
 };
 const active = { ...completed, id: "active-a", status: "dispatched" };
+
+test("Ready, out-for-delivery and completed use separate lists and one selected panel", () => {
+  const h = harness(), ready = { ...completed, id: "ready-a", status: "preparing" };
+  h.state.orders = [ready, active, completed]; h.renderDashboard();
+  assert.equal(h.node("rider-ready-list").children[0].dataset.orderId, ready.id);
+  assert.equal(h.node("rider-assigned-list").children[0].dataset.orderId, active.id);
+  assert.equal(h.node("rider-recent-list").children[0].dataset.orderId, completed.id);
+  assert.deepEqual(h.deliveryPanels.filter(p => !p.hidden).map(p => p.dataset.deliveryPanel), ["ready"]);
+  h.deliveryTabs[1].emit("click"); h.renderDashboard();
+  assert.deepEqual(h.deliveryPanels.filter(p => !p.hidden).map(p => p.dataset.deliveryPanel), ["dispatched"]);
+  assert.equal(h.deliveryTabs[1].attrs["aria-selected"], "true");
+  assert.equal(h.node("rider-stat-ready").textContent, "1");
+  assert.equal(h.node("rider-stat-active").textContent, "1");
+  assert.equal(h.node("rider-stat-completed").textContent, "1");
+});
+
+test("Rider status tabs support keyboard navigation and preserve browser shortcuts", () => {
+  const h = harness(); let prevented = 0;
+  h.deliveryTabs[0].emit("keydown", { key: "ArrowLeft", preventDefault() { prevented++; } });
+  assert.equal(h.state.selectedDeliveryStatus, "completed"); assert.equal(h.deliveryTabs[2].focused, true);
+  h.deliveryTabs[2].emit("keydown", { key: "Home", ctrlKey: true, preventDefault() { prevented++; } });
+  assert.equal(h.state.selectedDeliveryStatus, "completed");
+  h.deliveryTabs[2].emit("keydown", { key: "Home", preventDefault() { prevented++; } });
+  assert.equal(h.state.selectedDeliveryStatus, "ready"); assert.equal(prevented, 2);
+});
 test("Completed cards stay compact with full items, address and maps only in the modal", () => {
   const h = harness(); h.state.orders = [completed, active]; h.renderDashboard();
   const card = h.node("rider-recent-list").children[0];

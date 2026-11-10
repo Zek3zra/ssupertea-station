@@ -44,18 +44,23 @@ Applied remote migrations: `official_menu_catalog`, `official_menu_catalog_nonan
 - M1–M4 include small classic milk tea only, as confirmed by the owner.
 - Conflicting opening times in the posters are not used to restrict ordering.
 
-## Future admin editing and photos
+## Admin menu editing and photos
 
 Finished orders have a **Clear finished** action for completed orders only. The separate Cancelled section has **Clear cancelled**. Each section has its own **Show cleared** action. These controls hide loaded records for the current staff account on this browser/device and persist that preference across refreshes. They never delete database records, affect active orders, or change customer history/tracking. Admin cards use an even border without a status stripe.
 
 Successful order submission clears the busy state and closes checkout before opening confirmation. Opening tracking also closes checkout and confirmation, so closing tracking returns to the store. Failed submissions keep the checkout and cart available for retry. Mobile menu descriptions display in full, and the price has spacing before “from.”
 
-The catalog is ready for an admin menu editor; the editor screen itself is the next feature. Until then, edit these tables through the Supabase dashboard:
+The local Admin page now has **Orders** and **Menu** workspaces. Order alerts continue running while Menu is open. The editor uses the signed-in staff client and existing Supabase catalog policies; no new environment variables, database migration, or secret key in browser code is needed.
 
-1. Change prices in `menu_catalog_variants.price`, matching the product and variant IDs. Refresh the customer menu to see changes. Checkout always verifies the current database price.
-2. Add a photo by setting `menu_catalog.image_url` to an HTTPS image URL. Failed image loads fall back to the existing icon.
-3. Add a menu item as inactive, add its variants and optional extras, then set the product to active. A product without any active variants is omitted from the customer menu.
-4. Hide an item or option by setting `active` to false. Existing order snapshots remain readable.
+1. In **Admin → Menu**, search by name/category and filter Available or Unavailable. Select **Edit item**. Sizes and prices appear first; change a price or its Available checkbox, then press that row's **Save**.
+2. **Add option** adds a size, serving, or combo choice. **Add extra** adds an optional extra. Save each row separately. Existing IDs stay unchanged, and historical order names/prices are never rewritten.
+3. Expand **Item details & photo** to edit the name, category, description, icon, option heading, display order, featured status, sugar/ice customization, or optional HTTPS/`/assets/` photo URL. Press **Save item details**. This version accepts an image URL; it does not upload files to Storage.
+4. **Add item** creates a product with its first serving and price. New products are initially saved as unavailable; publication happens only after the price is saved. If a step fails, an unavailable draft can remain. Refresh the editor and finish that draft rather than creating another item. Repeated requests with the same draft ID do not create duplicates.
+5. **Mark unavailable / Make available** controls the product's availability. Individual sizes and extras can also be unavailable. At least one price must be available before publishing a product. Items are hidden rather than deleted, preserving order history.
+
+Saves recheck staff permissions and account identity. Ordinary customers and anonymous accounts cannot use the editor. Updates compare `updated_at` to prevent silently overwriting another admin's changes; refresh and reapply an edit if there is a conflict. Unsaved changes prompt before the modal closes. Prices must be ₱0–₱100,000 with at most two decimal places. Customers see saved changes when they refresh the menu; checkout continues checking current Supabase availability and prices.
+
+The code is local only until committed/deployed. Saving from the real signed-in Admin editor updates the connected Supabase catalog. Automated and browser verification used isolated sample data, not live catalog writes. The separate sample-only preview runs on port 4186 and is not a production backend.
 
 The JSON in `data/menu-catalog.json` records the original poster seed. It is not a browser fallback and changing that file alone does not change the live Supabase menu. The generator scripts rebuild the initial seed/setup SQL only; they do not connect to the database or overwrite live price edits.
 
@@ -67,7 +72,7 @@ The new UI uses a separate cart storage key so the deployed demo cart is preserv
 node --test tests/*.test.cjs
 ```
 
-All 132 checks passed on 9 November 2026, including 31 new tests in `delivery-policy.test.cjs`, `delivery-route-ui.test.cjs`, and `admin-queue.test.cjs`. The Node runner reports 72 test entries: five older files are counted as one entry each and run another 65 test cases internally, giving 132 checks overall. The new tests execute the actual handlers and UI functions with isolated route-provider, authentication, and database boundaries; they do not place live delivery orders.
+All 154 checks passed on 10 November 2026, including 14 menu-editor tests for existing-product compatibility, validation, permission checks, account changes, targeted price edits, stale-update conflicts, unavailable drafts, and safe creation retries. The Node runner reports 94 entries: five older files wrap 65 cases, giving 94 minus 5 plus 65 = 154 checks overall. Browser verification with sample data covered search, a price save surviving refresh, availability off/on, an extra, new item creation, item-detail updates, and 320px/390px layouts. No live catalog prices or orders were changed by this update. The service-worker cache version is v32.
 
 Earlier, `sql/VERIFY_OFFICIAL_MENU_CATALOG.sql` also passed against the connected project: all 123 variant prices and 16 extras, the three recipe sugar choices, legacy sugar compatibility, hot/cold icons, invalid quantities/options, duplicate extras, forged client prices, changed database prices, inactive items, public visibility, and customer write restrictions. Temporary test updates were rolled back. No database changes or new live SQL tests were performed for the mobile queue and delivery-limit update.
 
@@ -83,7 +88,9 @@ Deliveries are limited to **3 km by driving route from the configured store loca
 
 The server caps `SSUPERTEA_MAX_ROUTE_KM` at 3 even if an existing deployment variable still says 50; a smaller positive configured limit is respected. Pickup orders and rider tracking are unaffected. The service-worker cache version was updated to v29 for the new Admin stylesheet.
 
-The subsequent staff UI refinement gives Admin and Rider matching headers: Sign out stays at the upper right, and a segmented Admin/Rider switch shows the current mode. Permission checks still determine which modes are available. On phones, the switch spans its own row; on desktop, it sits beside the brand. Admin cards now show only the reference, customer, status, order type, item count, age, and total. Tapping a card opens full contact, item choices, fees, address/map, and the existing confirmation/assignment/pickup controls in a modal. Done, Escape, outside tap, or a downward header swipe dismisses it. Unchanged refreshes preserve modal controls; changed orders update the open details. Targeted staff UI regressions passed, including six new tests in `admin-details.test.cjs`. The service-worker version is now v30. No additional live services were accessed for this refinement.
+The subsequent staff UI refinement gives Admin and Rider matching headers: Sign out stays at the upper right, and a compact 196px Admin/Rider switch shows the current mode. An older mobile CSS rule hiding Admin was removed, so both buttons appear side by side for staff with both permissions. Permission checks still determine which modes are available. On phones, the compact switch sits on its own row; on desktop, it sits beside the brand. Admin cards now show only the reference, customer, status, order type, item count, age, and total. Tapping a card opens full contact, item choices, fees, address/map, and the existing confirmation/assignment/pickup controls in a modal. Done, Escape, outside tap, or a downward header swipe dismisses it. Unchanged refreshes preserve modal controls; changed orders update the open details.
+
+Rider now uses independent **Ready to start**, **Out for delivery**, and **Completed** tabs with counts, selected states, keyboard navigation, and one visible section at a time. Refresh preserves the selected tab. The existing delivery actions, completed history controls, GPS, and live map remain available; **Operations** contains refresh and GPS controls. Opening the Out for delivery panel resizes the live map after revealing it. The 390px browser preview with isolated sample data verified both mode buttons and switching from Ready to start to Out for delivery. All 31 targeted checks in the rider completed/GPS and admin details suites passed, including two new Rider navigation checks. The service-worker version is now v31. No live services were changed for this refinement.
 
 The new 390px sample preview was visually checked for the header, search/sort row, tab strip, and Pending/Preparing separation. Browser control then stopped because it could not reliably verify the current URL during a reload. Final visual verification of the Operations refinement and the 320px layout remains incomplete; no further browser actions were attempted after that stop.
 

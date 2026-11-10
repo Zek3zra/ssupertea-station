@@ -10,8 +10,10 @@
   <link rel="stylesheet" href="/css/staff.css">
   <script type="module" src="/js/staff-gate.js"></script>
   <script type="module" src="/js/admin.js"></script>
+  <script type="module" src="/js/menu-editor.js"></script>
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/admin-mobile.css">
+  <link rel="stylesheet" href="/css/menu-editor.css">
 </head>
 <body class="staff-page" data-staff-permission="manage">
   <div class="staff-gate" id="staff-gate">
@@ -39,6 +41,11 @@
     </header>
 
     <main class="staff-content admin-dashboard" id="admin-dashboard">
+      <nav class="admin-workspace-nav" aria-label="Admin workspace">
+        <button id="admin-show-orders" type="button" aria-pressed="true" aria-controls="admin-orders-view">Orders</button>
+        <button id="admin-show-menu" type="button" aria-pressed="false" aria-controls="menu-manager">Menu</button>
+      </nav>
+      <div id="admin-orders-view">
       <section class="admin-hero">
         <div>
           <p class="eyebrow">Order queue</p>
@@ -192,6 +199,62 @@
         </header>
         <div class="admin-details-content" id="admin-details-content"></div>
         <footer class="admin-details-footer"><button class="admin-finished-button" id="admin-details-done" type="button">Done</button></footer>
+      </dialog>
+      </div>
+
+      <section id="menu-manager" class="menu-manager" hidden aria-labelledby="menu-manager-title">
+        <header class="menu-manager-heading">
+          <div><p class="eyebrow">Store catalog</p><h1 id="menu-manager-title">Menu</h1></div>
+          <button id="menu-add-item" class="menu-primary-button" type="button" disabled>Add item</button>
+        </header>
+        <p class="menu-manager-copy">Manage prices and availability. Saved changes appear when customers refresh the menu.</p>
+        <div class="menu-manager-toolbar">
+          <input id="menu-editor-search" type="search" aria-label="Search menu items" placeholder="Search name or category">
+          <select id="menu-editor-filter" aria-label="Filter menu availability"><option value="all">All items</option><option value="available">Available</option><option value="unavailable">Unavailable</option></select>
+          <button id="menu-editor-refresh" class="menu-secondary-button" type="button">Refresh</button>
+        </div>
+        <p id="menu-editor-status" class="menu-editor-status" role="status" aria-live="polite">Select Menu to load the catalog.</p>
+        <p id="menu-editor-count" class="menu-editor-count"></p>
+        <div id="menu-editor-list" class="menu-editor-list"></div>
+      </section>
+
+      <dialog id="menu-editor-dialog" class="menu-editor-dialog" aria-labelledby="menu-editor-title">
+        <header class="menu-editor-dialog-header sheet-drag-region">
+          <span class="menu-editor-handle" aria-hidden="true"></span>
+          <h2 id="menu-editor-title">Edit item</h2>
+          <p>Save changes using the button in each section.</p>
+        </header>
+        <div class="menu-editor-dialog-body">
+          <p id="menu-editor-message" class="menu-editor-status" role="status" aria-live="polite"></p>
+          <div id="menu-existing-options">
+            <section class="menu-options-section"><header><div><h3>Sizes &amp; price options</h3><p>A single price uses its serving automatically.</p></div><button class="menu-secondary-button" type="button" data-add-menu-option="variants">Add option</button></header><div id="menu-variant-rows"></div></section>
+            <section class="menu-options-section"><header><div><h3>Extras</h3><p>Optional add-ons, such as extra egg or rice.</p></div><button class="menu-secondary-button" type="button" data-add-menu-option="addons">Add extra</button></header><div id="menu-addon-rows"></div></section>
+          </div>
+          <details id="menu-item-details" class="menu-item-details">
+          <summary>Item details &amp; photo</summary>
+          <form id="menu-product-form" class="menu-product-form">
+            <label>Item name<input name="name" required maxlength="120" autocomplete="off"></label>
+            <label>Category<input name="category" required maxlength="60" list="menu-category-suggestions" autocomplete="off"><datalist id="menu-category-suggestions"></datalist></label>
+            <label class="menu-wide-field">Description<textarea name="description" maxlength="500" rows="3"></textarea></label>
+            <label>Placeholder icon<select name="icon"><option value="cup">Cold cup</option><option value="coffee">Hot coffee</option><option value="soda">Fruit soda</option><option value="shake">Milkshake</option><option value="sandwich">Sandwich</option><option value="burger">Burger</option><option value="fries">Fries</option><option value="meal">Meal</option><option value="noodles">Noodles</option><option value="snack">Snack</option><option value="pitcher">Pitcher</option><option value="combo">Combo</option></select></label>
+            <label>Option heading<input name="variant_label" required maxlength="60" placeholder="Size or Serving"></label>
+            <label class="menu-wide-field">Photo URL <span class="menu-field-hint">Optional · leave blank to keep the icon</span><input name="image_url" type="text" inputmode="url" maxlength="2000" placeholder="https://… or /assets/…"></label>
+            <label>Display order<input name="sort_order" type="number" min="0" max="2147483647" step="1" required></label>
+            <div class="menu-wide-field menu-checkboxes">
+              <label><input name="active" type="checkbox"> Available to order</label>
+              <label><input name="featured" type="checkbox"> Featured item</label>
+              <label><input name="customizable" type="checkbox"> Allow sugar and ice choices</label>
+            </div>
+            <fieldset id="menu-initial-price" class="menu-wide-field menu-initial-price" hidden>
+              <legend>First price option</legend>
+              <label>Size or serving name<input name="initial_label" maxlength="100" placeholder="Regular"></label>
+              <label>Price (₱)<input name="initial_price" type="number" min="0" max="100000" step="0.01" inputmode="decimal"></label>
+            </fieldset>
+            <button class="menu-primary-button menu-wide-field" id="menu-save-item" type="submit">Save item details</button>
+          </form>
+          </details>
+        </div>
+        <footer class="menu-editor-dialog-footer"><button id="menu-editor-done" class="menu-secondary-button" type="button">Done</button></footer>
       </dialog>
     </main>
   </div>

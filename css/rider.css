@@ -81,6 +81,24 @@
 .rider-details-meta dd { margin-top: 3px; }
 .rider-details-footer { flex-shrink: 0; padding: 12px 20px; border-top: 1px solid #eee; background: #fff; }
 .rider-details-footer button { width: 100%; }
+.rider-dashboard .rider-hero { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 0; border: 0; border-radius: 0; background: #fff; gap: 12px; }
+.rider-dashboard .rider-hero h1 { font-size: clamp(1.5rem, 6vw, 2rem); }
+.rider-dashboard .rider-hero-copy { display: none; font-size: .8rem; color: #666; }
+.rider-operations { position: relative; z-index: 70; }
+.rider-operations summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 999px; background: #fff; color: #333; font-size: .75rem; font-weight: 650; cursor: pointer; list-style: none; }
+.rider-operations summary::-webkit-details-marker { display: none; }
+.rider-operations summary:focus-visible { outline: 2px solid #171717; outline-offset: 3px; }
+.rider-operations .rider-live-panel { position: absolute; top: calc(100% + 8px); right: 0; width: min(360px, calc(100vw - 28px)); box-shadow: 0 12px 32px rgb(0 0 0 / 10%); }
+.rider-operations #rider-last-updated { display: none; }
+.rider-dashboard .rider-live-panel { background: #fafafa; }
+.rider-dashboard .rider-status-message[data-type="success"] { display: none; }
+.rider-queue-toolbar { position: sticky; top: calc(var(--staff-header-height, 110px) + env(safe-area-inset-top)); z-index: 60; margin-top: 18px; padding: 12px 0 8px; border-bottom: 1px solid #eee; background: #fff; }
+.rider-status-tabs { display: flex; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain; padding: 1px 1px 5px; scrollbar-width: thin; }
+.rider-status-tabs button { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 9px 13px; border: 1px solid #e0e0e0; border-radius: 999px; background: #fff; color: #555; font: inherit; font-size: .77rem; font-weight: 650; white-space: nowrap; cursor: pointer; }
+.rider-status-tabs button[aria-selected="true"] { border-color: #171717; background: #171717; color: #fff; }
+.rider-status-tabs button span { min-width: 20px; padding: 2px 5px; border-radius: 20px; background: #f1f1f1; color: #555; font-size: .67rem; }
+.rider-status-tabs button[aria-selected="true"] span { background: #444; color: #fff; }
+.rider-dashboard [data-delivery-panel] { margin-top: 20px; outline-offset: 3px; }
 @media (max-width: 760px) {
   .staff-content.rider-dashboard { width: calc(100% - 24px); margin-top: 16px; }
   .rider-hero { grid-template-columns: 1fr; padding: 20px; gap: 16px; }

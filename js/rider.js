@@ -38,6 +38,7 @@ const state = {
   clearedCompletedIds: new Set(),
   completedMinimized: false,
   detailOrderId: null,
+  selectedDeliveryStatus: "ready",
 };
 
 const el = {};
@@ -66,6 +67,8 @@ function cacheElements() {
     "rider-status-message",
     "rider-stat-ready",
     "rider-stat-active",
+    "rider-stat-completed",
+    "rider-ready-list",
     "rider-assigned-list",
     "rider-recent-list",
     "rider-toast-region",
@@ -80,9 +83,23 @@ function cacheElements() {
   for (const id of ids) {
     el[id] = document.getElementById(id);
   }
+  el.deliveryTabs = Array.from(document.querySelectorAll?.("[data-delivery-tab]") || []);
+  el.deliveryPanels = Array.from(document.querySelectorAll?.("[data-delivery-panel]") || []);
 }
 
 function bindEvents() {
+  for (const tab of el.deliveryTabs) {
+    tab.addEventListener("click", () => selectDeliveryStatus(tab.dataset.deliveryTab));
+    tab.addEventListener("keydown", event => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      const index = el.deliveryTabs.indexOf(tab), last = el.deliveryTabs.length - 1;
+      const next = { ArrowRight: (index + 1) % (last + 1), ArrowLeft: (index + last) % (last + 1), Home: 0, End: last }[event.key];
+      if (next === undefined) return;
+      event.preventDefault();
+      selectDeliveryStatus(el.deliveryTabs[next].dataset.deliveryTab);
+      el.deliveryTabs[next].focus();
+    });
+  }
   el["rider-clear-completed"]?.addEventListener("click", clearCompletedDeliveries);
   el["rider-restore-completed"]?.addEventListener("click", restoreCompletedDeliveries);
   el["rider-toggle-completed"]?.addEventListener("click", toggleCompletedDeliveries);
@@ -249,6 +266,7 @@ function renderDashboard() {
 
   setText(el["rider-stat-ready"], String(preparing.length));
   setText(el["rider-stat-active"], String(dispatched.length));
+  setText(el["rider-stat-completed"], String(state.orders.filter(order => order.status === "completed" && !state.clearedCompletedIds.has(order.id)).length));
   el["rider-clear-completed"].disabled = recent.length === 0;
   el["rider-restore-completed"].hidden = state.clearedCompletedIds.size === 0;
   el["rider-recent-list"].hidden = state.completedMinimized;
@@ -256,12 +274,11 @@ function renderDashboard() {
   el["rider-toggle-completed"].textContent = state.completedMinimized ? "Show list" : "Minimize";
   if (state.detailOrderId && !state.orders.some(order => order.id === state.detailOrderId && order.status === "completed")) closeDeliveryDetails();
 
-  const assigned = [...dispatched, ...preparing];
-
+  renderOrderList(el["rider-ready-list"], preparing, "No deliveries are waiting to start.");
   renderOrderList(
     el["rider-assigned-list"],
-    assigned,
-    "No active delivery is assigned to you."
+    dispatched,
+    "No orders are out for delivery."
   );
 
   renderOrderList(
@@ -269,6 +286,24 @@ function renderDashboard() {
     recent,
     state.clearedCompletedIds.size ? "Completed deliveries cleared. New completed deliveries will appear here." : "Completed deliveries will appear here."
   );
+  selectDeliveryStatus(state.selectedDeliveryStatus);
+}
+
+function selectDeliveryStatus(status) {
+  if (!["ready", "dispatched", "completed"].includes(status)) return;
+  state.selectedDeliveryStatus = status;
+  for (const tab of el.deliveryTabs) {
+    const selected = tab.dataset.deliveryTab === status;
+    tab.setAttribute("aria-selected", String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  }
+  let revealed = false;
+  for (const panel of el.deliveryPanels) {
+    if (panel.hidden && panel.dataset.deliveryPanel === status) revealed = true;
+    panel.hidden = panel.dataset.deliveryPanel !== status;
+  }
+  // A map revealed from a hidden panel needs to measure its visible container again.
+  if (revealed) window.dispatchEvent?.(new Event("resize"));
 }
 
 function completedDeliveriesStorageKey() {

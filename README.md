@@ -14,7 +14,7 @@ The system supports three main experiences:
 - **Admin** — manage orders, confirm orders, assign riders, monitor active deliveries, complete pickup orders, and view rider GPS status and live maps.
 - **Rider** — view assigned deliveries, start and complete deliveries, share GPS while a delivery is active, view an in-app rider-to-customer map, and open Google Maps for turn-by-turn navigation.
 
-> The products, menu entries, and prices currently shown in the frontend may include sample or demonstration data and should not be treated as the official Ssupertea Station menu.
+The storefront loads its official menu and prices from the connected Supabase catalog. The local Admin **Menu** editor can update item details, availability, sizes, prices, and extras, or add a product. See `README_MENU_UPDATE.md` for usage and verification. The original poster seed is a reference; changing the JSON alone does not update the connected menu.
 
 ## Core Features
 
@@ -42,6 +42,8 @@ The system supports three main experiences:
 
 ### Admin dashboard
 
+- Switch between **Orders** and **Menu**; order notifications keep running while editing the catalog.
+- Edit menu prices, sizes, extras, availability, item details, and optional photo URLs, or create a new item with its first price.
 - View and manage active orders.
 - Confirm pending orders.
 - Assign delivery orders to riders.

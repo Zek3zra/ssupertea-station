@@ -163,21 +163,21 @@ html, body, body.staff-page { background: #fff; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .product-card:hover { transform: none; } }
 
-/* Matching staff navigation, with a full-width mode switch on phones. */
-body.staff-page { --staff-header-height: 116px; }
-.staff-page .staff-topbar { position: sticky; top: 0; z-index: 80; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 44px 44px; align-items: center; gap: 8px 12px; height: calc(var(--staff-header-height) + env(safe-area-inset-top)); min-height: 0; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; }
+/* Matching staff navigation, with a compact two-button mode switch. */
+body.staff-page { --staff-header-height: 110px; }
+.staff-page .staff-topbar { position: sticky; top: 0; z-index: 80; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 44px 38px; align-items: center; gap: 8px 12px; height: calc(var(--staff-header-height) + env(safe-area-inset-top)); min-height: 0; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; }
 .staff-page .staff-topbar .staff-brand { grid-row: 1; grid-column: 1; min-width: 0; gap: 9px; }
 .staff-page .staff-topbar .brand-mark { width: 28px; height: 40px; }
 .staff-page .staff-topbar .staff-brand strong { max-width: none; font-size: clamp(.8rem, 3.5vw, 1rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .staff-page .staff-topbar .staff-brand small, .staff-page .staff-topbar .staff-role-pill { display: none; }
 .staff-page .staff-topbar > .staff-signout-button { grid-row: 1; grid-column: 2; align-self: center; justify-self: end; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: .75rem; }
-.staff-page .staff-topbar .staff-mode-nav { grid-row: 2; grid-column: 1 / -1; display: flex; flex-wrap: nowrap; width: 100%; min-width: 0; gap: 4px; padding: 3px; border: 1px solid #e6e6e6; border-radius: 12px; background: #f5f5f5; }
-.staff-page .staff-mode-nav .staff-action-link { flex: 1; min-width: 0; min-height: 36px; padding: 6px 12px; border: 0; border-radius: 8px; background: transparent; color: #666; font-size: .8rem; font-weight: 700; }
+.staff-page .staff-topbar .staff-mode-nav { grid-row: 2; grid-column: 1 / -1; justify-self: start; display: flex; flex-wrap: nowrap; width: 196px; max-width: 100%; min-width: 0; gap: 4px; padding: 3px; border: 1px solid #e6e6e6; border-radius: 10px; background: #f5f5f5; }
+.staff-page .staff-mode-nav .staff-action-link { flex: 1; min-width: 0; min-height: 30px; padding: 5px 12px; border: 0; border-radius: 7px; background: transparent; color: #666; font-size: .75rem; font-weight: 700; }
 .staff-page .staff-mode-nav .staff-action-link[aria-current="page"] { background: #171717; color: #fff; }
 .staff-page .staff-mode-nav .staff-action-link:focus-visible { outline: 2px solid #171717; outline-offset: 2px; }
 @media (min-width: 760px) {
   body.staff-page { --staff-header-height: 76px; }
-  .staff-page .staff-topbar { grid-template-columns: minmax(0, 1fr) minmax(180px, 260px) auto; grid-template-rows: 44px; column-gap: 20px; padding: calc(16px + env(safe-area-inset-top)) max(20px, calc((100vw - 1120px) / 2)) 16px; }
+  .staff-page .staff-topbar { grid-template-columns: minmax(0, 1fr) 196px auto; grid-template-rows: 44px; column-gap: 20px; padding: calc(16px + env(safe-area-inset-top)) max(20px, calc((100vw - 1120px) / 2)) 16px; }
   .staff-page .staff-topbar .staff-mode-nav { grid-row: 1; grid-column: 2; }
   .staff-page .staff-topbar > .staff-signout-button { grid-column: 3; }
 }

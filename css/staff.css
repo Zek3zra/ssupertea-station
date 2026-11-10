@@ -759,10 +759,6 @@ body.staff-page {
     font-size: 0.78rem;
   }
 
-  .staff-action-link#admin-mode-link {
-    display: none;
-  }
-
   .admin-stats {
     grid-template-columns: 1fr 1fr;
     gap: 8px;

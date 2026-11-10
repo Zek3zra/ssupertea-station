@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en-PH">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff"><meta name="robots" content="noindex,nofollow">
+  <title>Ssupertea Station | Staff security</title>
+  <link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/theme.css"><link rel="stylesheet" href="/css/staff-security.css">
+  <script type="module" src="/js/staff-security.js"></script>
+</head>
+<body>
+  <main class="security-shell">
+    <a class="security-brand" href="/"><img src="/assets/brand/ssupertea-logo.jpg" width="32" height="46" alt=""><span>Ssupertea Station</span></a>
+    <p class="security-eyebrow">STAFF ACCOUNT</p><h1 id="security-title">Two-step verification</h1>
+    <p id="security-copy">Use an authenticator app to protect your staff access.</p>
+    <p id="security-status" role="status" aria-live="polite">Checking your account…</p>
+    <button id="security-enroll" type="button" hidden>Set up authenticator</button>
+    <section id="security-setup" hidden>
+      <p>Scan this QR code with your authenticator app. Keep the setup key private.</p>
+      <img id="security-qr" width="220" height="220" alt="Authenticator setup QR code">
+      <details><summary>Enter a setup key instead</summary><code id="security-secret"></code></details>
+    </section>
+    <form id="security-verify-form" hidden>
+      <label for="security-code">Authenticator code</label>
+      <input id="security-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required placeholder="6-digit code">
+      <button type="submit">Verify code</button>
+    </form>
+    <a id="security-continue" class="security-continue" href="/admin.html" hidden>Continue to dashboard</a>
+    <p class="security-help">Lost access to your authenticator? Contact the store owner to recover your account.</p>
+    <button id="security-signout" class="security-signout" type="button">Sign out</button>
+  </main>
+</body>
+</html>

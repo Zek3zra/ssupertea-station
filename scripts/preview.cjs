@@ -8,9 +8,11 @@ const envFile = path.join(root,".env.local");
 if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
 const port = Number(process.env.PREVIEW_PORT || 4173);
 const types = { ".html":"text/html", ".css":"text/css", ".js":"text/javascript", ".json":"application/json", ".jpg":"image/jpeg", ".png":"image/png", ".svg":"image/svg+xml", ".ico":"image/x-icon" };
-const pages = new Set(["index.html","admin.html","rider.html","reset-password.html","auth-callback.html","manifest.json","sw.js"]);
+const pages = new Set(["index.html","admin.html","rider.html","staff-security.html","reset-password.html","auth-callback.html","manifest.json","sw.js"]);
+const securityHeaders = JSON.parse(fs.readFileSync(path.join(root,"vercel.json"),"utf8")).headers?.[0]?.headers || [];
 http.createServer(async (req,res) => {
   res.setHeader("Cache-Control","no-store");
+  for (const header of securityHeaders) res.setHeader(header.key,header.value);
   try {
     const url = new URL(req.url,"http://localhost");
     const pathname = decodeURIComponent(url.pathname);

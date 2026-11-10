@@ -1,4 +1,5 @@
 import { bindSheetDismiss } from "/js/sheet-dismiss.js";
+import { createCheckoutAttemptStore } from "/js/checkout-attempt.js";
 import { normalizeCatalogProduct, catalogIcon, getSizeOptions, getAddonOptions, calculateCatalogPrice, SUGAR_OPTIONS, getSugarOption, getSugarSummary } from "/js/catalog.js";
 import {
   customerSupabase,
@@ -24,6 +25,10 @@ const CUSTOMER_NAME_STORAGE_KEY = "ssupertea-customer-name-v1";
 const CUSTOMER_SESSION_TOKEN_STORAGE_KEY =
   "ssupertea-customer-session-token-v1";
 const LAST_ORDER_STORAGE_KEY = "ssupertea-last-order-v1";
+let checkoutAttemptStore;
+function getCheckoutAttempts() {
+  return checkoutAttemptStore ||= createCheckoutAttemptStore({ createId: createUuid });
+}
 
 const MAX_ITEM_QUANTITY = 20;
 const MAX_DELIVERY_ADDRESS_LENGTH = 500;
@@ -3012,11 +3017,8 @@ async function handleCheckoutSubmit(event) {
     )
   );
 
-  const clientOrderId = createUuid();
-
   try {
     const orderPayload = {
-      id: clientOrderId,
       customer_name: customerName,
       customer_phone: customerPhone,
       order_type: orderType,
@@ -3025,12 +3027,14 @@ async function handleCheckoutSubmit(event) {
       delivery_lat: deliveryLatitude,
       delivery_lng: deliveryLongitude,
     };
+    orderPayload.id = await getCheckoutAttempts().idFor(orderPayload, checkoutOwner);
 
     const {
       order,
       session,
     } = await createOrderWithSessionRecovery(
-      orderPayload
+      orderPayload,
+      checkoutOwner
     );
 
     if (state.checkout.customerUserId !== checkoutOwner) return;
@@ -3074,6 +3078,7 @@ async function handleCheckoutSubmit(event) {
     setCheckoutSubmitting(false);
     closeCheckoutDialog();
     showOrderConfirmation(order);
+    getCheckoutAttempts().clear(checkoutOwner, order.id);
 
     if (
       Number.isFinite(serverTotal) &&
@@ -3097,7 +3102,7 @@ async function handleCheckoutSubmit(event) {
 
     showToast({
       type: "error",
-      title: "Order was not submitted",
+      title: "Unable to confirm your order",
       message: getOrderSubmissionMessage(error),
       duration: 5200,
     });
@@ -3154,14 +3159,15 @@ function normalizeAddressPart(value) {
 }
 
 async function createOrderWithSessionRecovery(
-  orderPayload
+  orderPayload,
+  expectedOwner = state.checkout.customerUserId
 ) {
   const session =
     await ensureCustomerSession({
       forceRefresh: true,
     });
 
-  if (!state.checkout.customerUserId || session.user.id !== state.checkout.customerUserId) {
+  if (!expectedOwner || state.checkout.customerUserId !== expectedOwner || session.user.id !== expectedOwner) {
     throw new Error("Your account changed. Reopen checkout before placing this order.");
   }
 
@@ -3246,8 +3252,7 @@ function getOrderSubmissionMessage(error) {
     errorCode === "order_api_not_configured"
   ) {
     return (
-      "The secure order endpoint is missing one or more Vercel variables. " +
-      "Add the Supabase server variables listed in the Phase 5 setup guide."
+      "The store is temporarily unable to accept online orders. Try again later or contact the store."
     );
   }
 
@@ -3263,6 +3268,13 @@ function getOrderSubmissionMessage(error) {
     errorCode === "destination_too_far"
   ) {
     return error.message;
+  }
+
+  if (
+    errorCode === "order_rate_limited" ||
+    (Number(error?.status) === 429 && errorCode !== "ors_rate_limited")
+  ) {
+    return "Too many requests. Wait a minute before trying again. Retrying the same checkout will recover an order that was already accepted.";
   }
 
   if (
@@ -3286,7 +3298,7 @@ function getOrderSubmissionMessage(error) {
     errorCode === "order_insert_failed"
   ) {
     return (
-      "The database rejected the order. Run the Phase 5 SQL migration and try again."
+      "Your order could not be confirmed. Wait briefly and retry the same checkout, or check your order tracking."
     );
   }
 

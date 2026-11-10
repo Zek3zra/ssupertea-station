@@ -5,6 +5,7 @@ import {
 import { createOrderContact } from "/js/order-contact.js";
 import { createOrderAlert } from "/js/order-alert.js";
 import { bindSheetDismiss } from "/js/sheet-dismiss.js";
+import { createOrderHistoryPanel } from "/js/order-history.js";
 
 const ACTIVE_STATUSES = new Set([
   "pending",
@@ -542,7 +543,12 @@ function renderOrderDetails() {
   const snapshot = JSON.stringify([order, state.assignments.get(order.id), state.riders]);
   if (snapshot === state.detailSnapshot) return;
   state.detailSnapshot = snapshot;
-  el["admin-details-content"]?.replaceChildren(createOrderCard(order, { details: true }));
+  const content = el["admin-details-content"], owner = state.session?.user?.id;
+  if (!content) return;
+  const card = createOrderCard(order, { details: true });
+  const activity = createOrderHistoryPanel({ client: customerSupabase, orderId: order.id, document, formatTime: formatDateTime,
+    isCurrent: () => state.detailOrderId === order.id && state.session?.user?.id === owner && state.permissions?.can_manage_orders === true && content.children[0] === card });
+  content.replaceChildren(card, activity);
 }
 
 function closeOrderDetails() {

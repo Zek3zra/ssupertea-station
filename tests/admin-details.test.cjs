@@ -26,10 +26,13 @@ function harness() {
     getElementById(id) { if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id); } };
   const contact = new Function("document", read("order-contact.js").replace(/^export /gm, "") + ";return createOrderContact;")(document);
   const dismiss = new Function(read("sheet-dismiss.js").replace(/^export /gm, "") + ";return bindSheetDismiss;")();
+  const { createOrderHistoryPanel } = new Function(read("order-history.js").replace(/^export /gm, "") + ";return {createOrderHistoryPanel};")();
+  const historyQuery = { select() {return this;}, eq() {return this;}, order() {return this;}, limit() {return this;}, abortSignal() {return Promise.resolve({data:[]});} };
+  const client = { from() {return historyQuery;} };
   const source = read("admin.js").replace(/^import[\s\S]*?from\s+["'][^"']+["'];\s*/gm, "");
-  const app = new Function("document", "window", "createOrderContact", "bindSheetDismiss", source + `
+  const app = new Function("document", "window", "createOrderContact", "bindSheetDismiss", "createOrderHistoryPanel", "customerSupabase", source + `
     return { state, cacheElements, initializeOrderDetails, createOrderCard, openOrderDetails, renderOrderDetails, closeOrderDetails, handleDashboardClick,
-      prepare(record){runOrderRpc=async (...args)=>record(args);refreshDashboard=async()=>{};showToast=()=>{};} };`)(document, { addEventListener() {} }, contact, dismiss);
+      prepare(record){runOrderRpc=async (...args)=>record(args);refreshDashboard=async()=>{};showToast=()=>{};} };`)(document, { addEventListener() {} }, contact, dismiss, createOrderHistoryPanel, client);
   app.cacheElements(); app.initializeOrderDetails(); app.prepare(args => calls.push(args));
   app.state.session = { user: { id: "sample-admin" } }; app.state.permissions = { can_manage_orders: true }; app.state.orders = [structuredClone(order)];
   return { ...app, calls, node: id => document.getElementById(id) };

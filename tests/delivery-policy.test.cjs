@@ -18,6 +18,7 @@ function harness(name, { distance = 3000, duration = 120, maxKm = "50" } = {}) {
     fetch: async (url, options = {}) => {
       calls.push({ url, options });
       if (url.endsWith("/auth/v1/user")) return response({ id: userId, is_anonymous: false });
+      if (url.includes("/rpc/consume_order_action")) return response({ allowed: true });
       if (url.includes("/rpc/price_catalog_order")) return response({ items: [{ name: "Taro Milk Tea", quantity: 1, unit_price: 39 }], total_price: 39 });
       if (url.includes("/rest/v1/orders")) {
         if (options.method === "POST") { inserted.push(JSON.parse(options.body)); return response([inserted.at(-1)], 201); }

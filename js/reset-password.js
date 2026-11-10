@@ -44,8 +44,8 @@ async function handleSubmit(event) {
   const password = String(passwordInput?.value || "");
   const confirmation = String(confirmationInput?.value || "");
 
-  if (password.length < 8) {
-    setStatus("Use at least 8 characters for your new password.", "error");
+  if (password.length < 12) {
+    setStatus("Use at least 12 characters for your new password.", "error");
     passwordInput?.focus();
     return;
   }

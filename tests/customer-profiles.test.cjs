@@ -161,6 +161,7 @@ function checkoutHarness() {
     return nodes[id];
   }
   const h = compile("js/app.js", {
+    createCheckoutAttemptStore: options => compile("js/checkout-attempt.js", { crypto: require("node:crypto").webcrypto, TextEncoder }, "createCheckoutAttemptStore").createCheckoutAttemptStore({ ...options, storage: () => ({ getItem: () => null, setItem() {}, removeItem() {} }) }),
     customerSupabase: {},
     ensureCustomerAccount: async () => session,
     ensureCustomerSession: async () => session,
@@ -275,6 +276,12 @@ test("Accepted orders close checkout before showing confirmation", async () => {
   assert.equal(h.state.checkout.isSubmitting, false);
   assert.equal(h.state.cart.length, 0);
 });
+test("Switching accounts while preparing a checkout retry cannot submit the previous customer's details", async () => {
+  const h = checkoutHarness(); await h.handleCheckoutRequest();
+  const submitting = h.handleCheckoutSubmit({ preventDefault() {} });
+  h.clearCheckoutCustomer(); h.setSession({ user: { id: "customer-b" } }); h.state.checkout.customerUserId = "customer-b";
+  await submitting; assert.equal(h.submitted.length, 0);
+});
 test("Failed orders keep checkout and the cart available for retry", async () => {
   const h = checkoutHarness();
   await h.handleCheckoutRequest();
@@ -334,6 +341,7 @@ function orderApiHarness() {
       requests.push({ url, options });
       const response = data => ({ ok: true, status: 200, json: async () => data });
       if (url.endsWith("/auth/v1/user")) return response({ id: "11111111-1111-4111-8111-111111111111", is_anonymous: false });
+      if (url.includes("/rpc/consume_order_action")) return response({ allowed: true });
       if (url.includes("/rpc/price_catalog_order")) return response({ items: [{ name: "Classic Milk Tea", quantity: 1 }], total_price: 80 });
       if (url.includes("/rest/v1/orders") && options.method === "POST") { storedOrder = JSON.parse(options.body); return response([storedOrder]); }
       if (url.includes("/rest/v1/orders")) return response([]);

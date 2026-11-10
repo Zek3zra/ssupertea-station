@@ -72,6 +72,14 @@
 .admin-results-note:empty { display: none; }
 .admin-details-dialog { width: min(calc(100% - 32px), 600px); max-height: 88dvh; margin: auto; padding: 0; border: 1px solid #ddd; border-radius: 16px; background: #fff; color: #171717; overflow: hidden; }
 .admin-details-dialog[open] { display: flex; flex-direction: column; }
+.admin-order-history { padding: 18px 0 4px; border-top: 1px solid #eee; }
+.admin-order-history h3 { font-size: .95rem; }
+.admin-order-history p, .admin-order-history ol { font-size: .76rem; color: #666; line-height: 1.6; }
+.admin-order-history ol { padding-left: 18px; margin: 12px 0; }
+.admin-order-history li { padding: 6px 0; }
+.admin-order-history li strong, .admin-order-history li span { display: block; }
+.admin-order-history li strong { color: #222; font-weight: 600; }
+.admin-order-history button { min-height: 44px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #222; font: inherit; font-size: .76rem; cursor: pointer; }
 .admin-details-dialog::backdrop { background: rgb(0 0 0 / 45%); }
 .admin-details-header { position: relative; flex-shrink: 0; padding: 28px 20px 16px; border-bottom: 1px solid #eee; touch-action: none; }
 .admin-details-header h2 { font-size: 1.15rem; }

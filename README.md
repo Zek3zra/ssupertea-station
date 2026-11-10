@@ -1,8 +1,10 @@
 # Ssupertea Station
 
-A production-ready Progressive Web App for Ssupertea Station that handles customer ordering, staff order management, rider delivery workflows, realtime GPS tracking, and live delivery maps.
+A Progressive Web App for Ssupertea Station that handles customer ordering, staff order management, rider delivery workflows, realtime GPS tracking, and live delivery maps. Production acceptance testing is still required before a public launch.
 
 **Live production:** https://ssupertea-station.vercel.app
+
+**Current rollout:** See [Step 1 setup and testing](README_STEP_1.md) for checkout recovery, order activity, API protections, and staff authenticator enrollment. Database setup and the Vercel rate-limit update are applied; local application changes still need your manual commit and deployment. Staff MFA enforcement remains off until enrollment and rollout are complete.
 
 ## Overview
 

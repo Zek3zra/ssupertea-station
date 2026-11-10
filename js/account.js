@@ -669,9 +669,9 @@ async function handleEmailSignup(
     return;
   }
 
-  if (password.length < 8) {
+  if (password.length < 12) {
     setAuthStatus(
-      "Use at least 8 characters for your password.",
+      "Use at least 12 characters for your password.",
       "error"
     );
     return;

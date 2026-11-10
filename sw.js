@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v35";
+const CACHE_VERSION = "v36";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -14,12 +14,14 @@ const APP_SHELL = [
   "/index.html",
   "/auth-callback.html",
   "/reset-password.html",
+  "/staff-security.html",
   "/admin.html",
   "/rider.html",
   "/manifest.json",
   "/css/style.css",
   "/css/account.css",
   "/css/staff.css",
+  "/css/staff-security.css",
   "/css/admin-mobile.css",
   "/css/menu-editor.css",
   "/css/rider.css",
@@ -28,9 +30,11 @@ const APP_SHELL = [
   "/js/sheet-dismiss.js",
   "/assets/brand/ssupertea-logo.jpg",
   "/js/app.js",
+  "/js/checkout-attempt.js",
   "/js/account.js",
   "/js/customer-profile.js",
   "/js/order-contact.js",
+  "/js/order-history.js",
   "/js/admin.js",
   "/js/menu-editor.js",
   "/js/menu-editor-data.js",
@@ -43,6 +47,8 @@ const APP_SHELL = [
   "/js/reset-password.js",
   "/js/auth-callback.js",
   "/js/staff-gate.js",
+  "/js/staff-mfa.js",
+  "/js/staff-security.js",
   "/js/supabase-config.js",
   "/js/openstreetmap-config.js",
   "/assets/icons/brand-icon.svg",
@@ -154,6 +160,10 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname === "/css/rider.css" ||
     requestUrl.pathname === "/css/menu-editor.css" ||
     requestUrl.pathname === "/js/menu-editor.js" ||
+    requestUrl.pathname === "/js/checkout-attempt.js" ||
+    requestUrl.pathname === "/js/order-history.js" ||
+    requestUrl.pathname === "/js/staff-mfa.js" ||
+    requestUrl.pathname === "/js/staff-security.js" ||
     requestUrl.pathname === "/js/menu-editor-data.js"
   ) {
     event.respondWith(networkFirstAsset(request));

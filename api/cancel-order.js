@@ -1,4 +1,6 @@
 "use strict";
+const { enforceOrderActionLimit } = require("../lib/order-action-limit.cjs");
+const { assertOrderBodySize } = require("../lib/order-request.cjs");
 
 module.exports = async function cancelOrderHandler(
   request,
@@ -41,6 +43,7 @@ module.exports = async function cancelOrderHandler(
   }
 
   try {
+    assertOrderBodySize(request.body, 8 * 1024);
     const accessToken =
       getBearerToken(request);
 
@@ -74,6 +77,7 @@ module.exports = async function cancelOrderHandler(
       );
     }
 
+    await enforceOrderActionLimit(configuration, user.id, "cancel", fetch);
     const rpcResponse = await fetch(
       `${configuration.supabaseUrl}/rest/v1/rpc/cancel_customer_order`,
       {
@@ -149,12 +153,13 @@ module.exports = async function cancelOrderHandler(
     throw publicError(
       "ORDER_CANCEL_FAILED",
       502,
-      message
+      "Cancellation could not be confirmed. Refresh your order status before trying again."
     );
   } catch (error) {
+    if (error.retryAfter) response.setHeader("Retry-After", String(error.retryAfter));
     console.error(
       "Cancel-order endpoint failed:",
-      error
+      { code: error?.code || "CANCEL_ORDER_FAILED", status: Number(error?.statusCode) || 500 }
     );
 
     return response.status(

@@ -3,6 +3,7 @@ import {
   getVerifiedAccountSession,
   clearCustomerSession,
 } from "/js/supabase-config.js";
+import { requiresStaffMfa } from "/js/staff-mfa.js";
 
 document.addEventListener(
   "DOMContentLoaded",
@@ -59,6 +60,12 @@ async function initializeStaffGate() {
     }
 
     redirectToStore();
+    return;
+  }
+
+  if (await requiresStaffMfa(customerSupabase, data)) {
+    const next = required === "deliver" ? "/rider.html" : "/admin.html";
+    window.location.replace(`/staff-security.html?next=${encodeURIComponent(next)}`);
     return;
   }
 

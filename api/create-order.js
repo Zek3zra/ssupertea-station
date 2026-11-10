@@ -1,5 +1,9 @@
 "use strict";
 const { getDeliveryLimitKm, isValidRouteSummary, calculateDeliveryFee } = require("../lib/delivery-policy.cjs");
+const { orderRequestFingerprint, assertMatchingOrder, assertOrderBodySize } = require("../lib/order-request.cjs");
+const { enforceOrderActionLimit } = require("../lib/order-action-limit.cjs");
+
+const ORDER_COLUMNS = "id,customer_name,customer_phone,order_type,items,items_subtotal,delivery_fee,total_price,status,delivery_address,delivery_lat,delivery_lng,route_distance_m,route_duration_s,customer_session_token,created_at,request_fingerprint";
 
 const ORS_DIRECTIONS_URL =
   "https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson";
@@ -47,6 +51,7 @@ module.exports = async function createOrderHandler(request, response) {
   }
 
   try {
+    assertOrderBodySize(request.body);
     const accessToken = getBearerToken(request);
 
     if (!accessToken) {
@@ -60,6 +65,16 @@ module.exports = async function createOrderHandler(request, response) {
       configuration,
       accessToken
     );
+
+    const body = parseRequestBody(request.body);
+    const orderInput = validateOrderInput(body);
+    const fingerprint = orderRequestFingerprint(orderInput);
+    // Recover before checking other active orders or repricing/rerouting.
+    const existing = await recoverOrder(configuration, orderInput.id, user.id, ORDER_COLUMNS);
+    if (existing) {
+      assertMatchingOrder(existing, fingerprint);
+      return response.status(200).json({ order: existing, recovered: true });
+    }
 
     const activeOrder =
       await findActiveOrder(
@@ -75,9 +90,7 @@ module.exports = async function createOrderHandler(request, response) {
       );
     }
 
-    const body = parseRequestBody(request.body);
-    const orderInput = validateOrderInput(body);
-
+    await enforceOrderActionLimit(configuration, user.id, "create", fetch);
     const pricedOrder = await priceItems(
       configuration,
       orderInput.items
@@ -125,6 +138,7 @@ module.exports = async function createOrderHandler(request, response) {
       route_distance_m: routeDistanceMeters,
       route_duration_s: routeDurationSeconds,
       customer_session_token: user.id,
+      request_fingerprint: fingerprint,
     };
 
     const order = await insertOrder(
@@ -141,7 +155,8 @@ module.exports = async function createOrderHandler(request, response) {
       },
     });
   } catch (error) {
-    console.error("Create-order endpoint failed:", error);
+    if (error.retryAfter) response.setHeader("Retry-After", String(error.retryAfter));
+    console.error("Create-order endpoint failed:", { code: error?.code || "CREATE_ORDER_FAILED", status: Number(error?.statusCode) || 500 });
 
     return response.status(
       Number(error?.statusCode) || 500
@@ -531,24 +546,7 @@ async function insertOrder(
   databaseOrder,
   customerUserId
 ) {
-  const columns = [
-    "id",
-    "customer_name",
-    "customer_phone",
-    "order_type",
-    "items",
-    "items_subtotal",
-    "delivery_fee",
-    "total_price",
-    "status",
-    "delivery_address",
-    "delivery_lat",
-    "delivery_lng",
-    "route_distance_m",
-    "route_duration_s",
-    "customer_session_token",
-    "created_at",
-  ].join(",");
+  const columns = ORDER_COLUMNS;
 
   const response = await fetch(
     `${configuration.supabaseUrl}/rest/v1/orders?select=${encodeURIComponent(columns)}`,
@@ -577,7 +575,7 @@ async function insertOrder(
     );
 
     if (recovered) {
-      return recovered;
+      return assertMatchingOrder(recovered, databaseOrder.request_fingerprint);
     }
 
     const activeOrder =
@@ -598,9 +596,7 @@ async function insertOrder(
   throw publicError(
     "ORDER_INSERT_FAILED",
     502,
-    payload?.message ||
-      payload?.details ||
-      "The database rejected the order."
+    "We could not confirm this order. Try again shortly; an order that was already accepted will be recovered."
   );
 }
 
@@ -636,6 +632,9 @@ async function findActiveOrder(
       .json()
       .catch(() => null);
 
+  if (!response.ok || !Array.isArray(payload)) {
+    throw publicError("ORDER_LOOKUP_FAILED", 503, "We could not check your existing orders. Try again shortly.");
+  }
   return (
     response.ok &&
     Array.isArray(payload) &&
@@ -667,6 +666,9 @@ async function recoverOrder(
 
   const payload = await response.json().catch(() => null);
 
+  if (!response.ok || !Array.isArray(payload)) {
+    throw publicError("ORDER_LOOKUP_FAILED", 503, "We could not confirm whether this order was already placed. Try again shortly.");
+  }
   return response.ok &&
     Array.isArray(payload) &&
     payload[0]

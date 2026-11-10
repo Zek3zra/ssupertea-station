@@ -802,3 +802,4 @@ body.staff-page {
 }
 .staff-order-contact > span:first-child { font-weight: 700; }
 .staff-order-contact a { color: #484848; text-decoration: underline; text-underline-offset: 3px; }
+.staff-security-link { display: block; min-height: 44px; padding: 10px 12px; color: inherit; font-size: .8rem; text-decoration: underline; }

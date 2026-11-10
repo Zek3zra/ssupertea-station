@@ -1,0 +1,7 @@
+{
+  "name": "Ssupertea API Protection",
+  "description": "Shared 60 requests/minute/IP limit for routing, geocoding, order creation and cancellation. Reuses the existing rate-limit rule without adding a paid rule.",
+  "active": true,
+  "conditionGroup": [{ "conditions": [{ "type": "path", "op": "re", "value": "^/api/(route|reverse-geocode|create-order|cancel-order)(\\.js)?/?$" }] }],
+  "action": { "mitigate": { "action": "rate_limit", "rateLimit": { "limit": 60, "window": 60, "algo": "fixed_window", "keys": ["ip"], "action": "rate_limit" } } }
+}

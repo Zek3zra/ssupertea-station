@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_VERSION = "v36";
+const CACHE_VERSION = "v37";
 const STATIC_CACHE = `ssupertea-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `ssupertea-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "ssupertea-";
@@ -18,6 +18,8 @@ const APP_SHELL = [
   "/admin.html",
   "/rider.html",
   "/manifest.json",
+  "/favicon.ico",
+  "/favicon.png",
   "/css/style.css",
   "/css/account.css",
   "/css/staff.css",
@@ -52,6 +54,7 @@ const APP_SHELL = [
   "/js/supabase-config.js",
   "/js/openstreetmap-config.js",
   "/assets/icons/brand-icon.svg",
+  "/assets/icons/icon-192.png",
   "/assets/icons/icon-512.png",
   "/assets/icons/maskable-icon-512.png",
   "/assets/icons/apple-touch-icon.png",
